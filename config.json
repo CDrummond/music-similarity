@@ -5,7 +5,7 @@
   "extractstart":-48,
   "extractlen":30
  },
- "esentia":{
+ "essentia":{
   "enabled":true,
   "extractor":"essentia/bin/x86-64/essentia_streaming_extractor_music",
   "weight":0.0

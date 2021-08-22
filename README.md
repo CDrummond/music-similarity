@@ -1,4 +1,4 @@
-# Musis Similarity
+# Music Similarity
 
 Simple python3 API server to create a mix of music tracks for LMS.
 
@@ -19,7 +19,7 @@ Instructions, and binaries, for Musly on macOS can be found [here](https://githu
 
 ## Essentia
 
-The essentia binaries and models are only required for anlysing tracks, and are
+The Essentia binaries and models are only required for anlysing tracks, and are
 not required for the similarity API. Therefore, if analysis is performed on one
 machine and API served on another (e.g. a Raspberry Pi) the contents of the
 `essentia` folder are not required on the API machine.
@@ -134,9 +134,9 @@ the default value.
 `shuffle` if set to `1` will cause extra tracks to be located, this list
 shuffled, and then the desired `count` tracks taken from this shuffled list.
 
-The API will use Musly to get the similairt between all tracks and each seed
+The API will use Musly to get the similarity between all tracks and each seed
 track, and sort this by similarity (most similar first). The Essentia attributes
-are then used to filter out some tracks (e.g. by checking BPM, etc.). Initally
+are then used to filter out some tracks (e.g. by checking BPM, etc.). Initially
 the API will ignore tracks from the same artist or album of the seed tracks (and
 any previous in the list, any albums from the (e.g.) 25 `previous` tracks, or
 albums from the last (e.g.) 15 `previous` tracks). If, because of this
@@ -186,8 +186,8 @@ This is the method that is used by the LMS plugin.
 
 ## Configuration
 
-The sever reads its configuration from a JSON file (default name is
-`config.json`). This has the following format:
+Configuration is read from a JSON file (default name is `config.json`). This has
+the following format:
 
 ```
 {
@@ -197,7 +197,7 @@ The sever reads its configuration from a JSON file (default name is
   "extractstart":-48,
   "extractlen":30
  },
- "esentia":{
+ "essentia":{
   "enabled":true,
   "extractor":"essentia/bin/x86-64/essentia_streaming_extractor_music",
   "weight":0.0
@@ -249,10 +249,10 @@ zero, decoding starts at the beginning. If negative, the excerpt is centered in
 the file, but starts at -`extractstart` the latest. If positive and
 `extractstart`+`extractlen` exceeds the file length, then the excerpt is taken
 from the end of the file.
-* `essentia.enabled` should be set to true if essentia is to be used for filtering
-* `essentia.extractor` should containt the math to the essentia extractor - path is
+* `essentia.enabled` should be set to true if Essentia is to be used for filtering
+* `essentia.extractor` should containt the math to the Essentia extractor - path is
 relative to `music-similarity.py`
-* `essentia.weight` By default Musly is used for similarity score, and essentia
+* `essentia.weight` By default Musly is used for similarity score, and Essentia
 is used to filter tracks. However, if you set `essentia.weight` to higher than
 0.0 (and less than or equal to 1.0) then Essentia can also be used to score
 similarity based upon the Essentia attributes. This value then configures the
