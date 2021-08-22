@@ -1,0 +1,10 @@
+[Unit]
+Description=Music Similarity
+
+[Service]
+Type=simple
+User=lms
+ExecStart=/usr/bin/python3 /usr/local/music-similarity/music-similarity.py -c /usr/local/music-similarity/pi.json
+
+[Install]
+WantedBy=multi-user.target

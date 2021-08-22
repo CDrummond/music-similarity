@@ -1,0 +1,15 @@
+highlevel:
+    compute: 1
+    svm_models: [
+    'essentia/models/danceability.history',
+    'essentia/models/mood_acoustic.history',
+    'essentia/models/mood_aggressive.history',
+    'essentia/models/mood_electronic.history',
+    'essentia/models/mood_happy.history',
+    'essentia/models/mood_party.history',
+    'essentia/models/mood_relaxed.history',
+    'essentia/models/mood_sad.history',
+    'essentia/models/timbre.history',
+    'essentia/models/tonal_atonal.history',
+    'essentia/models/voice_instrumental.history'
+    ]
