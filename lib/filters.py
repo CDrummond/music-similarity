@@ -5,8 +5,10 @@
 # GPLv3 license.
 #
 
-
 from . import tracks_db
+import logging
+
+_LOGGER = logging.getLogger(__name__)
 
 VARIOUS_ARTISTS = ['various', 'various artists'] # Artist names are normalised, and coverted to lower case
 CHRISTMAS_GENRES = ['Christmas', 'Xmas']
@@ -93,9 +95,6 @@ def check_duration(min_duration, max_duration, meta):
     return True
 
 
-#import logging
-#_LOGGER = logging.getLogger(__name__)
-
 def check_attribs(seed, candidate):
     if 'bpm' not in seed or 'bpm' not in candidate:
         # No essentia attributes, so accept track
@@ -111,11 +110,12 @@ def check_attribs(seed, candidate):
         attr=[]
         for ess in tracks_db.ESSENTIA_ATTRIBS:
             if ess != 'bpm':
-               attr.append({'key':ess, 'val':abs(0.5-seed[ess])})
-        attr=sorted(attr, key=lambda k: k['val'])[:4]
+               attr.append({'key':ess, 'val':abs(0.5-seed[ess]), 'a':seed[ess]})
+        attr=sorted(attr, key=lambda k: -1*k['val'])[:4]
         seed['ess']=[]
         for a in attr:
             seed['ess'].append(a['key'])
+        #_LOGGER.debug('SEED attribs: %s' % str(seed['ess']))
  
     for ess in seed['ess']:
         if abs(seed[ess]-candidate[ess])>0.75:
