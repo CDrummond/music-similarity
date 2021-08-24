@@ -101,7 +101,7 @@ def check_attribs(seed, candidate):
         return True
 
     if abs(seed['bpm']-candidate['bpm'])>50:
-        #_LOGGER.debug('DISCARD %s %s due to BPM' % (candidate['artist'], candidate['title']))
+        _LOGGER.debug('DISCARD %s %s due to BPM [%d / %d]' % (candidate['artist'], candidate['title'], seed['bpm'], candidate['bpm']))
         return False
 
     # Determine the 4 most accurate Essentia attributes, and filter on those
@@ -115,12 +115,12 @@ def check_attribs(seed, candidate):
         seed['ess']=[]
         for a in attr:
             seed['ess'].append(a['key'])
-        #_LOGGER.debug('SEED attribs: %s' % str(seed['ess']))
+        _LOGGER.debug('SEED attribs: %s' % str(seed['ess']))
  
     for ess in seed['ess']:
         # Filter out tracks where attribute is in opposite end of spectrum
         if abs(seed[ess]-candidate[ess])>0.75:
-            #_LOGGER.debug('DISCARD %s %s due to %s [%f - %f]' % (candidate['artist'], candidate['title'], ess, seed[ess], candidate[ess]))
+            _LOGGER.debug('DISCARD %s %s due to %s [%f - %f]' % (candidate['artist'], candidate['title'], ess, seed[ess], candidate[ess]))
             return False
     #for ess in tracks_db.ESSENTIA_ATTRIBS:
     #    if not ess in ['bpm', 'danceable'] and seed[ess]>=0.001 and seed[ess]<=0.9999 and candidate[ess]>=0.001 and candidate[ess]<=0.9999 and abs(seed[ess]-candidate[ess])>0.75:
