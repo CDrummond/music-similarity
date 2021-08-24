@@ -19,7 +19,7 @@ Instructions, and binaries, for Musly on macOS can be found [here](https://githu
 
 ## Essentia
 
-The Essentia binaries and models are only required for anlysing tracks, and are
+The Essentia binaries and models are only required for analysing tracks, and are
 not required for the similarity API. Therefore, if analysis is performed on one
 machine and API served on another (e.g. a Raspberry Pi) the contents of the
 `essentia` folder are not required on the API machine.
@@ -120,7 +120,7 @@ repeated. This is not a hard-limit, as if there are too few candidates then
 repeats can happen.
 
 `norepalb` specifies the number of tracks where an album should not be
-repeated. This does not aply to 'Various Artist' albums. This is also not a
+repeated. This does not apply to 'Various Artist' albums. This is also not a
 hard-limit, as if there are too few candidates then repeats can happen.
 
 `previous` may be used to list tracks currently in the play queue. This
@@ -227,8 +227,8 @@ the following format:
 }
 ```
 
-* `musly.lib` should contain the path the musy shared library - path is relative
-to `music-similarity.py`
+* `musly.lib` should contain the path the Musly shared library - path is
+relative to `music-similarity.py`
 * `musly.styletracks` A  subset of tracks is passed to Musly's `setmusicstyle`
 function, by default 1000 random tracks is chosen. This config item can be used
 to alter this. Note, however, the larger the number here the longer it takes to
