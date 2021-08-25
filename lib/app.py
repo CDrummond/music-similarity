@@ -274,7 +274,7 @@ def similar_api():
     # Similar tracks
     similar_tracks=[]
     # Track IDs of similar tracks - used to avoid duplicates
-    similar_track_ids=[]
+    similar_track_ids=set()
     # Similar tracks ignored because of artist/album
     filtered_by_seeds_tracks=[]
     filtered_by_current_tracks=[]
@@ -328,7 +328,7 @@ def similar_api():
         else:
             _LOGGER.debug('Could not locate %s in DB' % track)
 
-    previous_track_ids = []
+    previous_track_ids = set()
     previous_metadata = [] # Ignore tracks with same meta-data, i.e. artist
     if 'previous' in params:
         for trk in params['previous']:
@@ -342,7 +342,7 @@ def similar_api():
             except:
                 pass
             if track_id is not None and track_id>=0:
-                previous_track_ids.append(track_id)
+                previous_track_ids.add(track_id)
                 if len(previous_metadata)<no_repeat_artist_or_album:
                     meta = tdb.get_metadata(track_id+1) # IDs (rowid) in SQLite are 1.. musly is 0..
                     if meta:
@@ -370,8 +370,10 @@ def similar_api():
         for simtrack in simtracks:
             if math.isnan(simtrack['sim']):
                 continue
+            if simtrack['sim']>max_similarity:
+                break
             if (not simtrack['id'] in track_ids) and (not simtrack['id'] in previous_track_ids) and (not simtrack['id'] in similar_track_ids) and (simtrack['sim']>0.0) and (simtrack['sim']<=max_similarity):
-                similar_track_ids.append(simtrack['id'])
+                similar_track_ids.add(simtrack['id'])
 
                 meta = tdb.get_metadata(simtrack['id']+1) # IDs (rowid) in SQLite are 1.. musly is 0..
                 if not meta:
