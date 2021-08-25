@@ -109,7 +109,7 @@ def check_attribs(seed, candidate):
     if not 'ess' in seed:
         attr=[]
         for ess in tracks_db.ESSENTIA_ATTRIBS:
-            if ess != 'bpm' and (seed[ess]>=0.8 or seed[ess]<=0.2):
+            if ess != 'bpm' and ((seed[ess]>=0.8 and seed[ess]<1.0) or (seed[ess]>0.0 and seed[ess]<=0.2)):
                attr.append({'key':ess, 'val':abs(0.5-seed[ess])})
         attr=sorted(attr, key=lambda k: -1*k['val'])[:4]
         seed['ess']=[]
