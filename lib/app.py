@@ -132,6 +132,22 @@ def append_list(orig, to_add, min_count):
     return orig
 
 
+def set_filtered(simtrack, mta, filtered_tracks, key, ids):
+    if simtrack['id'] in filtered_tracks['ids'][ids] or (ids=='attribs' and simtrack['id'] in filtered_tracks['ids']['other']):
+        return
+
+    if simtrack['id'] in filtered_tracks['ids']['attribs']:
+        # Remove from filtered_tracks::attribs
+        for i in len(filtered_tracks['attribs']):
+            if filtered_tracks['attribs'][i]['id']==simtrack['id']:
+                filtered_tracks['attribs'].pop(i)
+                filtered_tracks['ids']['attribs'].remove(simtrack['id'])
+                break
+
+    filtered_tracks[key].append({'path':mta.paths[simtrack['id']], 'similarity':simtrack['sim']})
+    filtered_tracks['ids'][ids].add(simtrack['id'])
+
+
 @similarity_app.route('/api/dump', methods=['GET', 'POST'])
 def dump_api():
     isPost = False
@@ -288,14 +304,11 @@ def similar_api():
     # Similar tracks
     similar_tracks=[]
     # Track IDs of similar tracks - used to avoid duplicates
-    similar_track_ids=set()
+    filtered_tracks={'seeds':[], 'current':[], 'previous':[], 'attribs':[], 'ids':{'other':set(), 'attribs':set()}}
 
-    # Similar tracks ignored because of artist/album
-    filtered_by_seeds_tracks=[]
-    filtered_by_current_tracks=[]
-    filtered_by_previous_tracks=[]
-    filtered_by_attribs=[]
-    filtered_by_attribs_track_ids=set()
+    # IDs of previous tracks, discarded tracks, and chosen tracks - so not repeated
+    skip_track_ids = set()
+
     current_titles=[]
 
     # Artist/album of seed tracks
@@ -303,7 +316,7 @@ def similar_api():
     track_id_seed_metadata={} # Map from seed track's ID to its metadata
     seed_genres=[]
     all_genres = cfg['all_genres'] if 'all_genres' in cfg else None
-    
+
     # Artist/album of chosen tracks
     current_metadata_keys={}
     current_metadata=[]
@@ -326,6 +339,7 @@ def similar_api():
             pass
         if track_id is not None and track_id>=0:
             track_ids.append(track_id)
+            skip_track_ids.add(track_id)
             meta = tdb.get_metadata(track_id+1) # IDs (rowid) in SQLite are 1.. musly is 0..
             _LOGGER.debug('Seed %d metadata:%s' % (track_id, json.dumps(meta)))
             if meta is not None:
@@ -344,7 +358,6 @@ def similar_api():
         else:
             _LOGGER.debug('Could not locate %s in DB' % track)
 
-    previous_track_ids = set()
     previous_metadata = [] # Ignore tracks with same meta-data, i.e. artist
     if 'previous' in params:
         for trk in params['previous']:
@@ -358,7 +371,7 @@ def similar_api():
             except:
                 pass
             if track_id is not None and track_id>=0:
-                previous_track_ids.add(track_id)
+                skip_track_ids.add(track_id)
                 if len(previous_metadata)<no_repeat_artist_or_album:
                     meta = tdb.get_metadata(track_id+1) # IDs (rowid) in SQLite are 1.. musly is 0..
                     if meta:
@@ -367,7 +380,6 @@ def similar_api():
                             current_titles.append(meta['title'])
             else:
                 _LOGGER.debug('Could not locate %s in DB' % track)
-        _LOGGER.debug('Have %d previous tracks' % len(previous_track_ids))
 
     if match_genre:
         _LOGGER.debug('Seed genres: %s' % seed_genres)
@@ -388,50 +400,45 @@ def similar_api():
                 continue
             if simtrack['sim']>max_similarity:
                 break
-            if (simtrack['sim']>0.0) and (simtrack['sim']<=max_similarity) and (not simtrack['id'] in similar_track_ids) and (not simtrack['id'] in track_ids) and (not simtrack['id'] in previous_track_ids):
+            if (simtrack['sim']>0.0) and (simtrack['sim']<=max_similarity) and (not simtrack['id'] in skip_track_ids):
 
                 meta = tdb.get_metadata(simtrack['id']+1) # IDs (rowid) in SQLite are 1.. musly is 0..
                 if not meta:
                     _LOGGER.debug('DISCARD(not found) ID:%d Path:%s Similarity:%f' % (simtrack['id'], mta.paths[simtrack['id']], simtrack['sim']))
-                    similar_track_ids.add(simtrack['id'])
+                    skip_track_ids.add(simtrack['id'])
                 elif meta['ignore']:
                     _LOGGER.debug('DISCARD(ignore) ID:%d Path:%s Similarity:%f Meta:%s' % (simtrack['id'], mta.paths[simtrack['id']], simtrack['sim'], json.dumps(meta)))
-                    similar_track_ids.add(simtrack['id'])
+                    skip_track_ids.add(simtrack['id'])
                 elif (min_duration>0 or max_duration>0) and not filters.check_duration(min_duration, max_duration, meta):
                     _LOGGER.debug('DISCARD(duration) ID:%d Path:%s Similarity:%f Meta:%s' % (simtrack['id'], mta.paths[simtrack['id']], simtrack['sim'], json.dumps(meta)))
-                    similar_track_ids.add(simtrack['id'])
+                    skip_track_ids.add(simtrack['id'])
                 elif match_genre and not match_all_genres and not filters.genre_matches(cfg, seed_genres, meta):
                     _LOGGER.debug('DISCARD(genre) ID:%d Path:%s Similarity:%f Meta:%s' % (simtrack['id'], mta.paths[simtrack['id']], simtrack['sim'], json.dumps(meta)))
-                    similar_track_ids.add(simtrack['id'])
+                    skip_track_ids.add(simtrack['id'])
                 elif exclude_christmas and filters.is_christmas(meta):
                     _LOGGER.debug('DISCARD(xmas) ID:%d Path:%s Similarity:%f Meta:%s' % (simtrack['id'], mta.paths[simtrack['id']], simtrack['sim'], json.dumps(meta)))
-                    similar_track_ids.add(simtrack['id'])
+                    skip_track_ids.add(simtrack['id'])
                 else:
                     if ess_enabled and not filters.check_attribs_all(seed_metadata, meta):
                         _LOGGER.debug('FILTERED(attribs) ID:%d Path:%s Similarity:%f Meta:%s' % (simtrack['id'], mta.paths[simtrack['id']], simtrack['sim'], json.dumps(meta)))
-                        if not simtrack['id'] in filtered_by_attribs_track_ids:
-                            filtered_by_attribs.append({'path':mta.paths[simtrack['id']], 'similarity':simtrack['sim']})
-                            filtered_by_attribs_track_ids.add(simtrack['id'])
+                        set_filtered(simtrack, mta, filtered_tracks, 'attribs', 'attribs')
                     elif filters.same_artist_or_album(seed_metadata, meta):
                         _LOGGER.debug('FILTERED(seeds) ID:%d Path:%s Similarity:%f Meta:%s' % (simtrack['id'], mta.paths[simtrack['id']], simtrack['sim'], json.dumps(meta)))
-                        filtered_by_seeds_tracks.append({'path':mta.paths[simtrack['id']], 'similarity':simtrack['sim']})
-                        similar_track_ids.add(simtrack['id'])
+                        set_filtered(simtrack, mta, filtered_tracks, 'seeds', 'other')
                     elif filters.same_artist_or_album(current_metadata, meta):
                         _LOGGER.debug('FILTERED(current) ID:%d Path:%s Similarity:%f Meta:%s' % (simtrack['id'], mta.paths[simtrack['id']], simtrack['sim'], json.dumps(meta)))
-                        filtered_by_current_tracks.append({'path':mta.paths[simtrack['id']], 'similarity':simtrack['sim']})
+                        set_filtered(simtrack, mta, filtered_tracks, 'current', 'other')
                         if meta['artist'] in matched_artists and simtrack['sim'] - matched_artists[meta['artist']]['similarity'] <= 0.2:
                             matched_artists[meta['artist']]['tracks'].append({'path':mta.paths[simtrack['id']], 'similarity':simtrack['sim']})
-                        similar_track_ids.add(simtrack['id'])
                     elif no_repeat_artist>0 and filters.same_artist_or_album(previous_metadata, meta, False, no_repeat_artist):
                         _LOGGER.debug('FILTERED(previous(artist)) ID:%d Path:%s Similarity:%f Meta:%s' % (simtrack['id'], mta.paths[simtrack['id']], simtrack['sim'], json.dumps(meta)))
-                        filtered_by_previous_tracks.append({'path':mta.paths[simtrack['id']], 'similarity':simtrack['sim']})
-                        similar_track_ids.add(simtrack['id'])
+                        set_filtered(simtrack, mta, filtered_tracks, 'previous', 'other')
                     elif no_repeat_album>0 and filters.same_artist_or_album(previous_metadata, meta, True, no_repeat_album):
                         _LOGGER.debug('FILTERED(previous(album)) ID:%d Path:%s Similarity:%f Meta:%s' % (simtrack['id'], mta.paths[simtrack['id']], simtrack['sim'], json.dumps(meta)))
+                        set_filtered(simtrack, mta, filtered_tracks, 'previous', 'other')
                     elif filters.match_title(current_titles, meta):
                         _LOGGER.debug('FILTERED(title) ID:%d Path:%s Similarity:%f Meta:%s' % (simtrack['id'], mta.paths[simtrack['id']], simtrack['sim'], json.dumps(meta)))
-                        filtered_by_previous_tracks.append({'path':mta.paths[simtrack['id']], 'similarity':simtrack['sim']})
-                        similar_track_ids.add(simtrack['id'])
+                        set_filtered(simtrack, mta, filtered_tracks, 'current', 'other')
                     else:
                         key = '%s::%s::%s' % (meta['artist'], meta['album'], meta['albumartist'] if 'albumartist' in meta and meta['albumartist'] is not None else '')
                         if not key in current_metadata_keys:
@@ -446,7 +453,7 @@ def similar_api():
                         if 'title' in meta:
                             current_titles.append(meta['title'])
                         accepted_tracks += 1
-                        similar_track_ids.add(simtrack['id'])
+                        skip_track_ids.add(simtrack['id'])
                         if accepted_tracks>=similarity_count:
                             break
 
@@ -459,20 +466,20 @@ def similar_api():
             similar_tracks[matched_artists[matched]['pos']]['similarity'] = sim
 
     # Too few tracks? Add some from the filtered lists
-    _LOGGER.debug('similar_tracks: %d, filtered_by_previous_tracks: %d, filtered_by_current_tracks: %d, filtered_by_seeds_tracks: %d, filtered_by_attribs: %d' % (len(similar_tracks), len(filtered_by_previous_tracks), len(filtered_by_current_tracks), len(filtered_by_seeds_tracks), len(filtered_by_attribs)))
+    _LOGGER.debug('similar_tracks: %d, filtered_tracks::previous: %d, filtered_tracks::current: %d, filtered_tracks::seeds: %d, filtered_tracks::attribs: %d' % (len(similar_tracks), len(filtered_tracks['previous']), len(filtered_tracks['current']), len(filtered_tracks['seeds']), len(filtered_tracks['attribs'])))
     min_count = 2
-    if len(similar_tracks)<min_count and len(filtered_by_previous_tracks)>0:
-        _LOGGER.debug('Add some tracks from filtered_by_previous_tracks, %d/%d' % (len(similar_tracks), len(filtered_by_previous_tracks)))
-        similar_tracks = append_list(similar_tracks, filtered_by_previous_tracks, min_count)
-    if len(similar_tracks)<min_count and len(filtered_by_current_tracks)>0:
-        _LOGGER.debug('Add some tracks from filtered_by_current_tracks, %d/%d' % (len(similar_tracks), len(filtered_by_current_tracks)))
-        similar_tracks = append_list(similar_tracks, filtered_by_current_tracks, min_count)
-    if len(similar_tracks)<min_count and len(filtered_by_seeds_tracks)>0:
-        _LOGGER.debug('Add some tracks from filtered_by_seeds_tracks, %d/%d' % (len(similar_tracks), len(filtered_by_seeds_tracks)))
-        similar_tracks = append_list(similar_tracks, filtered_by_seeds_tracks, min_count)
-    if len(similar_tracks)<min_count and len(filtered_by_attribs)>0:
-        _LOGGER.debug('Add some tracks from filtered_by_attribs, %d/%d' % (len(similar_tracks), len(filtered_by_attribs)))
-        similar_tracks = append_list(similar_tracks, filtered_by_attribs, min_count)
+    if len(similar_tracks)<min_count and len(filtered_tracks['previous'])>0:
+        _LOGGER.debug('Add some tracks from filtered_tracks::previous, %d/%d' % (len(similar_tracks), len(filtered_tracks['previous'])))
+        similar_tracks = append_list(similar_tracks, filtered_tracks['previous'], min_count)
+    if len(similar_tracks)<min_count and len(filtered_tracks['current'])>0:
+        _LOGGER.debug('Add some tracks from filtered_tracks::current, %d/%d' % (len(similar_tracks), len(filtered_tracks['current'])))
+        similar_tracks = append_list(similar_tracks, filtered_tracks['current'], min_count)
+    if len(similar_tracks)<min_count and len(filtered_tracks['seeds'])>0:
+        _LOGGER.debug('Add some tracks from filtered_tracks::seeds, %d/%d' % (len(similar_tracks), len(filtered_tracks['seeds'])))
+        similar_tracks = append_list(similar_tracks, filtered_tracks['seeds'], min_count)
+    if len(similar_tracks)<min_count and len(filtered_tracks['attribs'])>0:
+        _LOGGER.debug('Add some tracks from filtered_tracks::attribs, %d/%d' % (len(similar_tracks), len(filtered_tracks['attribs'])))
+        similar_tracks = append_list(similar_tracks, filtered_tracks['attribs'], min_count)
 
     # Sort by similarity
     similar_tracks = sorted(similar_tracks, key=lambda k: k['similarity'])
