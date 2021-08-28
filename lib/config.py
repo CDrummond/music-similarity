@@ -83,11 +83,10 @@ def read_config(path, analyse):
         config['musly']['styletracksmethod']='genres'
 
     if 'genres' in config:
-        config['all_genres']=[]
-        for genres in config['genres']:
-            for g in genres:
-                if not g in config['all_genres']:
-                    config['all_genres'].append(g)
+        config['all_genres']=set()
+        for i in range(len(config['genres'])):
+            config['genres'][i]=set(config['genres'][i])
+            config['all_genres'].update(config['genres'][i])
 
     if 'ignoregenre' in config:
         if isinstance(config['ignoregenre'], list):
