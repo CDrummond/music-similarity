@@ -345,12 +345,13 @@ def similar_api():
             if meta is not None:
                 seed_metadata.append(meta)
                 track_id_seed_metadata[track_id]=meta
-                # Get genres for this seed track - this takes its genres and gets any matching genres from config
-                if 'genres' in meta and 'genres' in cfg:
-                    for genre in meta['genres']:
-                        for group in cfg['genres']:
-                            if genre in group:
-                                acceptable_genres.update(group)
+                if match_genre:
+                    # Get genres for this seed track - this takes its genres and gets any matching genres from config
+                    if 'genres' in meta and 'genres' in cfg:
+                        for genre in meta['genres']:
+                            for group in cfg['genres']:
+                                if genre in group:
+                                    acceptable_genres.update(group)
                 if 'title' in meta:
                     current_titles.append(meta['title'])
         else:
@@ -370,23 +371,26 @@ def similar_api():
                 pass
             if track_id is not None and track_id>=0:
                 skip_track_ids.add(track_id)
-                meta = tdb.get_metadata(track_id+1) # IDs (rowid) in SQLite are 1.. musly is 0..
-                if meta:
-                    if len(previous_metadata)<no_repeat_artist_or_album:
+                use_to_filter_prev = len(previous_metadata)<no_repeat_artist_or_album
+                if use_to_filter_prev or match_genre:
+                    meta = tdb.get_metadata(track_id+1) # IDs (rowid) in SQLite are 1.. musly is 0..
+                    if meta:
+                        if use_to_filter_prev:
                             previous_metadata.append(meta)
                             if 'title' in meta:
                                 current_titles.append(meta['title'])
-                    # Get genres for this track - this takes its genres and gets any matching genres from config
-                    if 'genres' in meta and 'genres' in cfg:
-                        for genre in meta['genres']:
-                            for group in cfg['genres']:
-                                if genre in group:
-                                    acceptable_genres.update(group)
+                        if match_genre:
+                            # Get genres for this track - this takes its genres and gets any matching genres from config
+                            if 'genres' in meta and 'genres' in cfg:
+                                for genre in meta['genres']:
+                                    for group in cfg['genres']:
+                                        if genre in group:
+                                            acceptable_genres.update(group)
             else:
                 _LOGGER.debug('Could not locate %s in DB' % track)
 
     if match_genre:
-        _LOGGER.debug('Seed genres: %s' % acceptable_genres)
+        _LOGGER.debug('Acceptable genres: %s' % acceptable_genres)
 
     similarity_count = int(count * SHUFFLE_FACTOR) if shuffle else count
 
