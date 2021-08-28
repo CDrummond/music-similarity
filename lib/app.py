@@ -392,7 +392,7 @@ def similar_api():
     if match_genre:
         _LOGGER.debug('Acceptable genres: %s' % acceptable_genres)
 
-    similarity_count = int(count * SHUFFLE_FACTOR) if shuffle else count
+    similarity_count = int(count * SHUFFLE_FACTOR) if shuffle and (count<20 or len(track_ids)<10) else count
 
     matched_artists={}
     for track_id in track_ids:
