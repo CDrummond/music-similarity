@@ -303,6 +303,7 @@ def similar_api():
 
     # Similar tracks
     similar_tracks=[]
+    similar_track_positions={}
     # Track IDs of similar tracks - used to avoid duplicates
     filtered_tracks={'seeds':[], 'current':[], 'previous':[], 'attribs':[], 'ids':{'other':set(), 'attribs':set()}}
 
@@ -399,19 +400,25 @@ def similar_api():
         match_all_genres = ('ignoregenre' in cfg) and (('*'==cfg['ignoregenre'][0]) or ((track_id in track_id_seed_metadata) and (track_id_seed_metadata[track_id]['artist'] in cfg['ignoregenre'])))
 
         # Query musly for similar tracks
-        _LOGGER.debug('Query musly for similar tracks to index: %d' % track_id)
+        _LOGGER.debug('Query musly for %d similar tracks to index: %d' % (similarity_count, track_id))
         simtracks = get_similarity(track_id, mus, mta, tdb, ess_weight)
-
         accepted_tracks = 0
         for simtrack in simtracks:
             if math.isnan(simtrack['sim']):
                 continue
             if simtrack['sim']>max_similarity:
                 break
-            if (simtrack['sim']>0.0) and (simtrack['sim']<=max_similarity) and (not simtrack['id'] in skip_track_ids):
 
-                meta = tdb.get_metadata(simtrack['id']+1) # IDs (rowid) in SQLite are 1.. musly is 0..
-                if not meta:
+            if (simtrack['sim']>0.0) and (simtrack['sim']<=max_similarity) and (not simtrack['id'] in skip_track_ids):
+                prev_idx = similar_track_positions[simtrack['id']] if simtrack['id'] in similar_track_positions else -1
+                meta = similar_tracks[prev_idx] if prev_idx>=0 else tdb.get_metadata(simtrack['id']+1) # IDs (rowid) in SQLite are 1.. musly is 0..
+                if prev_idx>=0:
+                    # Seen from previous seed, so set simialrity to lowest value
+                    sim = simtrack['sim'] + genre_adjust(seed_metadata, meta, acceptable_genres, all_genres, match_all_genres)
+                    if similar_tracks[prev_idx]['similarity']>sim:
+                        _LOGGER.debug('SEEN %d before, prev:%f, current:%f' % (simtrack['id'], similar_tracks[prev_idx]['similarity'], sim))
+                        similar_tracks[prev_idx]['similarity']=sim
+                elif not meta:
                     _LOGGER.debug('DISCARD(not found) ID:%d Path:%s Similarity:%f' % (simtrack['id'], mta.paths[simtrack['id']], simtrack['sim']))
                     skip_track_ids.add(simtrack['id'])
                 elif meta['ignore']:
@@ -460,8 +467,11 @@ def similar_api():
                         matched_artists[meta['artist']]={'similarity':simtrack['sim'], 'tracks':[{'path':mta.paths[simtrack['id']], 'similarity':sim}], 'pos':len(similar_tracks)-1}
                         if 'title' in meta:
                             current_titles.append(meta['title'])
+
                         accepted_tracks += 1
-                        skip_track_ids.add(simtrack['id'])
+                        # Save mapping of this ID to its position in similar_tracks so that we can determine if we have
+                        # seen this track before.
+                        similar_track_positions[simtrack['id']]=len(similar_tracks)-1
                         if accepted_tracks>=similarity_count:
                             break
 
