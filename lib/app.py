@@ -338,7 +338,7 @@ def similar_api():
             _LOGGER.debug('Get %d similar track(s) to %s, index: %d' % (count, track, track_id))
         except:
             pass
-        if track_id is not None and track_id>=0:
+        if track_id is not None and track_id>=0 and track_id not in track_ids:
             track_ids.append(track_id)
             skip_track_ids.add(track_id)
             meta = tdb.get_metadata(track_id+1) # IDs (rowid) in SQLite are 1.. musly is 0..
