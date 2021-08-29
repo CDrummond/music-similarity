@@ -37,18 +37,13 @@ def genre_matches(config, seed_genres, track):
     if len(seed_genres)<1:
         # No filtering for seed track genres
         if 'all_genres' in config:
-            for tg in track['genres']:
-                if tg in config['all_genres']:
-                    # Track's genre is in config list, but not in seeds, so filter out track
-                    return False
+            if len(track['genres'].intersect(config['all_genres']))>0:
+                # Track's genre is in config list, but not in seeds, so filter out track
+                return False
         # No seed genres, and track's genre not in filters, so accept track
         return True
 
-    for sg in seed_genres:
-        if sg in track['genres']:
-            return True
-
-    return False
+    return len(seed_genres.intersect(track['genres']))>0
 
 
 def is_christmas(track):

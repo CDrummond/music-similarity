@@ -58,6 +58,8 @@ def read_config(path, analyse):
     if not 'threads' in config:
         config['threads']=os.cpu_count()
 
+    if not 'bpm' in config['bpm']:
+        config['essentia']['bpm']=50
     if not 'enabled' in config['essentia']:
         config['essentia']['enabled']=True
     else:

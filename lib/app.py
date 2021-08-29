@@ -65,6 +65,13 @@ class SimilarityApp(Flask):
 similarity_app = SimilarityApp(__name__)
 
 
+class SetEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, set):
+            return list(obj)
+        return json.JSONEncoder.default(self, obj)
+
+
 def get_value(params, key, defVal, isPost):
     if isPost:
         return params[key] if key in params else defVal
@@ -89,11 +96,11 @@ def genre_adjust(seed, entry, acceptable_genres, all_genres, match_all_genres):
         return 0.1
     if 'genres' not in entry:
         return 0.1
-    if seed['genres'][0]==entry['genres'][0]:
+    if len(seed['genres'].intersection(entry['genres']))>0:
         # Exact genre match
         return 0.0
-    if (acceptable_genres is not None and entry['genres'][0] not in acceptable_genres) or \
-       (acceptable_genres is None and all_genres is not None and entry['genres'][0] in all_genres):
+    if (acceptable_genres is not None and len(entry['genres'].intersection(acceptable_genres)))==0 or \
+       (acceptable_genres is None and all_genres is not None and len(entry['genres'].intersection(all_genres)))==0:
         return 0.1
     # Genre in group
     return 0.05
@@ -194,14 +201,14 @@ def dump_api():
         meta = tdb.get_metadata(track_id+1) # IDs (rowid) in SQLite are 1.. musly is 0..
 
         all_genres = cfg['all_genres'] if 'all_genres' in cfg else None
-        acceptable_genres=[]
-        if 'genres' in meta and 'genres' in cfg:
-            for genre in meta['genres']:
-                for group in cfg['genres']:
-                    if genre in group:
-                        for cg in group:
-                            if not cg in acceptable_genres:
-                                acceptable_genres.append(cg)
+        acceptable_genres=set()
+        if 'genres' in meta:
+            acceptable_genres.update(meta['genres'])
+            if 'genres' in cfg:
+                for genre in meta['genres']:
+                    for group in cfg['genres']:
+                        if genre in group:
+                            acceptable_genres.update(group)
 
         simtracks = get_similarity(track_id, mus, mta, tdb, ess_weight)
 
@@ -317,6 +324,7 @@ def similar_api():
 
     track_id_seed_metadata={} # Map from seed track's ID to its metadata
     acceptable_genres=set()
+    seed_genres=set()
     all_genres = cfg['all_genres'] if 'all_genres' in cfg else None
 
     # Artist/album of chosen tracks
@@ -344,13 +352,14 @@ def similar_api():
             track_ids.append(track_id)
             skip_track_ids.add(track_id)
             meta = tdb.get_metadata(track_id+1) # IDs (rowid) in SQLite are 1.. musly is 0..
-            _LOGGER.debug('Seed %d metadata:%s' % (track_id, json.dumps(meta)))
+            _LOGGER.debug('Seed %d metadata:%s' % (track_id, json.dumps(meta, cls=SetEncoder)))
             if meta is not None:
                 track_metadata['seeds'].append(meta)
                 track_id_seed_metadata[track_id]=meta
-                if match_genre:
-                    # Get genres for this seed track - this takes its genres and gets any matching genres from config
-                    if 'genres' in meta and 'genres' in cfg:
+                # Get genres for this seed track - this takes its genres and gets any matching genres from config
+                if 'genres' in meta:
+                    acceptable_genres.update(meta['genres'])
+                    if 'genres' in cfg:
                         for genre in meta['genres']:
                             for group in cfg['genres']:
                                 if genre in group:
@@ -359,6 +368,8 @@ def similar_api():
                     current_titles.add(meta['title'])
         else:
             _LOGGER.debug('Could not locate %s in DB' % track)
+
+    seed_genres.update(acceptable_genres)
 
     if 'previous' in params:
         for trk in params['previous']:
@@ -383,14 +394,17 @@ def similar_api():
                                 current_titles.add(meta['title'])
                         if match_genre:
                             # Get genres for this track - this takes its genres and gets any matching genres from config
-                            if 'genres' in meta and 'genres' in cfg:
-                                for genre in meta['genres']:
-                                    for group in cfg['genres']:
-                                        if genre in group:
-                                            acceptable_genres.update(group)
+                            if 'genres' in meta:
+                                acceptable_genres.update(meta['genres'])
+                                if 'genres' in cfg:
+                                    for genre in meta['genres']:
+                                        for group in cfg['genres']:
+                                            if genre in group:
+                                                acceptable_genres.update(group)
             else:
                 _LOGGER.debug('Could not locate %s in DB' % track)
 
+    _LOGGER.debug('Seed genres: %s' % seed_genres)
     if match_genre:
         _LOGGER.debug('Acceptable genres: %s' % acceptable_genres)
 
@@ -415,7 +429,7 @@ def similar_api():
                 meta = similar_tracks[prev_idx] if prev_idx>=0 else tdb.get_metadata(simtrack['id']+1) # IDs (rowid) in SQLite are 1.. musly is 0..
                 if prev_idx>=0:
                     # Seen from previous seed, so set similarity to lowest value
-                    sim = simtrack['sim'] + genre_adjust(track_metadata['seeds'], meta, acceptable_genres, all_genres, match_all_genres)
+                    sim = simtrack['sim'] + genre_adjust(track_metadata['seeds'], meta, seed_genres, all_genres, match_all_genres)
                     if similar_tracks[prev_idx]['similarity']>sim:
                         _LOGGER.debug('SEEN %d before, prev:%f, current:%f' % (simtrack['id'], similar_tracks[prev_idx]['similarity'], sim))
                         similar_tracks[prev_idx]['similarity']=sim
@@ -423,20 +437,20 @@ def similar_api():
                     _LOGGER.debug('DISCARD(not found) ID:%d Path:%s Similarity:%f' % (simtrack['id'], mta.paths[simtrack['id']], simtrack['sim']))
                     skip_track_ids.add(simtrack['id'])
                 elif meta['ignore']:
-                    _LOGGER.debug('DISCARD(ignore) ID:%d Path:%s Similarity:%f Meta:%s' % (simtrack['id'], mta.paths[simtrack['id']], simtrack['sim'], json.dumps(meta)))
+                    _LOGGER.debug('DISCARD(ignore) ID:%d Path:%s Similarity:%f Meta:%s' % (simtrack['id'], mta.paths[simtrack['id']], simtrack['sim'], json.dumps(meta, cls=SetEncoder)))
                     skip_track_ids.add(simtrack['id'])
                 elif (min_duration>0 or max_duration>0) and not filters.check_duration(min_duration, max_duration, meta):
-                    _LOGGER.debug('DISCARD(duration) ID:%d Path:%s Similarity:%f Meta:%s' % (simtrack['id'], mta.paths[simtrack['id']], simtrack['sim'], json.dumps(meta)))
+                    _LOGGER.debug('DISCARD(duration) ID:%d Path:%s Similarity:%f Meta:%s' % (simtrack['id'], mta.paths[simtrack['id']], simtrack['sim'], json.dumps(meta, cls=SetEncoder)))
                     skip_track_ids.add(simtrack['id'])
                 elif match_genre and not match_all_genres and not filters.genre_matches(cfg, acceptable_genres, meta):
-                    _LOGGER.debug('DISCARD(genre) ID:%d Path:%s Similarity:%f Meta:%s' % (simtrack['id'], mta.paths[simtrack['id']], simtrack['sim'], json.dumps(meta)))
+                    _LOGGER.debug('DISCARD(genre) ID:%d Path:%s Similarity:%f Meta:%s' % (simtrack['id'], mta.paths[simtrack['id']], simtrack['sim'], json.dumps(meta, cls=SetEncoder)))
                     skip_track_ids.add(simtrack['id'])
                 elif exclude_christmas and filters.is_christmas(meta):
-                    _LOGGER.debug('DISCARD(xmas) ID:%d Path:%s Similarity:%f Meta:%s' % (simtrack['id'], mta.paths[simtrack['id']], simtrack['sim'], json.dumps(meta)))
+                    _LOGGER.debug('DISCARD(xmas) ID:%d Path:%s Similarity:%f Meta:%s' % (simtrack['id'], mta.paths[simtrack['id']], simtrack['sim'], json.dumps(meta, cls=SetEncoder)))
                     skip_track_ids.add(simtrack['id'])
                 else:
                     if ess_enabled and not filters.check_attribs_all(track_metadata['seeds'], meta):
-                        _LOGGER.debug('FILTERED(attribs) ID:%d Path:%s Similarity:%f Meta:%s' % (simtrack['id'], mta.paths[simtrack['id']], simtrack['sim'], json.dumps(meta)))
+                        _LOGGER.debug('FILTERED(attribs) ID:%d Path:%s Similarity:%f Meta:%s' % (simtrack['id'], mta.paths[simtrack['id']], simtrack['sim'], json.dumps(meta, cls=SetEncoder)))
                         set_filtered(simtrack, mta, filtered_tracks, 'attribs', 'attribs')
                         continue
 
@@ -444,9 +458,9 @@ def similar_api():
                         filtered = False
                         for key in ['seeds', 'current', 'previous']:
                             no_rep = no_repeat_artist if 'previous'==key else 0
-                            _LOGGER.debug('FILTERED CHECK (%s(artist) %d) ID:%d Path:%s Similarity:%f Meta:%s' % (key, len(track_metadata[key]), simtrack['id'], mta.paths[simtrack['id']], simtrack['sim'], json.dumps(meta)))
+                            _LOGGER.debug('FILTERED CHECK (%s(artist) %d) ID:%d Path:%s Similarity:%f Meta:%s' % (key, len(track_metadata[key]), simtrack['id'], mta.paths[simtrack['id']], simtrack['sim'], json.dumps(meta, cls=SetEncoder)))
                             if filters.same_artist_or_album(track_metadata[key], meta, False, no_rep):
-                                _LOGGER.debug('FILTERED(%s(artist)) ID:%d Path:%s Similarity:%f Meta:%s' % (key, simtrack['id'], mta.paths[simtrack['id']], simtrack['sim'], json.dumps(meta)))
+                                _LOGGER.debug('FILTERED(%s(artist)) ID:%d Path:%s Similarity:%f Meta:%s' % (key, simtrack['id'], mta.paths[simtrack['id']], simtrack['sim'], json.dumps(meta, cls=SetEncoder)))
                                 filtered=True
                                 set_filtered(simtrack, mta, filtered_tracks, key, 'other')
                                 break
@@ -458,7 +472,7 @@ def similar_api():
                         for key in ['seeds', 'current', 'previous']:
                             no_rep = no_repeat_album if 'previous'==key else 0
                             if filters.same_artist_or_album(track_metadata[key], meta, True, no_rep):
-                                _LOGGER.debug('FILTERED(%s(album)) ID:%d Path:%s Similarity:%f Meta:%s' % (key, simtrack['id'], mta.paths[simtrack['id']], simtrack['sim'], json.dumps(meta)))
+                                _LOGGER.debug('FILTERED(%s(album)) ID:%d Path:%s Similarity:%f Meta:%s' % (key, simtrack['id'], mta.paths[simtrack['id']], simtrack['sim'], json.dumps(meta, cls=SetEncoder)))
                                 filtered=True
                                 set_filtered(simtrack, mta, filtered_tracks, key, 'other')
                                 break
@@ -466,7 +480,7 @@ def similar_api():
                             continue
 
                     if filters.match_title(current_titles, meta):
-                        _LOGGER.debug('FILTERED(title) ID:%d Path:%s Similarity:%f Meta:%s' % (simtrack['id'], mta.paths[simtrack['id']], simtrack['sim'], json.dumps(meta)))
+                        _LOGGER.debug('FILTERED(title) ID:%d Path:%s Similarity:%f Meta:%s' % (simtrack['id'], mta.paths[simtrack['id']], simtrack['sim'], json.dumps(meta, cls=SetEncoder)))
                         set_filtered(simtrack, mta, filtered_tracks, 'current', 'other')
                         continue
 
@@ -474,9 +488,9 @@ def similar_api():
                     if not key in current_metadata_keys:
                         current_metadata_keys[key]=1
                         track_metadata['current'].append(meta)
-                    sim = simtrack['sim'] + genre_adjust(track_metadata['seeds'], meta, acceptable_genres, all_genres, match_all_genres)
+                    sim = simtrack['sim'] + genre_adjust(track_metadata['seeds'], meta, seed_genres, all_genres, match_all_genres)
 
-                    _LOGGER.debug('USABLE ID:%d Path:%s Similarity:%f AdjSim:%s Meta:%s' % (simtrack['id'], mta.paths[simtrack['id']], simtrack['sim'], sim, json.dumps(meta)))
+                    _LOGGER.debug('USABLE ID:%d Path:%s Similarity:%f AdjSim:%s Meta:%s' % (simtrack['id'], mta.paths[simtrack['id']], simtrack['sim'], sim, json.dumps(meta, cls=SetEncoder)))
                     similar_tracks.append({'path':mta.paths[simtrack['id']], 'similarity':sim})
                     # Keep list of all tracks of an artist, so that we can randomly select one => we don't always use the same one
                     matched_artists[meta['artist']]={'similarity':simtrack['sim'], 'tracks':[{'path':mta.paths[simtrack['id']], 'similarity':sim}], 'pos':len(similar_tracks)-1}
