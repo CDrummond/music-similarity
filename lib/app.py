@@ -440,10 +440,10 @@ def similar_api():
                     if ess_enabled and not filters.check_attribs_all(seed_metadata, meta):
                         _LOGGER.debug('FILTERED(attribs) ID:%d Path:%s Similarity:%f Meta:%s' % (simtrack['id'], mta.paths[simtrack['id']], simtrack['sim'], json.dumps(meta)))
                         set_filtered(simtrack, mta, filtered_tracks, 'attribs', 'attribs')
-                    elif filters.same_artist_or_album(seed_metadata, meta):
+                    elif (no_repeat_artist>0 or no_repeat_album>0) and filters.same_artist_or_album(seed_metadata, meta):
                         _LOGGER.debug('FILTERED(seeds) ID:%d Path:%s Similarity:%f Meta:%s' % (simtrack['id'], mta.paths[simtrack['id']], simtrack['sim'], json.dumps(meta)))
                         set_filtered(simtrack, mta, filtered_tracks, 'seeds', 'other')
-                    elif filters.same_artist_or_album(current_metadata, meta):
+                    elif (no_repeat_artist>0 or no_repeat_album>0) and filters.same_artist_or_album(current_metadata, meta):
                         _LOGGER.debug('FILTERED(current) ID:%d Path:%s Similarity:%f Meta:%s' % (simtrack['id'], mta.paths[simtrack['id']], simtrack['sim'], json.dumps(meta)))
                         set_filtered(simtrack, mta, filtered_tracks, 'current', 'other')
                         if meta['artist'] in matched_artists and simtrack['sim'] - matched_artists[meta['artist']]['similarity'] <= 0.2:
