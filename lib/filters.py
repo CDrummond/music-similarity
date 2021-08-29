@@ -90,12 +90,12 @@ def check_duration(min_duration, max_duration, meta):
     return True
 
 
-def check_attribs(seed, candidate):
+def check_attribs(seed, candidate, max_bpm_diff):
     if 'bpm' not in seed or 'bpm' not in candidate:
         # No essentia attributes, so accept track
         return True
 
-    if abs(seed['bpm']-candidate['bpm'])>50:
+    if abs(seed['bpm']-candidate['bpm'])>max_bpm_diff:
         _LOGGER.debug('DISCARD %s %s due to BPM [%d / %d]' % (candidate['artist'], candidate['title'], seed['bpm'], candidate['bpm']))
         return False
 
@@ -124,8 +124,8 @@ def check_attribs(seed, candidate):
     return True
 
 
-def check_attribs_all(seeds, candidate):
+def check_attribs_all(seeds, candidate, max_bpm_diff):
     for seed in seeds:
-        if not check_attribs(seed, candidate):
+        if not check_attribs(seed, candidate, max_bpm_diff):
             return False
     return True
