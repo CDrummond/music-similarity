@@ -304,13 +304,16 @@ def similar_api():
     # Similar tracks
     similar_tracks=[]
     similar_track_positions={}
-    # Track IDs of similar tracks - used to avoid duplicates
-    filtered_tracks={'seeds':[], 'current':[], 'previous':[], 'attribs':[], 'ids':{'other':set(), 'attribs':set()}}
 
-    # IDs of previous tracks, discarded tracks, and chosen tracks - so not repeated
+    # Details of filtered tracks. We _might_ need to use some of these fitered tracks if there are
+    # insufficient similar_tracks chosen.
+    filtered_tracks = {'seeds':[], 'current':[], 'previous':[], 'attribs':[], 'ids':{'other':set(), 'attribs':set()}}
+
+    # IDs of previous or discarded tracks
     skip_track_ids = set()
 
-    current_titles=[]
+    # Keep track of titles so that we can filter against
+    current_titles = set()
 
     # Artist/album of seed tracks
     seed_metadata=[]
@@ -354,7 +357,7 @@ def similar_api():
                                 if genre in group:
                                     acceptable_genres.update(group)
                 if 'title' in meta:
-                    current_titles.append(meta['title'])
+                    current_titles.add(meta['title'])
         else:
             _LOGGER.debug('Could not locate %s in DB' % track)
 
@@ -379,7 +382,7 @@ def similar_api():
                         if use_to_filter_prev:
                             previous_metadata.append(meta)
                             if 'title' in meta:
-                                current_titles.append(meta['title'])
+                                current_titles.add(meta['title'])
                         if match_genre:
                             # Get genres for this track - this takes its genres and gets any matching genres from config
                             if 'genres' in meta and 'genres' in cfg:
@@ -413,7 +416,7 @@ def similar_api():
                 prev_idx = similar_track_positions[simtrack['id']] if simtrack['id'] in similar_track_positions else -1
                 meta = similar_tracks[prev_idx] if prev_idx>=0 else tdb.get_metadata(simtrack['id']+1) # IDs (rowid) in SQLite are 1.. musly is 0..
                 if prev_idx>=0:
-                    # Seen from previous seed, so set simialrity to lowest value
+                    # Seen from previous seed, so set similarity to lowest value
                     sim = simtrack['sim'] + genre_adjust(seed_metadata, meta, acceptable_genres, all_genres, match_all_genres)
                     if similar_tracks[prev_idx]['similarity']>sim:
                         _LOGGER.debug('SEEN %d before, prev:%f, current:%f' % (simtrack['id'], similar_tracks[prev_idx]['similarity'], sim))
@@ -466,7 +469,7 @@ def similar_api():
                         # Keep list of all tracks of an artist, so that we can randomly select one => we don't always use the same one
                         matched_artists[meta['artist']]={'similarity':simtrack['sim'], 'tracks':[{'path':mta.paths[simtrack['id']], 'similarity':sim}], 'pos':len(similar_tracks)-1}
                         if 'title' in meta:
-                            current_titles.append(meta['title'])
+                            current_titles.add(meta['title'])
 
                         accepted_tracks += 1
                         # Save mapping of this ID to its position in similar_tracks so that we can determine if we have
@@ -475,7 +478,7 @@ def similar_api():
                         if accepted_tracks>=similarity_count:
                             break
 
-    # For each matched_artists randonly select a track...
+    # For each matched_artists randomly select a track...
     for matched in matched_artists:
         if len(matched_artists[matched]['tracks'])>1:
             _LOGGER.debug('Choosing random track for %s (%d tracks)' % (matched, len(matched_artists[matched]['tracks'])))
