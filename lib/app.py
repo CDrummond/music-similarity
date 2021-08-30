@@ -145,13 +145,13 @@ def set_filtered(simtrack, mta, filtered_tracks, key, ids):
 
     if simtrack['id'] in filtered_tracks['ids']['attribs']:
         # Remove from filtered_tracks::attribs
-        for i in len(filtered_tracks['attribs']):
+        for i in range(len(filtered_tracks['attribs'])):
             if filtered_tracks['attribs'][i]['id']==simtrack['id']:
                 filtered_tracks['attribs'].pop(i)
                 filtered_tracks['ids']['attribs'].remove(simtrack['id'])
                 break
 
-    filtered_tracks[key].append({'path':mta.paths[simtrack['id']], 'similarity':simtrack['sim']})
+    filtered_tracks[key].append({'path':mta.paths[simtrack['id']], 'id':simtrack['id'], 'similarity':simtrack['sim']})
     filtered_tracks['ids'][ids].add(simtrack['id'])
 
 
