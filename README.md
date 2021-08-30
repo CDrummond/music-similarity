@@ -201,6 +201,7 @@ the following format:
   "enabled":true,
   "extractor":"essentia/bin/x86-64/essentia_streaming_extractor_music",
   "bpm":50,
+  "attr":0.8,
   "weight":0.0
  },
  "paths":{
@@ -254,6 +255,7 @@ from the end of the file.
 * `essentia.extractor` should containt the math to the Essentia extractor - path is
 relative to `music-similarity.py`
 * `essentia.bpm` Specify max BPM difference when filtering tracks.
+* `essentia.attr` Specify max difference in Essentia attributes.
 * `essentia.weight` By default Musly is used for similarity score, and Essentia
 is used to filter tracks. However, if you set `essentia.weight` to higher than
 0.0 (and less than or equal to 1.0) then Essentia can also be used to score

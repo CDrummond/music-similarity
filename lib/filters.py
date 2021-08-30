@@ -90,7 +90,8 @@ def check_duration(min_duration, max_duration, meta):
     return True
 
 
-def check_attribs(seed, candidate, max_bpm_diff):
+ess_attr_lim = None
+def check_attribs(seed, candidate, max_bpm_diff, max_attr_diff):
     if 'bpm' not in seed or 'bpm' not in candidate:
         # No essentia attributes, so accept track
         return True
@@ -99,12 +100,21 @@ def check_attribs(seed, candidate, max_bpm_diff):
         _LOGGER.debug('DISCARD %s %s due to BPM [%d / %d]' % (candidate['artist'], candidate['title'], seed['bpm'], candidate['bpm']))
         return False
 
+    global ess_attr_lim
+    if ess_attr_lim is None:
+        if max_attr_diff>0.8:
+            ess_attr_lim = 0.2
+        elif max_attr_diff>0.6:
+            ess_attr_lim = 0.3
+        else:
+            ess_attr_lim = 0.4
+
     # Determine the 4 most accurate Essentia attributes, and filter on those
     # These will be the ones closest to 1.0 or 0.0
     if not 'ess' in seed:
         attr=[]
         for ess in tracks_db.ESSENTIA_ATTRIBS:
-            if ess != 'bpm' and ((seed[ess]>=0.8 and seed[ess]<1.0) or (seed[ess]>0.000001 and seed[ess]<=0.2)):
+            if ess != 'bpm' and ((seed[ess]>=(1.0-ess_attr_lim) and seed[ess]<1.0) or (seed[ess]>0.000001 and seed[ess]<=ess_attr_lim)):
                attr.append({'key':ess, 'val':abs(0.5-seed[ess])})
         attr=sorted(attr, key=lambda k: -1*k['val'])[:5]
         seed['ess']=[]
@@ -114,11 +124,11 @@ def check_attribs(seed, candidate, max_bpm_diff):
  
     for ess in seed['ess']:
         # Filter out tracks where attribute is in opposite end of spectrum
-        if abs(seed[ess]-candidate[ess])>0.8:
+        if abs(seed[ess]-candidate[ess])>max_attr_diff:
             _LOGGER.debug('DISCARD %s %s due to %s [%f - %f]' % (candidate['artist'], candidate['title'], ess, seed[ess], candidate[ess]))
             return False
     #for ess in tracks_db.ESSENTIA_ATTRIBS:
-    #    if not ess in ['bpm', 'danceable'] and seed[ess]>=0.001 and seed[ess]<=0.9999 and candidate[ess]>=0.001 and candidate[ess]<=0.9999 and abs(seed[ess]-candidate[ess])>0.75:
+    #    if 'bpm'!=ess and seed[ess]>=0.000001 and candidate[ess]>=0.000001 and seed[ess]<1.0 and candidate[ess]<1.0 and abs(seed[ess]-candidate[ess])>max_attr_diff:
     #        _LOGGER.debug('DISCARD %s %s due to %s [%f - %f]' % (candidate['artist'], candidate['title'], ess, seed[ess], candidate[ess]))
     #        return False
     return True

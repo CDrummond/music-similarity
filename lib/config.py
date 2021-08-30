@@ -60,6 +60,8 @@ def read_config(path, analyse):
 
     if not 'bpm' in config['essentia']:
         config['essentia']['bpm']=50
+    if not 'attr' in config['essentia']:
+        config['essentia']['attr']=0.8
     if not 'enabled' in config['essentia']:
         config['essentia']['enabled']=True
     else:
