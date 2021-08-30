@@ -19,7 +19,7 @@ MAX_TRACKS_TO_RETURN                  = 50   # Max value for 'count' parameter
 DEFAULT_NUM_PREV_TRACKS_FILTER_ARTIST = 15   # Try to ensure artist is not in previous N tracks
 DEFAULT_NUM_PREV_TRACKS_FILTER_ALBUM  = 25   # Try to ensure album is not in previous N tracks
 NUM_SIMILAR_TRACKS_FACTOR             = 25   # Request count*NUM_SIMILAR_TRACKS_FACTOR from musly
-SHUFFLE_FACTOR                        = 3    # How many (shuffle_factor*count) tracks to shuffle?
+SHUFFLE_FACTOR                        = 1.75 # How many (shuffle_factor*count) tracks to shuffle?
 
 
 class SimilarityApp(Flask):
