@@ -314,7 +314,7 @@ def similar_api():
 
     # Details of filtered tracks. We _might_ need to use some of these fitered tracks if there are
     # insufficient similar_tracks chosen.
-    filtered_tracks = {'seeds':[], 'current':[], 'previous':[], 'attribs':[], 'ids':{'other':set(), 'attribs':set()}}
+    filtered_tracks = {'current':[], 'previous':[], 'attribs':[], 'ids':{'other':set(), 'attribs':set()}}
 
     # IDs of previous or discarded tracks
     skip_track_ids = set()
@@ -403,6 +403,9 @@ def similar_api():
                                                 acceptable_genres.update(group)
             else:
                 _LOGGER.debug('Could not locate %s in DB' % track)
+    else:
+        _LOGGER.debug('No previous track specified, using seeds as previous tracks')
+        track_metadata['previous']=track_metadata['seeds']
 
     _LOGGER.debug('Seed genres: %s' % seed_genres)
     if match_genre:
@@ -456,7 +459,7 @@ def similar_api():
 
                     if no_repeat_artist>0:
                         filtered = False
-                        for key in ['seeds', 'current', 'previous']:
+                        for key in ['current', 'previous']:
                             no_rep = no_repeat_artist if 'previous'==key else 0
                             _LOGGER.debug('FILTERED CHECK (%s(artist) %d) ID:%d Path:%s Similarity:%f Meta:%s' % (key, len(track_metadata[key]), simtrack['id'], mta.paths[simtrack['id']], simtrack['sim'], json.dumps(meta, cls=SetEncoder)))
                             if filters.same_artist_or_album(track_metadata[key], meta, False, no_rep):
@@ -469,7 +472,7 @@ def similar_api():
 
                     if no_repeat_album>0:
                         filtered = False
-                        for key in ['seeds', 'current', 'previous']:
+                        for key in ['current', 'previous']:
                             no_rep = no_repeat_album if 'previous'==key else 0
                             if filters.same_artist_or_album(track_metadata[key], meta, True, no_rep):
                                 _LOGGER.debug('FILTERED(%s(album)) ID:%d Path:%s Similarity:%f Meta:%s' % (key, simtrack['id'], mta.paths[simtrack['id']], simtrack['sim'], json.dumps(meta, cls=SetEncoder)))
@@ -513,7 +516,7 @@ def similar_api():
             similar_tracks[matched_artists[matched]['pos']]['similarity'] = sim
 
     # Too few tracks? Add some from the filtered lists
-    _LOGGER.debug('similar_tracks: %d, filtered_tracks::previous: %d, filtered_tracks::current: %d, filtered_tracks::seeds: %d, filtered_tracks::attribs: %d' % (len(similar_tracks), len(filtered_tracks['previous']), len(filtered_tracks['current']), len(filtered_tracks['seeds']), len(filtered_tracks['attribs'])))
+    _LOGGER.debug('similar_tracks: %d, filtered_tracks::previous: %d, filtered_tracks::current: %d, filtered_tracks::attribs: %d' % (len(similar_tracks), len(filtered_tracks['previous']), len(filtered_tracks['current']), len(filtered_tracks['attribs'])))
     min_count = 2
     if len(similar_tracks)<min_count and len(filtered_tracks['previous'])>0:
         _LOGGER.debug('Add some tracks from filtered_tracks::previous, %d/%d' % (len(similar_tracks), len(filtered_tracks['previous'])))
@@ -521,9 +524,6 @@ def similar_api():
     if len(similar_tracks)<min_count and len(filtered_tracks['current'])>0:
         _LOGGER.debug('Add some tracks from filtered_tracks::current, %d/%d' % (len(similar_tracks), len(filtered_tracks['current'])))
         similar_tracks = append_list(similar_tracks, filtered_tracks['current'], min_count)
-    if len(similar_tracks)<min_count and len(filtered_tracks['seeds'])>0:
-        _LOGGER.debug('Add some tracks from filtered_tracks::seeds, %d/%d' % (len(similar_tracks), len(filtered_tracks['seeds'])))
-        similar_tracks = append_list(similar_tracks, filtered_tracks['seeds'], min_count)
     if len(similar_tracks)<min_count and len(filtered_tracks['attribs'])>0:
         _LOGGER.debug('Add some tracks from filtered_tracks::attribs, %d/%d' % (len(similar_tracks), len(filtered_tracks['attribs'])))
         similar_tracks = append_list(similar_tracks, filtered_tracks['attribs'], min_count)
