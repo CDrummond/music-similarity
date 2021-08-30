@@ -123,9 +123,3 @@ def check_attribs(seed, candidate, max_bpm_diff):
     #        return False
     return True
 
-
-def check_attribs_all(seeds, candidate, max_bpm_diff):
-    for seed in seeds:
-        if not check_attribs(seed, candidate, max_bpm_diff):
-            return False
-    return True
