@@ -518,15 +518,12 @@ def similar_api():
     # Too few tracks? Add some from the filtered lists
     _LOGGER.debug('similar_tracks: %d, filtered_tracks::previous: %d, filtered_tracks::current: %d, filtered_tracks::attribs: %d' % (len(similar_tracks), len(filtered_tracks['previous']), len(filtered_tracks['current']), len(filtered_tracks['attribs'])))
     min_count = 2
-    if len(similar_tracks)<min_count and len(filtered_tracks['previous'])>0:
-        _LOGGER.debug('Add some tracks from filtered_tracks::previous, %d/%d' % (len(similar_tracks), len(filtered_tracks['previous'])))
-        similar_tracks = append_list(similar_tracks, filtered_tracks['previous'], min_count)
-    if len(similar_tracks)<min_count and len(filtered_tracks['current'])>0:
-        _LOGGER.debug('Add some tracks from filtered_tracks::current, %d/%d' % (len(similar_tracks), len(filtered_tracks['current'])))
-        similar_tracks = append_list(similar_tracks, filtered_tracks['current'], min_count)
-    if len(similar_tracks)<min_count and len(filtered_tracks['attribs'])>0:
-        _LOGGER.debug('Add some tracks from filtered_tracks::attribs, %d/%d' % (len(similar_tracks), len(filtered_tracks['attribs'])))
-        similar_tracks = append_list(similar_tracks, filtered_tracks['attribs'], min_count)
+    for key in ['previous', 'current', 'attribs']:
+        if len(similar_tracks)>=min_count:
+            break
+        if len(filtered_tracks[key])>0:
+            _LOGGER.debug('Add some tracks from filtered_tracks::%s, %d/%d' % (key, len(similar_tracks), len(filtered_tracks[key])))
+            similar_tracks = append_list(similar_tracks, filtered_tracks[key], min_count)
 
     # Sort by similarity
     similar_tracks = sorted(similar_tracks, key=lambda k: k['similarity'])
