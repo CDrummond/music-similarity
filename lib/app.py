@@ -93,17 +93,17 @@ def genre_adjust(seed, entry, acceptable_genres, all_genres, match_all_genres):
     if match_all_genres:
         return 0.0
     if 'genres' not in seed:
-        return 0.1
+        return 0.15
     if 'genres' not in entry:
-        return 0.1
+        return 0.15
     if len(seed['genres'].intersection(entry['genres']))>0:
         # Exact genre match
         return 0.0
     if (acceptable_genres is not None and len(entry['genres'].intersection(acceptable_genres)))==0 or \
        (acceptable_genres is None and all_genres is not None and len(entry['genres'].intersection(all_genres)))==0:
-        return 0.1
+        return 0.15
     # Genre in group
-    return 0.05
+    return 0.075
 
 
 def get_similarity(track_id, mus, mta, tdb, ess_weight):
