@@ -12,6 +12,8 @@ _LOGGER = logging.getLogger(__name__)
 
 VARIOUS_ARTISTS = ['various', 'various artists'] # Artist names are normalised, and coverted to lower case
 CHRISTMAS_GENRES = ['Christmas', 'Xmas']
+ESS_ATTR_LIM = 0.2
+
 
 def same_artist_or_album(seeds, track, check_album_only=False, max_check=0):
     check = 0
@@ -90,7 +92,6 @@ def check_duration(min_duration, max_duration, meta):
     return True
 
 
-ess_attr_lim = None
 def check_attribs(seed, candidate, max_bpm_diff, max_attr_diff):
     if 'bpm' not in seed or 'bpm' not in candidate:
         # No essentia attributes, so accept track
@@ -100,21 +101,12 @@ def check_attribs(seed, candidate, max_bpm_diff, max_attr_diff):
         _LOGGER.debug('DISCARD %s %s due to BPM [%d / %d]' % (candidate['artist'], candidate['title'], seed['bpm'], candidate['bpm']))
         return False
 
-    global ess_attr_lim
-    if ess_attr_lim is None:
-        if max_attr_diff>0.8:
-            ess_attr_lim = 0.2
-        elif max_attr_diff>0.6:
-            ess_attr_lim = 0.3
-        else:
-            ess_attr_lim = 0.4
-
     # Determine the 4 most accurate Essentia attributes, and filter on those
     # These will be the ones closest to 1.0 or 0.0
     if not 'ess' in seed:
         attr=[]
         for ess in tracks_db.ESSENTIA_ATTRIBS:
-            if ess != 'bpm' and ((seed[ess]>=(1.0-ess_attr_lim) and seed[ess]<1.0) or (seed[ess]>0.000001 and seed[ess]<=ess_attr_lim)):
+            if ess != 'bpm' and ((seed[ess]>=(1.0-ESS_ATTR_LIM) and seed[ess]<1.0) or (seed[ess]>0.000001 and seed[ess]<=ESS_ATTR_LIM)):
                attr.append({'key':ess, 'val':abs(0.5-seed[ess])})
         attr=sorted(attr, key=lambda k: -1*k['val'])[:5]
         seed['ess']=[]
