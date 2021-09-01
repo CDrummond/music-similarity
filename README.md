@@ -200,8 +200,8 @@ the following format:
  "essentia":{
   "enabled":true,
   "extractor":"essentia/bin/x86-64/essentia_streaming_extractor_music",
-  "bpm":50,
-  "attr":0.8,
+  "bpm":30,
+  "attr":0.4,
   "weight":0.0
  },
  "paths":{
