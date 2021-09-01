@@ -385,22 +385,21 @@ def similar_api():
             if track_id is not None and track_id>=0:
                 skip_track_ids.add(track_id)
                 use_to_filter_prev = len(track_metadata['previous'])<no_repeat_artist_or_album
-                if use_to_filter_prev or match_genre:
-                    meta = tdb.get_metadata(track_id+1) # IDs (rowid) in SQLite are 1.. musly is 0..
-                    if meta:
-                        if use_to_filter_prev:
-                            track_metadata['previous'].append(meta)
-                            if 'title' in meta:
-                                current_titles.add(meta['title'])
-                        if match_genre:
-                            # Get genres for this track - this takes its genres and gets any matching genres from config
-                            if 'genres' in meta:
-                                acceptable_genres.update(meta['genres'])
-                                if 'genres' in cfg:
-                                    for genre in meta['genres']:
-                                        for group in cfg['genres']:
-                                            if genre in group:
-                                                acceptable_genres.update(group)
+                meta = tdb.get_metadata(track_id+1) # IDs (rowid) in SQLite are 1.. musly is 0..
+                if meta:
+                    if 'title' in meta:
+                        current_titles.add(meta['title'])
+                    if use_to_filter_prev:
+                        track_metadata['previous'].append(meta)
+                    if match_genre:
+                        # Get genres for this track - this takes its genres and gets any matching genres from config
+                        if 'genres' in meta:
+                            acceptable_genres.update(meta['genres'])
+                            if 'genres' in cfg:
+                                for genre in meta['genres']:
+                                    for group in cfg['genres']:
+                                        if genre in group:
+                                            acceptable_genres.update(group)
             else:
                 _LOGGER.debug('Could not locate %s in DB' % track)
     else:
@@ -461,7 +460,6 @@ def similar_api():
                         filtered = False
                         for key in ['current', 'previous']:
                             no_rep = no_repeat_artist if 'previous'==key else 0
-                            _LOGGER.debug('FILTERED CHECK (%s(artist) %d) ID:%d Path:%s Similarity:%f Meta:%s' % (key, len(track_metadata[key]), simtrack['id'], mta.paths[simtrack['id']], simtrack['sim'], json.dumps(meta, cls=SetEncoder)))
                             if filters.same_artist_or_album(track_metadata[key], meta, False, no_rep):
                                 _LOGGER.debug('FILTERED(%s(artist)) ID:%d Path:%s Similarity:%f Meta:%s' % (key, simtrack['id'], mta.paths[simtrack['id']], simtrack['sim'], json.dumps(meta, cls=SetEncoder)))
                                 filtered=True
