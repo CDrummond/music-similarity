@@ -205,7 +205,7 @@ the following format:
   "weight":0.0
  },
  "paths":{
-  "db":"/home/user/.local/share/musly/",
+  "db":"/home/user/.local/share/music-similarity/",
   "local":"/home/Music/",
   "lms":"/media/Music/",
   "tmp":"/tmp/",
