@@ -223,7 +223,7 @@ the following format:
   "album":["deluxe edition", "remastered"],
   "title"["demo", "radio edit"]
  },
- "port":10000,
+ "port":11000,
  "host":"0.0.0.0",
  "threads":8
 }
