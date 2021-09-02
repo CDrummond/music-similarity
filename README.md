@@ -7,7 +7,7 @@ Simple python3 API server to create a mix of music tracks for LMS.
 This service uses the [Musly audio music similarity library](https://github.com/CDrummond/musly)
 This library needs to be compiled, and `config.json` (from this API project)
 updated to store the location of this library. This repo contains pre-built
-built versions for:
+versions for:
 
 1. Fedora 64-bit
 2. Raspbian Buster 32-bit
@@ -35,9 +35,9 @@ Musly. This is accomplished via:
 ```
 
 This can take about 20hrs to process 25k tracks. The process analyses tracks
-with Essentia, analyuses with Musly, adds them to Musly, intialises Musly's
+with Essentia, analyses with Musly, adds them to Musly, initialises Musly's
 'jukebox' style with 1000 random tracks, and extracts certain tags. If re-run
-new tracks will be added, and old (non-existant) will be removed. Pass
+new tracks will be added, and old (non-existent) will be removed. Pass
 `--keep-old` to keep these old tracks.
 
 To analyse the Music path stored in the config file, the following shortcut can
@@ -72,7 +72,7 @@ It then checks that there are different similarities, and if not an error
 message is shown.
 
 If this script states that there is an error you can try simply removing the
-jukebox file and re-runnnig this script - it will recreate the jukebox with
+jukebox file and re-running this script - it will recreate the jukebox with
 random tracks. If this keeps failing it might be better to adjust the
 `styletracks` config item, delete the jukebox, and test again.
 
@@ -241,18 +241,18 @@ delete the jukebox file and restart the server.
 set to `genres` (which is the default if not set) then the meta-data db is
 queried for how many track each genre has and tracks are chosen for each of
 these genres based upon the percentage of tracks in a genre. If set to `albums`
-then at least one track from each album is used. If set to aything else then
+then at least one track from each album is used. If set to anything else then
 random tracks are chosen.
 * `musly.extractlen` The maximum length in seconds of the file to decode. If zero
 or greater than the file length, then the whole file will be decoded. Note,
 however, that only a maximum of 5 minutes is used for analysis.
 * `musly.extractstart` The starting position in seconds of the excerpt to decode. If
-zero, decoding starts at the beginning. If negative, the excerpt is centered in
+zero, decoding starts at the beginning. If negative, the excerpt is centred in
 the file, but starts at -`extractstart` the latest. If positive and
 `extractstart`+`extractlen` exceeds the file length, then the excerpt is taken
 from the end of the file.
 * `essentia.enabled` should be set to true if Essentia is to be used for filtering
-* `essentia.extractor` should containt the math to the Essentia extractor - path is
+* `essentia.extractor` should contain the path to the Essentia extractor - path is
 relative to `music-similarity.py`
 * `essentia.bpm` Specify max BPM difference when filtering tracks.
 * `essentia.attr` Specify max difference in Essentia attributes.
@@ -260,7 +260,7 @@ relative to `music-similarity.py`
 is used to filter tracks. However, if you set `essentia.weight` to higher than
 0.0 (and less than or equal to 1.0) then Essentia can also be used to score
 similarity based upon the Essentia attributes. This value then configures the
-percentage give to each meteric. e.g. an `essentia.weight` of 0.4 will cause the
+percentage give to each metric. e.g. an `essentia.weight` of 0.4 will cause the
 similarity score to be base 60% Musly 40% Essentia.
 * `paths.db` should be the path where the SQLite and jukebox files created by
 this app can be written.
@@ -298,7 +298,7 @@ Musly is asked to analyse. Defaults to CPU count, if not set.
 
 ## Ignoring artists, albums, etc.
 
-To mark certains items as 'ignored' (i.e. so that they are not added to mixes),
+To mark certain items as 'ignored' (i.e. so that they are not added to mixes),
 create a text file where each line contains the unique path, e.g.:
 
 ```
