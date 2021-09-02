@@ -192,7 +192,7 @@ class TracksDb(object):
         if meta is not None:
             if 'track' in track and 'title' in track['track']: # Tracks from CUE files
                 meta['title'] = track['track']['title']
-            update_metadata(self, track['db'], meta)
+            self.update_metadata(track['db'], meta)
 
 
     def remove_old_tracks(self, source_path):
