@@ -58,17 +58,18 @@ def read_config(path, analyse):
     if not 'threads' in config:
         config['threads']=os.cpu_count()
 
-    if not 'bpm' in config['essentia']:
-        config['essentia']['bpm']=30
-    if not 'attr' in config['essentia']:
-        config['essentia']['attr']=0.4
     if not 'enabled' in config['essentia']:
         config['essentia']['enabled']=True
-    else:
-        if config['essentia']['enabled'] and not 'extractor' in config['essentia']:
+
+    if config['essentia']['enabled']:
+        if not 'bpm' in config['essentia']:
+            config['essentia']['bpm']=30
+        if not 'attr' in config['essentia']:
+            config['essentia']['attr']=0.4
+        if not 'extractor' in config['essentia']:
             _LOGGER.error("'essentia.extractor' not in config file")
             exit(-1)
-        if config['essentia']['enabled'] and not 'weight' in config['essentia']:
+        if not 'weight' in config['essentia']:
             config['essentia']['weight'] = 0.0
         if config['essentia']['weight']<0.0 or config['essentia']['weight']>1.0:
             _LOGGER.error("'essentia.weight' is invalid. Must be in the range 0.0 .. 1.0")
