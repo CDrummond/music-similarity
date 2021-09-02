@@ -34,7 +34,7 @@ class SimilarityApp(Flask):
         tdb = tracks_db.TracksDb(app_config)
         (paths, tracks) = self.mus.get_alltracks_db(tdb.get_cursor())
         random.seed()
-        if app_config['essentia']['weight']>0.0:
+        if app_config['essentia']['enabled'] and app_config['essentia']['weight']>0.0:
             from . import essentia_sim
             essentia_sim.init(tdb)
         ids = None
