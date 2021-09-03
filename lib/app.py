@@ -466,7 +466,9 @@ def similar_api():
                                 set_filtered(simtrack, mta, filtered_tracks, key, 'other')
 
                                 if 'current'==key and meta['artist'] in matched_artists and len(matched_artists[meta['artist']]['tracks'])<5 and simtrack['sim'] - matched_artists[meta['artist']]['similarity'] <= 0.1:
-                                    matched_artists[meta['artist']]['tracks'].append({'path':mta.paths[simtrack['id']], 'similarity':simtrack['sim']})
+                                    # Only add this track as a possibility if album not in previous
+                                    if no_repeat_album<=0 or not filters.same_artist_or_album(track_metadata['previous'], meta, True, no_repeat_album):
+                                        matched_artists[meta['artist']]['tracks'].append({'path':mta.paths[simtrack['id']], 'similarity':simtrack['sim']})
                                 break
                         if filtered:
                             continue
