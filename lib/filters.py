@@ -17,10 +17,12 @@ ESS_ATTR_LIM = 0.2
 
 def same_artist_or_album(seeds, track, check_album_only=False, max_check=0):
     check = 0
+    trackaa = track['albumartist'] if 'albumartist' in track else track['artist']
     for seed in seeds:
         if seed['artist']==track['artist'] and not check_album_only:
             return True
-        if seed['album']==track['album'] and 'albumartist' in seed and 'albumartist' in track and seed['albumartist']==track['albumartist'] and track['albumartist'] not in VARIOUS_ARTISTS:
+        seedaa = seed['albumartist'] if 'albumartist' in seed else seed['artist']
+        if seed['album']==track['album'] and seedaa==trackaa and seedaa not in VARIOUS_ARTISTS:
             return True
         check+=1
         if max_check>0 and check>=max_check:
