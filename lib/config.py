@@ -65,7 +65,7 @@ def read_config(path, analyse):
         if not 'bpm' in config['essentia']:
             config['essentia']['bpm']=30
         if not 'attr' in config['essentia']:
-            config['essentia']['attr']=0.4
+            config['essentia']['attr']=0.2
         if not 'extractor' in config['essentia']:
             _LOGGER.error("'essentia.extractor' not in config file")
             exit(-1)
