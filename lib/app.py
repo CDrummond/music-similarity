@@ -99,8 +99,8 @@ def genre_adjust(seed, entry, acceptable_genres, all_genres, match_all_genres):
     if len(seed['genres'].intersection(entry['genres']))>0:
         # Exact genre match
         return 0.0
-    if (acceptable_genres is not None and len(entry['genres'].intersection(acceptable_genres)))==0 or \
-       (acceptable_genres is None and all_genres is not None and len(entry['genres'].intersection(all_genres)))==0:
+    if (acceptable_genres is not None and len(entry['genres'].intersection(acceptable_genres))==0) or \
+       (acceptable_genres is None and all_genres is not None and len(entry['genres'].intersection(all_genres))==0):
         return 0.15
     # Genre in group
     return 0.075
@@ -139,8 +139,8 @@ def append_list(orig, to_add, min_count):
     return orig
 
 
-def set_filtered(simtrack, mta, filtered_tracks, key, ids):
-    if simtrack['id'] in filtered_tracks['ids'][ids] or (ids=='attribs' and simtrack['id'] in filtered_tracks['ids']['other']):
+def set_filtered(simtrack, mta, filtered_tracks, key):
+    if simtrack['id'] in filtered_tracks['ids'][key] or (key=='attribs' and simtrack['id'] in filtered_tracks['ids']['meta']):
         return
 
     if simtrack['id'] in filtered_tracks['ids']['attribs']:
@@ -152,7 +152,14 @@ def set_filtered(simtrack, mta, filtered_tracks, key, ids):
                 break
 
     filtered_tracks[key].append({'path':mta.paths[simtrack['id']], 'id':simtrack['id'], 'similarity':simtrack['sim']})
-    filtered_tracks['ids'][ids].add(simtrack['id'])
+    filtered_tracks['ids'][key].add(simtrack['id'])
+
+
+def get_album_key(track):
+    aa = track['albumartist'] if 'albumartist' in track and track['albumartist'] is not None and len(track['albumartist'])>0 else track['artist']
+    if aa in filters.VARIOUS_ARTISTS:
+        return None
+    return '%s::%s' % (aa, track['album'])
 
 
 @similarity_app.route('/api/dump', methods=['GET', 'POST'])
@@ -295,8 +302,6 @@ def similar_api():
     if no_repeat_album<0 or no_repeat_album>200:
         no_repeat_album = DEFAULT_NUM_PREV_TRACKS_FILTER_ALBUM
 
-    no_repeat_artist_or_album = no_repeat_album if no_repeat_album>no_repeat_artist else no_repeat_artist
-
     mta = similarity_app.get_mta()
     mus = similarity_app.get_musly()
     cfg = similarity_app.get_config()
@@ -314,29 +319,25 @@ def similar_api():
 
     # Details of filtered tracks. We _might_ need to use some of these fitered tracks if there are
     # insufficient similar_tracks chosen.
-    filtered_tracks = {'current':[], 'previous':[], 'attribs':[], 'ids':{'other':set(), 'attribs':set()}}
+    filtered_tracks = {'meta':[], 'attribs':[], 'ids':{'meta':set(), 'attribs':set()}}
+
+    filter_out = {'artists':set(), 'albums':set(), 'titles':set()}
 
     # IDs of previous or discarded tracks
     skip_track_ids = set()
-
-    # Keep track of titles so that we can filter against
-    current_titles = set()
 
     track_id_seed_metadata={} # Map from seed track's ID to its metadata
     acceptable_genres=set()
     seed_genres=set()
     all_genres = cfg['all_genres'] if 'all_genres' in cfg else None
 
-    # Artist/album of chosen tracks
-    current_metadata_keys={}
-
-    track_metadata={'current':[], 'seeds':[], 'previous':[]}
-
     if min_duration>0 or max_duration>0:
         _LOGGER.debug('Duration:%d .. %d' % (min_duration, max_duration))
 
+    have_prev_tracks = 'previous' in params
     # Musly IDs of seed tracks
     track_ids = []
+    trk_count = 0
     for trk in params['track']:
         track = decode(trk, root)
         _LOGGER.debug('S TRACK %s -> %s' % (trk, track))
@@ -354,7 +355,6 @@ def similar_api():
             meta = tdb.get_metadata(track_id+1) # IDs (rowid) in SQLite are 1.. musly is 0..
             _LOGGER.debug('Seed %d metadata:%s' % (track_id, json.dumps(meta, cls=SetEncoder)))
             if meta is not None:
-                track_metadata['seeds'].append(meta)
                 track_id_seed_metadata[track_id]=meta
                 # Get genres for this seed track - this takes its genres and gets any matching genres from config
                 if 'genres' in meta:
@@ -365,13 +365,22 @@ def similar_api():
                                 if genre in group:
                                     acceptable_genres.update(group)
                 if 'title' in meta:
-                    current_titles.add(meta['title'])
+                    filter_out['titles'].add(meta['title'])
+                if not have_prev_tracks:
+                    if trk_count<no_repeat_artist:
+                        filter_out['artists'].add(meta['artist'])
+                    if trk_count<no_repeat_album:
+                        akey = get_album_key(meta)
+                        if akey is not None:
+                            filter_out['albums'].add(akey)
+            trk_count += 1
         else:
             _LOGGER.debug('Could not locate %s in DB' % track)
 
     seed_genres.update(acceptable_genres)
 
-    if 'previous' in params:
+    if have_prev_tracks:
+        trk_count = 0
         for trk in params['previous']:
             track = decode(trk, root)
             _LOGGER.debug('I TRACK %s -> %s' % (trk, track))
@@ -384,13 +393,16 @@ def similar_api():
                 pass
             if track_id is not None and track_id>=0:
                 skip_track_ids.add(track_id)
-                use_to_filter_prev = len(track_metadata['previous'])<no_repeat_artist_or_album
                 meta = tdb.get_metadata(track_id+1) # IDs (rowid) in SQLite are 1.. musly is 0..
                 if meta:
                     if 'title' in meta:
-                        current_titles.add(meta['title'])
-                    if use_to_filter_prev:
-                        track_metadata['previous'].append(meta)
+                        filter_out['titles'].add(meta['title'])
+                    if trk_count<no_repeat_artist:
+                        filter_out['artists'].add(meta['artist'])
+                    if trk_count<no_repeat_album:
+                        akey = get_album_key(meta)
+                        if akey is not None:
+                            filter_out['albums'].add(akey)
                     if match_genre:
                         # Get genres for this track - this takes its genres and gets any matching genres from config
                         if 'genres' in meta:
@@ -402,9 +414,7 @@ def similar_api():
                                             acceptable_genres.update(group)
             else:
                 _LOGGER.debug('Could not locate %s in DB' % track)
-    else:
-        _LOGGER.debug('No previous track specified, using seeds as previous tracks')
-        track_metadata['previous']=track_metadata['seeds']
+            trk_count += 1
 
     _LOGGER.debug('Seed genres: %s' % seed_genres)
     if match_genre:
@@ -431,7 +441,7 @@ def similar_api():
                 meta = similar_tracks[prev_idx] if prev_idx>=0 else tdb.get_metadata(simtrack['id']+1) # IDs (rowid) in SQLite are 1.. musly is 0..
                 if prev_idx>=0:
                     # Seen from previous seed, so set similarity to lowest value
-                    sim = simtrack['sim'] + genre_adjust(track_metadata['seeds'], meta, seed_genres, all_genres, match_all_genres)
+                    sim = simtrack['sim'] + genre_adjust(track_id_seed_metadata[track_id], meta, seed_genres, all_genres, match_all_genres)
                     if similar_tracks[prev_idx]['similarity']>sim:
                         _LOGGER.debug('SEEN %d before, prev:%f, current:%f' % (simtrack['id'], similar_tracks[prev_idx]['similarity'], sim))
                         similar_tracks[prev_idx]['similarity']=sim
@@ -453,55 +463,50 @@ def similar_api():
                 else:
                     if ess_enabled and not filters.check_attribs(track_id_seed_metadata[track_id], meta, cfg['essentia']['bpm'], cfg['essentia']['attr']):
                         _LOGGER.debug('FILTERED(attribs) ID:%d Path:%s Similarity:%f Meta:%s' % (simtrack['id'], mta.paths[simtrack['id']], simtrack['sim'], json.dumps(meta, cls=SetEncoder)))
-                        set_filtered(simtrack, mta, filtered_tracks, 'attribs', 'attribs')
+                        set_filtered(simtrack, mta, filtered_tracks, 'attribs')
                         continue
 
                     if no_repeat_artist>0:
-                        filtered = False
-                        for key in ['current', 'previous']:
-                            no_rep = no_repeat_artist if 'previous'==key else 0
-                            if filters.same_artist_or_album(track_metadata[key], meta, False, no_rep):
-                                _LOGGER.debug('FILTERED(%s(artist)) ID:%d Path:%s Similarity:%f Meta:%s' % (key, simtrack['id'], mta.paths[simtrack['id']], simtrack['sim'], json.dumps(meta, cls=SetEncoder)))
-                                filtered=True
-                                set_filtered(simtrack, mta, filtered_tracks, key, 'other')
+                        if meta['artist'] in filter_out['artists']:
+                            _LOGGER.debug('FILTERED(artist) ID:%d Path:%s Similarity:%f Meta:%s' % (simtrack['id'], mta.paths[simtrack['id']], simtrack['sim'], json.dumps(meta, cls=SetEncoder)))
+                            set_filtered(simtrack, mta, filtered_tracks, 'meta')
 
-                                if 'current'==key and meta['artist'] in matched_artists and len(matched_artists[meta['artist']]['tracks'])<5 and simtrack['sim'] - matched_artists[meta['artist']]['similarity'] <= 0.1:
-                                    # Only add this track as a possibility if album not in previous
-                                    if no_repeat_album<=0 or not filters.same_artist_or_album(track_metadata['previous'], meta, True, no_repeat_album):
-                                        matched_artists[meta['artist']]['tracks'].append({'path':mta.paths[simtrack['id']], 'similarity':simtrack['sim']})
+                            if meta['artist'] in matched_artists and len(matched_artists[meta['artist']]['tracks'])<5 and simtrack['sim'] - matched_artists[meta['artist']]['similarity'] <= 0.1:
+                                # Only add this track as a possibility if album not in previous
+                                akey = get_album_key(meta)
+                                if akey is None or akey not in filter_out['albums']:
+                                    matched_artists[meta['artist']]['tracks'].append({'path':mta.paths[simtrack['id']], 'similarity':simtrack['sim']})
                                 break
-                        if filtered:
                             continue
 
                     if no_repeat_album>0:
-                        filtered = False
-                        for key in ['current', 'previous']:
-                            no_rep = no_repeat_album if 'previous'==key else 0
-                            if filters.same_artist_or_album(track_metadata[key], meta, True, no_rep):
-                                _LOGGER.debug('FILTERED(%s(album)) ID:%d Path:%s Similarity:%f Meta:%s' % (key, simtrack['id'], mta.paths[simtrack['id']], simtrack['sim'], json.dumps(meta, cls=SetEncoder)))
-                                filtered=True
-                                set_filtered(simtrack, mta, filtered_tracks, key, 'other')
-                                break
-                        if filtered:
+                        akey = get_album_key(meta)
+                        if akey is not None and akey in filter_out['albums']:
+                            _LOGGER.debug('FILTERED(album) ID:%d Path:%s Similarity:%f Meta:%s' % (simtrack['id'], mta.paths[simtrack['id']], simtrack['sim'], json.dumps(meta, cls=SetEncoder)))
+                            set_filtered(simtrack, mta, filtered_tracks, 'meta')
                             continue
 
-                    if filters.match_title(current_titles, meta):
+                    if 'title' in meta and meta['title'] in filter_out['titles']:
                         _LOGGER.debug('FILTERED(title) ID:%d Path:%s Similarity:%f Meta:%s' % (simtrack['id'], mta.paths[simtrack['id']], simtrack['sim'], json.dumps(meta, cls=SetEncoder)))
-                        set_filtered(simtrack, mta, filtered_tracks, 'current', 'other')
+                        set_filtered(simtrack, mta, filtered_tracks, 'meta')
                         continue
 
                     key = '%s::%s::%s' % (meta['artist'], meta['album'], meta['albumartist'] if 'albumartist' in meta and meta['albumartist'] is not None else '')
-                    if not key in current_metadata_keys:
-                        current_metadata_keys[key]=1
-                        track_metadata['current'].append(meta)
-                    sim = simtrack['sim'] + genre_adjust(track_metadata['seeds'], meta, seed_genres, all_genres, match_all_genres)
+                    sim = simtrack['sim'] + genre_adjust(track_id_seed_metadata[track_id], meta, seed_genres, all_genres, match_all_genres)
 
                     _LOGGER.debug('USABLE ID:%d Path:%s Similarity:%f AdjSim:%s Meta:%s' % (simtrack['id'], mta.paths[simtrack['id']], simtrack['sim'], sim, json.dumps(meta, cls=SetEncoder)))
                     similar_tracks.append({'path':mta.paths[simtrack['id']], 'similarity':sim})
                     # Keep list of all tracks of an artist, so that we can randomly select one => we don't always use the same one
                     matched_artists[meta['artist']]={'similarity':simtrack['sim'], 'tracks':[{'path':mta.paths[simtrack['id']], 'similarity':sim}], 'pos':len(similar_tracks)-1}
                     if 'title' in meta:
-                        current_titles.add(meta['title'])
+                        filter_out['titles'].add(meta['title'])
+
+                    if no_repeat_album>0:
+                        akey = get_album_key(meta)
+                        if akey is not None:
+                            filter_out['albums'].add(akey)
+                    if no_repeat_artist>0:
+                        filter_out['artists'].add(meta['artist'])
 
                     accepted_tracks += 1
                     # Save mapping of this ID to its position in similar_tracks so that we can determine if we have
@@ -519,9 +524,9 @@ def similar_api():
             similar_tracks[matched_artists[matched]['pos']]['similarity'] = sim
 
     # Too few tracks? Add some from the filtered lists
-    _LOGGER.debug('similar_tracks: %d, filtered_tracks::previous: %d, filtered_tracks::current: %d, filtered_tracks::attribs: %d' % (len(similar_tracks), len(filtered_tracks['previous']), len(filtered_tracks['current']), len(filtered_tracks['attribs'])))
+    _LOGGER.debug('similar_tracks: %d, filtered_tracks::meta: %d, filtered_tracks::attribs: %d' % (len(similar_tracks), len(filtered_tracks['meta']), len(filtered_tracks['attribs'])))
     min_count = 2
-    for key in ['previous', 'current', 'attribs']:
+    for key in ['meta', 'attribs']:
         if len(similar_tracks)>=min_count:
             break
         if len(filtered_tracks[key])>0:

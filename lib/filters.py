@@ -15,21 +15,6 @@ CHRISTMAS_GENRES = ['Christmas', 'Xmas']
 ESS_ATTR_LIM = 0.2
 
 
-def same_artist_or_album(seeds, track, check_album_only=False, max_check=0):
-    check = 0
-    trackaa = track['albumartist'] if 'albumartist' in track else track['artist']
-    for seed in seeds:
-        if seed['artist']==track['artist'] and not check_album_only:
-            return True
-        seedaa = seed['albumartist'] if 'albumartist' in seed else seed['artist']
-        if seed['album']==track['album'] and seedaa==trackaa and seedaa not in VARIOUS_ARTISTS:
-            return True
-        check+=1
-        if max_check>0 and check>=max_check:
-            return False
-    return False
-
-
 def genre_matches(config, seed_genres, track):
     if 'genres' not in track or len(track['genres'])<1:
         return True # Track has no genre? Then can't filter out...
@@ -57,28 +42,6 @@ def is_christmas(track):
                 return True
 
     return False
-
-
-def match_artist(artists, track):
-    for artist in artists:
-        if artist==track['artist'] or ('albumartist' in track and artist==track['albumartist']):
-            return True
-    return False
-
-
-def match_album(albums, track):
-    if (not 'album' in track) or ( ('albumartist' not in track) and ('artist' not in track)):
-        return False
-
-    album = '%s - %s' % (track['albumartist'] if 'albumartist' in track else track['artist'], track['album'])
-    return album in albums
-
-
-def match_title(titles, track):
-    if not 'title' in track:
-        return False
-
-    return track['title'] in titles 
 
 
 def check_duration(min_duration, max_duration, meta):
