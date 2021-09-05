@@ -236,9 +236,11 @@ def dump_api():
                 continue
             if not match_artist and track['ignore']:
                 continue
-            if ess_enabled and not filters.check_attribs(meta, track, cfg['essentia']['bpm'], cfg['essentia']['attr']):
-                #_LOGGER.debug('DISCARD: %s' % str(track))
-                continue
+            if ess_enabled:
+                filtered_due_to = filters.check_attribs(meta, track, cfg['essentia']['bpm'], cfg['essentia']['attr'])
+                if filtered_due_to is not None:
+                    #_LOGGER.debug('DISCARD(%s): %s' % (filtered_due_to, str(track)))
+                    continue
             match_all_genres = ('ignoregenre' in cfg) and (('*'==cfg['ignoregenre'][0]) or (meta is not None and meta['artist'] in cfg['ignoregenre']))
             sim = simtrack['sim'] + genre_adjust(meta, track, acceptable_genres, all_genres, match_all_genres)
             tracks.append({'path':mta.paths[simtrack['id']], 'sim':sim})
@@ -461,10 +463,12 @@ def similar_api():
                     _LOGGER.debug('DISCARD(xmas) ID:%d Path:%s Similarity:%f Meta:%s' % (simtrack['id'], mta.paths[simtrack['id']], simtrack['sim'], json.dumps(meta, cls=SetEncoder)))
                     skip_track_ids.add(simtrack['id'])
                 else:
-                    if ess_enabled and not filters.check_attribs(track_id_seed_metadata[track_id], meta, cfg['essentia']['bpm'], cfg['essentia']['attr']):
-                        _LOGGER.debug('FILTERED(attribs) ID:%d Path:%s Similarity:%f Meta:%s' % (simtrack['id'], mta.paths[simtrack['id']], simtrack['sim'], json.dumps(meta, cls=SetEncoder)))
-                        set_filtered(simtrack, mta, filtered_tracks, 'attribs')
-                        continue
+                    if ess_enabled:
+                        filtered_due_to = filters.check_attribs(track_id_seed_metadata[track_id], meta, cfg['essentia']['bpm'], cfg['essentia']['attr'])
+                        if filtered_due_to is not None:
+                            _LOGGER.debug('FILTERED(attribs(%s)) ID:%d Path:%s Similarity:%f Meta:%s' % (filtered_due_to, simtrack['id'], mta.paths[simtrack['id']], simtrack['sim'], json.dumps(meta, cls=SetEncoder)))
+                            set_filtered(simtrack, mta, filtered_tracks, 'attribs')
+                            continue
 
                     if no_repeat_artist>0:
                         if meta['artist'] in filter_out['artists']:

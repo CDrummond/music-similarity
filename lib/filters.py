@@ -6,9 +6,7 @@
 #
 
 from . import tracks_db
-import logging
 
-_LOGGER = logging.getLogger(__name__)
 
 VARIOUS_ARTISTS = ['various', 'various artists'] # Artist names are normalised, and coverted to lower case
 CHRISTMAS_GENRES = ['Christmas', 'Xmas']
@@ -60,11 +58,10 @@ def check_duration(min_duration, max_duration, meta):
 def check_attribs(seed, candidate, max_bpm_diff, max_attr_diff):
     if 'bpm' not in seed or 'bpm' not in candidate:
         # No essentia attributes, so accept track
-        return True
+        return None
 
     if abs(seed['bpm']-candidate['bpm'])>max_bpm_diff:
-        _LOGGER.debug('DISCARD %s %s due to BPM [%d / %d]' % (candidate['artist'], candidate['title'], seed['bpm'], candidate['bpm']))
-        return False
+        return 'bpm - %s/%s' % (seed['bpm'], candidate['bpm'])
 
     ess_attr_high = 1.0 - ESS_ATTR_LIM
     ess_attr_low = ESS_ATTR_LIM
@@ -79,17 +76,14 @@ def check_attribs(seed, candidate, max_bpm_diff, max_attr_diff):
         seed['ess']=[]
         for a in attr:
             seed['ess'].append(a['key'])
-        _LOGGER.debug('SEED attribs: %s' % str(seed['ess']))
  
     for ess in seed['ess']:
         # Filter out tracks where attribute is in opposite end of spectrum
         if (seed[ess]>=ess_attr_high and candidate[ess]<(ess_attr_high-max_attr_diff)) or (seed[ess]<=ess_attr_low and candidate[ess]>(ess_attr_low+max_attr_diff)):
         #if abs(seed[ess]-candidate[ess])>max_attr_diff:
-            _LOGGER.debug('DISCARD %s %s due to %s [%f - %f]' % (candidate['artist'], candidate['title'], ess, seed[ess], candidate[ess]))
-            return False
+            return '%s - %f/%f' % (ess, seed[ess], candidate[ess])
     #for ess in tracks_db.ESSENTIA_ATTRIBS:
     #    if 'bpm'!=ess and seed[ess]>=0.000001 and candidate[ess]>=0.000001 and seed[ess]<1.0 and candidate[ess]<1.0 and abs(seed[ess]-candidate[ess])>max_attr_diff:
-    #        _LOGGER.debug('DISCARD %s %s due to %s [%f - %f]' % (candidate['artist'], candidate['title'], ess, seed[ess], candidate[ess]))
-    #        return False
-    return True
+    #        return '%s - %f/%f' % (ess, seed[ess], candidate[ess])
+    return None
 
