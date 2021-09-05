@@ -19,6 +19,7 @@ def test_jukebox(app_config, jukebox_path, repeat):
     mus = musly.Musly(app_config['musly']['lib'])
     meta_db = tracks_db.TracksDb(app_config)
     (paths, tracks) = mus.get_alltracks_db(meta_db.get_cursor())
+    meta_db.close()
 
     while True:
         ids = None
@@ -28,11 +29,12 @@ def test_jukebox(app_config, jukebox_path, repeat):
             ids = mus.get_jukebox_from_file(jukebox_path)
 
         if ids==None or len(ids)!=len(tracks):
+            meta_db = tracks_db.TracksDb(app_config)
             _LOGGER.info('Adding tracks from DB to musly')
             ids = mus.add_tracks(tracks, app_config['musly']['styletracks'], app_config['musly']['styletracksmethod'], meta_db)
             mus.write_jukebox(jukebox_path)
+            meta_db.close()
 
-        meta_db.close()
         mta=musly.MuslyTracksAdded(paths, tracks, ids)
 
         simtracks = mus.get_similars( mta.mtracks, mta.mtrackids, 0 )
@@ -53,7 +55,7 @@ def test_jukebox(app_config, jukebox_path, repeat):
                     _LOGGER.error('Musly returned an invalid similarity? Suggest you remove %s (and perhaps alter styletracks in config?)' % jukebox_path)
                     sys.exit(-1)
             elif len(sims)<=1:
-                if not reopeat:
+                if not repeat:
                     _LOGGER.error('All similarities the same? Suggest you remove %s (and perhaps alter styletracks in config?)' % jukebox_path)
                     sys.exit(-1)
             else:
