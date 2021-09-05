@@ -241,7 +241,7 @@ def dump_api():
             if ess_enabled:
                 filtered_due_to = filters.check_attribs(meta, track, cfg['essentia']['bpm'], cfg['essentia']['attr'])
                 if filtered_due_to is not None:
-                    #_LOGGER.debug('DISCARD(%s): %s' % (filtered_due_to, str(track)))
+                    _LOGGER.debug('DISCARD(%s): %s' % (filtered_due_to, str(track)))
                     continue
             match_all_genres = ('ignoregenre' in cfg) and (('*'==cfg['ignoregenre'][0]) or (meta is not None and meta['artist'] in cfg['ignoregenre']))
             sim = simtrack['sim'] + genre_adjust(meta, track, acceptable_genres, all_genres, match_all_genres)
