@@ -236,6 +236,8 @@ def dump_api():
                 continue
             if not match_artist and track['ignore']:
                 continue
+            if simtrack['id']!=track_id and 'title' in track and 'title' in meta and track['title'] == meta['title']:
+                continue
             if ess_enabled:
                 filtered_due_to = filters.check_attribs(meta, track, cfg['essentia']['bpm'], cfg['essentia']['attr'])
                 if filtered_due_to is not None:
