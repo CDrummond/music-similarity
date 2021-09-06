@@ -204,6 +204,7 @@ def dump_api():
         resp=[]
         prev_id=-1
 
+        ignore_genre_for_all = ('ignoregenre' in cfg) and ('*' in cfg['ignoregenre'])
         tracks=[]
         for simtrack in simtracks:
             if simtrack['id']==prev_id:
@@ -224,11 +225,14 @@ def dump_api():
                 if filtered_due_to is not None:
                     _LOGGER.debug('DISCARD(%s): %s' % (filtered_due_to, str(track)))
                     continue
-            match_all_genres = ('ignoregenre' in cfg) and (('*'==cfg['ignoregenre'][0]) or (meta is not None and meta['artist'] in cfg['ignoregenre']))
+            match_all_genres = ignore_genre_for_all or ('ignoregenre' in cfg and meta is not None and meta['artist'] in cfg['ignoregenre'])
             sim = simtrack['sim'] + genre_adjust(meta, track, acceptable_genres, all_genres, match_all_genres)
             tracks.append({'path':mta.paths[simtrack['id']], 'sim':sim})
+            if match_all_genres and len(tracks)==count:
+                break
 
-        tracks = sorted(tracks, key=lambda k: k['sim'])
+        if not match_all_genres:
+            tracks = sorted(tracks, key=lambda k: k['sim'])
         for track in tracks:
             _LOGGER.debug("%s %s" % (track['path'], track['sim']))
             if txt:
@@ -317,6 +321,7 @@ def similar_api():
     if min_duration>0 or max_duration>0:
         _LOGGER.debug('Duration:%d .. %d' % (min_duration, max_duration))
 
+    ignore_genre_for_all = ('ignoregenre' in cfg) and ('*' in cfg['ignoregenre'])
     have_prev_tracks = 'previous' in params
     # Musly IDs of seed tracks
     track_ids = []
@@ -411,7 +416,7 @@ def similar_api():
 
     matched_artists={}
     for track_id in track_ids:
-        match_all_genres = ('ignoregenre' in cfg) and (('*'==cfg['ignoregenre'][0]) or ((track_id in track_id_seed_metadata) and (track_id_seed_metadata[track_id]['artist'] in cfg['ignoregenre'])))
+        match_all_genres = ignore_genre_for_all or ('ignoregenre' in cfg and track_id in track_id_seed_metadata and track_id_seed_metadata[track_id]['artist'] in cfg['ignoregenre'])
 
         # Query musly for similar tracks
         _LOGGER.debug('Query musly for %d similar tracks to index: %d' % (similarity_count, track_id))

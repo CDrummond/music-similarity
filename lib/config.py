@@ -93,9 +93,9 @@ def read_config(path, analyse):
             ignore=[]
             for item in config['ignoregenre']:
                 ignore.append(tracks_db.normalize_artist(item))
-            config['ignoregenre']=ignore
+            config['ignoregenre']=set(ignore)
         else:
-            config['ignoregenre']=[config['ignoregenre']]
+            config['ignoregenre']=set([config['ignoregenre']])
 
     if 'normalize' in config:
         tracks_db.set_normalize_options(config['normalize'])
