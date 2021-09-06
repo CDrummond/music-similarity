@@ -194,6 +194,7 @@ the following format:
  "musly":{
   "lib":"lib/x86-64/fedora/libmusly.so",
   "styletracks":1000,
+  "styletracksmethod":"genres",
   "extractstart":-48,
   "extractlen":30
  },
