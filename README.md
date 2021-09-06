@@ -243,24 +243,25 @@ queried for how many track each genre has and tracks are chosen for each of
 these genres based upon the percentage of tracks in a genre. If set to `albums`
 then at least one track from each album is used. If set to anything else then
 random tracks are chosen.
-* `musly.extractlen` The maximum length in seconds of the file to decode. If zero
-or greater than the file length, then the whole file will be decoded. Note,
+* `musly.extractlen` The maximum length in seconds of the file to decode. If
+zero or greater than the file length, then the whole file will be decoded. Note,
 however, that only a maximum of 5 minutes is used for analysis.
-* `musly.extractstart` The starting position in seconds of the excerpt to decode. If
-zero, decoding starts at the beginning. If negative, the excerpt is centred in
-the file, but starts at -`extractstart` the latest. If positive and
+* `musly.extractstart` The starting position in seconds of the excerpt to
+decode. If zero, decoding starts at the beginning. If negative, the excerpt is
+centred in the file, but starts at -`extractstart` the latest. If positive and
 `extractstart`+`extractlen` exceeds the file length, then the excerpt is taken
 from the end of the file.
-* `essentia.enabled` should be set to true if Essentia is to be used for filtering
-* `essentia.extractor` should contain the path to the Essentia extractor - path is
-relative to `music-similarity.py`
+* `essentia.enabled` should be set to true if Essentia is to be used for
+filtering.
+* `essentia.extractor` should contain the path to the Essentia extractor - path
+is relative to `music-similarity.py`
 * `essentia.bpm` Specify max BPM difference when filtering tracks.
 * `essentia.attr` Specify max difference in Essentia attributes. For each seed
 attribute that is in the range 0.8 .. 1.0 a candidate must be in the range
 0.8-`essentia.attr` .. 1.0, and for each attribute in the range 0.0 .. 0.2 a
 candidate must be in the range 0.0 .. 0.2+`essentia.attr`
 * `paths.db` should be the path where the SQLite and jukebox files created by
-this app can be written.
+this app can be written to or can be read from.
 * `paths.local` should be the path where this script can access your music
 files. This can be different to `path.lms` if you are running analysis on a
 different machine to where you would run the script as the API server. Thi
@@ -281,16 +282,25 @@ required to split tracks.
 * `genres` This is as described above.
 * `ignoregenre` List of artists where genre filtering (excluding christmas)
 should be ignored. To apply to all artists, use '*' - e.g. `"ignoregenre":"*"`
+When calculating a track's similarity, the similarity score is adjusted based
+upon whether a track's genre matches another, is in the same group, or does not
+match. If an artist is listed in `ignoregenre` then it is implied that it
+matches all genres. Therefore, setting `"ignoregenre":"*"` effectively disables
+this adjusting of similarity score based upon genre.
 * `normalize.artist` List of strings to split artist names, e.g. "A ft. B"
-becomes "A" (periods are automatically removed).
-* `normalize.album` List of strings to remove from album names.
-* `normalize.title` List of strings to remove from titles.
+becomes "A" (periods are automatically removed). This is then used to aid
+filtering of tracks - i.e. to prevent artists from being repeated in a mix.
+* `normalize.album` List of strings to remove from album names. This is then
+used to aid filtering of tracks - i.e. to prevent albums from being repeated in
+a mix.
+* `normalize.title` List of strings to remove from titles. This is then
+used to aid filtering of tracks - i.e. to prevent duplicate tracks in the mix.
 * `port` This is the port number the API is accessible on.
 * `host` IP addres on which the API will listen on. Use `0.0.0.0` to listen on
 all interfaces on your network.
 * `threads` Number of threads to use during analysis phase. This controls how
 many calls to `ffmpeg` are made concurrently, and how many concurrent tracks
-Musly is asked to analyse. Defaults to CPU count, if not set.
+Musly and Essentia are asked to analyse. Defaults to CPU count, if not set.
 
 
 ## Ignoring artists, albums, etc.
