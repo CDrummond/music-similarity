@@ -419,7 +419,7 @@ def similar_api():
         match_all_genres = ignore_genre_for_all or ('ignoregenre' in cfg and track_id in track_id_seed_metadata and track_id_seed_metadata[track_id]['artist'] in cfg['ignoregenre'])
 
         # Query musly for similar tracks
-        _LOGGER.debug('Query musly for %d similar tracks to index: %d' % (similarity_count, track_id))
+        _LOGGER.debug('Query musly for %d similar tracks to index: %d' % (num_sim, track_id))
         simtracks = mus.get_similars( mta.mtracks, mta.mtrackids, track_id, num_sim )
         accepted_tracks = 0
         for simtrack in simtracks:
@@ -470,7 +470,6 @@ def similar_api():
                                 akey = get_album_key(meta)
                                 if akey is None or akey not in filter_out['albums']:
                                     matched_artists[meta['artist']]['tracks'].append({'path':mta.paths[simtrack['id']], 'similarity':simtrack['sim']})
-                                break
                             continue
 
                     if no_repeat_album>0:
