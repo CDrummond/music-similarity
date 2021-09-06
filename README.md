@@ -201,8 +201,7 @@ the following format:
   "enabled":true,
   "extractor":"essentia/bin/x86-64/essentia_streaming_extractor_music",
   "bpm":30,
-  "attr":0.2,
-  "weight":0.0
+  "attr":0.2
  },
  "paths":{
   "db":"/home/user/.local/share/music-similarity/",
@@ -259,12 +258,6 @@ relative to `music-similarity.py`
 attribute that is in the range 0.8 .. 1.0 a candidate must be in the range
 0.8-`essentia.attr` .. 1.0, and for each attribute in the range 0.0 .. 0.2 a
 candidate must be in the range 0.0 .. 0.2+`essentia.attr`
-* `essentia.weight` By default Musly is used for similarity score, and Essentia
-is used to filter tracks. However, if you set `essentia.weight` to higher than
-0.0 (and less than or equal to 1.0) then Essentia can also be used to score
-similarity based upon the Essentia attributes. This value then configures the
-percentage give to each metric. e.g. an `essentia.weight` of 0.4 will cause the
-similarity score to be base 60% Musly 40% Essentia.
 * `paths.db` should be the path where the SQLite and jukebox files created by
 this app can be written.
 * `paths.local` should be the path where this script can access your music

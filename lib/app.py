@@ -168,7 +168,6 @@ def dump_api():
     root = cfg['paths']['lms']
 
     ess_enabled = cfg['essentia']['enabled']
-    ess_weight = cfg['essentia']['weight'] if ess_enabled else 0.0
 
     track = decode(params['track'][0], root)
     _LOGGER.debug('S TRACK %s -> %s' % (params['track'][0], track))
@@ -298,7 +297,6 @@ def similar_api():
     root = cfg['paths']['lms']
 
     ess_enabled = cfg['essentia']['enabled']
-    ess_weight = cfg['essentia']['weight'] if ess_enabled else 0.0
 
     # Similar tracks
     similar_tracks=[]
