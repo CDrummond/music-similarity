@@ -69,11 +69,6 @@ def read_config(path, analyse):
         if not 'extractor' in config['essentia']:
             _LOGGER.error("'essentia.extractor' not in config file")
             exit(-1)
-        if not 'weight' in config['essentia']:
-            config['essentia']['weight'] = 0.0
-        if config['essentia']['weight']<0.0 or config['essentia']['weight']>1.0:
-            _LOGGER.error("'essentia.weight' is invalid. Must be in the range 0.0 .. 1.0")
-            exit(-1)
 
     if not 'lib' in config['musly']:
         _LOGGER.error("'musly.lib' not in config file" % key)

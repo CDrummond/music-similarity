@@ -20,7 +20,7 @@ DEFAULT_NUM_PREV_TRACKS_FILTER_ARTIST = 15   # Try to ensure artist is not in pr
 DEFAULT_NUM_PREV_TRACKS_FILTER_ALBUM  = 25   # Try to ensure album is not in previous N tracks
 NUM_SIMILAR_TRACKS_FACTOR             = 25   # Request count*NUM_SIMILAR_TRACKS_FACTOR from musly
 SHUFFLE_FACTOR                        = 1.75 # How many (shuffle_factor*count) tracks to shuffle?
-
+MIN_MUSLY_NUM_SIM                     = 5000 # Min number of tracs to query musly for
 
 class SimilarityApp(Flask):
     def init(self, args, app_config, jukebox_path):
@@ -34,9 +34,6 @@ class SimilarityApp(Flask):
         tdb = tracks_db.TracksDb(app_config)
         (paths, tracks) = self.mus.get_alltracks_db(tdb.get_cursor())
         random.seed()
-        if app_config['essentia']['enabled'] and app_config['essentia']['weight']>0.0:
-            from . import essentia_sim
-            essentia_sim.init(tdb)
         ids = None
 
         # If we can, load musly from jukebox...
@@ -104,25 +101,6 @@ def genre_adjust(seed, entry, acceptable_genres, all_genres, match_all_genres):
         return 0.15
     # Genre in group
     return 0.075
-
-
-def get_similarity(track_id, mus, mta, tdb, ess_weight):
-    if ess_weight>0.0:
-        _LOGGER.debug('Call musly')
-    mt = mus.get_similars( mta.mtracks, mta.mtrackids, track_id )
-    if ess_weight>0.0:
-        from . import essentia_sim
-        _LOGGER.debug('Call essentia')
-        et = essentia_sim.get_similars( track_id )
-        num_et = len(et)
-        tracks = []
-        for track in mt:
-            i = track['id']
-            esval = et[i] if i<num_et else track['sim']
-            tracks.append({'id':i, 'sim':(track['sim']*(1.0-ess_weight)) + (esval*ess_weight)})
-    else:
-        tracks = mt
-    return sorted(tracks, key=lambda k: k['sim'])
 
 
 def append_list(orig, to_add, min_count):
@@ -217,11 +195,14 @@ def dump_api():
                         if genre in group:
                             acceptable_genres.update(group)
 
-        simtracks = get_similarity(track_id, mus, mta, tdb, ess_weight)
+        count = int(get_value(params, 'count', 1000, isPost))
+        num_sim = count * 50
+        if num_sim<MIN_MUSLY_NUM_SIM:
+            num_sim = MIN_MUSLY_NUM_SIM
+        simtracks = mus.get_similars( mta.mtracks, mta.mtrackids, track_id, num_sim )
 
         resp=[]
         prev_id=-1
-        count = int(get_value(params, 'count', 1000, isPost))
 
         tracks=[]
         for simtrack in simtracks:
@@ -246,8 +227,6 @@ def dump_api():
             match_all_genres = ('ignoregenre' in cfg) and (('*'==cfg['ignoregenre'][0]) or (meta is not None and meta['artist'] in cfg['ignoregenre']))
             sim = simtrack['sim'] + genre_adjust(meta, track, acceptable_genres, all_genres, match_all_genres)
             tracks.append({'path':mta.paths[simtrack['id']], 'sim':sim})
-            if len(tracks)>=count*10:
-                break
 
         tracks = sorted(tracks, key=lambda k: k['sim'])
         for track in tracks:
@@ -426,13 +405,17 @@ def similar_api():
 
     similarity_count = int(count * SHUFFLE_FACTOR) if shuffle and (count<20 or len(track_ids)<10) else count
 
+    num_sim = count * len(track_ids) * 50
+    if num_sim<MIN_MUSLY_NUM_SIM:
+        num_sim = MIN_MUSLY_NUM_SIM
+
     matched_artists={}
     for track_id in track_ids:
         match_all_genres = ('ignoregenre' in cfg) and (('*'==cfg['ignoregenre'][0]) or ((track_id in track_id_seed_metadata) and (track_id_seed_metadata[track_id]['artist'] in cfg['ignoregenre'])))
 
         # Query musly for similar tracks
         _LOGGER.debug('Query musly for %d similar tracks to index: %d' % (similarity_count, track_id))
-        simtracks = get_similarity(track_id, mus, mta, tdb, ess_weight)
+        simtracks = mus.get_similars( mta.mtracks, mta.mtrackids, track_id, num_sim )
         accepted_tracks = 0
         for simtrack in simtracks:
             if math.isnan(simtrack['sim']):

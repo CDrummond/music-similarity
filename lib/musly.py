@@ -272,24 +272,47 @@ class Musly(object):
         return mtrackids
 
 
-    def get_similars(self, mtracks, mtrackids, seedtrackid):
+    def get_similars(self, mtracks, mtrackids, seedtrackid, rnumtracks):
         numtracks = len(mtracks)
+        if rnumtracks>numtracks:
+            rnumtracks = numtracks
         mtrackids_type = ctypes.c_int * numtracks
         mtracks_type = (ctypes.POINTER(self.mtrack_type)) * numtracks
         msims_type = ctypes.c_float * numtracks
         msims = msims_type()
+        rsims_type = ctypes.c_float * rnumtracks
+        rsims = rsims_type()
+        rtrackids_type = ctypes.c_int * rnumtracks
+        rtrackids = rtrackids_type()
         # int musly_jukebox_similarity (musly_jukebox *  jukebox, musly_track *  seed_track, musly_trackid  seed_trackid, musly_track **  tracks, musly_trackid *  trackids, int  num_tracks, float *  similarities 
         self.mus.musly_jukebox_similarity.argtypes = [ctypes.POINTER(MuslyJukebox), ctypes.POINTER(ctypes.c_float), ctypes.c_int, ctypes.POINTER(mtracks_type), ctypes.POINTER(mtrackids_type), ctypes.c_int, ctypes.POINTER(msims_type) ]
+        # musly_findmin(const float* values, const musly_trackid* ids, int count, float* min_values, musly_trackid* min_ids, int min_count, int ordered)
+        self.mus.musly_findmin.argtypes = [ctypes.POINTER(msims_type), ctypes.POINTER(mtrackids_type), ctypes.c_int, ctypes.POINTER(rsims_type), ctypes.POINTER(rtrackids_type), ctypes.c_int, ctypes.c_int ]
 
         seedtrack = mtracks[seedtrackid].contents
+
+#        for t in mtracks:
+#            _LOGGER.debug("get_similars: mtrack = {}".format(repr(t.contents)))
+
+#        _LOGGER.debug("Get similar tracks, seedtrack = {} numres={}".format(repr(seedtrack), rnumtracks))
 
         if (self.mus.musly_jukebox_similarity(self.mj, seedtrack, ctypes.c_int(seedtrackid), ctypes.pointer(mtracks), ctypes.pointer(mtrackids), ctypes.c_int(numtracks), ctypes.pointer(msims))) == -1:
             _LOGGER.error("musly_jukebox_similarity")
             return None
 
+#        for i in mtrackids:
+#            _LOGGER.debug("get_similars: mtrack id: {:3} sim: {:8.6f}".format(i, msims[i]))
+        if (self.mus.musly_findmin(ctypes.pointer(msims), ctypes.pointer(mtrackids), ctypes.c_int(numtracks), ctypes.pointer(rsims), ctypes.pointer(rtrackids), ctypes.c_int(rnumtracks), ctypes.c_int(1))) == -1:
+            _LOGGER.error("musly_findmin")
+            return None
+
         rtracks=[]
-        for i in mtrackids:
+        prev_id = -1
+        for i in range(rnumtracks):
+            if rtrackids[i] == prev_id:
+                break
+            prev_id = rtrackids[i]
             #_LOGGER.debug("get_similars: mtrack id: {:3} sim: {:8.6f}".format(i, msims[i]))
-            rtracks.append({'id':i, 'sim':msims[i]})
+            rtracks.append({'id':rtrackids[i], 'sim':rsims[i]})
         return rtracks
 
