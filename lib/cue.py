@@ -78,6 +78,30 @@ def convert_to_cue_url(path):
 def convert_from_cue_path(path):
     hsh = path.find('#')
     if hsh>0:
+        # Try to ensure this is really a CUE track, not a filename with #!!!
+        # e.g. we should have Name.ext#start-end
+
+        pth = path[:hsh]
+        pos = path[hsh+1:]
+        # Check we have 2 times
+        times = pos.split('-')
+        if len(times) != 2:
+            return path
+        # Check time parts are floats...
+        try:
+            start = float(times[0])
+            end = float(times[1])
+        except:
+            return path
+
+        # Check we have file extension before #
+        dot = pth.find('.')
+        if dot<0:
+            return path
+        ext = pth[dot+1:].lower()
+        if ext not in ['m4a', 'mp3', 'ogg', 'flac', 'opus']:
+            return path
+
         return path.replace('#', CUE_TRACK)+'.mp3'
     return path
 
