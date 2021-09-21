@@ -37,7 +37,7 @@ def test_jukebox(app_config, jukebox_path, repeat):
 
         mta=musly.MuslyTracksAdded(paths, tracks, ids)
 
-        simtracks = mus.get_similars( mta.mtracks, mta.mtrackids, 0 )
+        simtracks = mus.get_similars( mta.mtracks, mta.mtrackids, 0, 100 )
         if len(simtracks)<2:
             _LOGGER.error('Too few tracks returned from similarity query???')
         else:
