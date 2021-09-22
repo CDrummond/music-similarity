@@ -150,15 +150,17 @@ def get_genre_cfg(config, params):
 
     if 'genregroups' in params:
         genre_cfg['all_genres']=set()
+        genre_cfg['genres']=[]
         for i in range(len(params['genregroups'])):
-            config['genres'][i]=set(params['genregroups'][i])
-            config['all_genres'].update(params['genregroups'][i])
+            genre_cfg['genres'].append(set(params['genregroups'][i]))
+            genre_cfg['all_genres'].update(params['genregroups'][i])
     else:
         if 'genres' in config:
             genre_cfg['genres']=config['genres']
         if 'all_genres' in config:
             genre_cfg['all_genres']=config['all_genres']
 
+    _LOGGER.debug('Genre cfg: %s' % json.dumps(genre_cfg, cls=SetEncoder))
     return genre_cfg
 
 
@@ -305,7 +307,6 @@ def similar_api():
     no_repeat_artist = int(get_value(params, 'norepart', 0, isPost))
     no_repeat_album = int(get_value(params, 'norepalb', 0, isPost))
     exclude_christmas = int(get_value(params, 'filterxmas', '0', isPost))==1 and datetime.now().month!=12
-    genre_cfg = get_genre_cfg(config, params)
 
     if no_repeat_artist<0 or no_repeat_artist>200:
         no_repeat_artist = DEFAULT_NUM_PREV_TRACKS_FILTER_ARTIST
@@ -316,6 +317,7 @@ def similar_api():
     mus = similarity_app.get_musly()
     cfg = similarity_app.get_config()
     tdb = tracks_db.TracksDb(cfg)
+    genre_cfg = get_genre_cfg(cfg, params)
 
     # Strip LMS root path from track path
     root = cfg['paths']['lms']
