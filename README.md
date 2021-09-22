@@ -169,6 +169,9 @@ listed here then any track returned by Musly, that does not contain any genre
 listed here, will be considered acceptable. Therefore, if seed is `Pop` then
 a `Hard Rock` track would not be considered.
 
+*NOTE* Genre groups can now be configured directly in the [LMS Music Similarity Plugin](https://github.com/CDrummond/lms-musicsimilarity),
+therfore there is no need to add these to `config.json`
+
 ### HTTP Post
 
 Alternatively, the API may be accessed via a HTTP POST call. To do this, the
@@ -302,6 +305,9 @@ all interfaces on your network.
 many calls to `ffmpeg` are made concurrently, and how many concurrent tracks
 Musly and Essentia are asked to analyse. Defaults to CPU count, if not set.
 
+*NOTE* `genres` and `ignoregenre` can now be configured directly in the
+[LMS Music Similarity Plugin](https://github.com/CDrummond/lms-musicsimilarity),
+therfore there is no need to add these to `config.json`
 
 ## Ignoring artists, albums, etc.
 
