@@ -140,6 +140,28 @@ def get_album_key(track):
     return '%s::%s' % (aa, track['album'])
 
 
+def get_genre_cfg(config, params):
+    ''' Get genre settings from URL or config '''
+    genre_cfg={}
+    if 'ignoregenre' in params:
+        genre_cfg['ignoregenre'] = set(params['ignoregenre'])
+    elif 'ignoregenre' in config:
+        genre_cfg['ignoregenre'] = config['ignoregenre']
+
+    if 'genregroups' in params:
+        genre_cfg['all_genres']=set()
+        for i in range(len(params['genregroups'])):
+            config['genres'][i]=set(params['genregroups'][i])
+            config['all_genres'].update(params['genregroups'][i])
+    else:
+        if 'genres' in config:
+            genre_cfg['genres']=config['genres']
+        if 'all_genres' in config:
+            genre_cfg['all_genres']=config['all_genres']
+
+    return genre_cfg
+
+
 @similarity_app.route('/api/dump', methods=['GET', 'POST'])
 def dump_api():
     isPost = False
@@ -163,6 +185,7 @@ def dump_api():
     mus = similarity_app.get_musly()
     cfg = similarity_app.get_config()
     tdb = tracks_db.TracksDb(cfg)
+    genre_cfg = get_genre_cfg(config, params)
 
     # Strip LMS root path from track path
     root = cfg['paths']['lms']
@@ -184,13 +207,13 @@ def dump_api():
         match_artist = int(get_value(params, 'filterartist', '0', isPost))==1
         meta = tdb.get_metadata(track_id+1) # IDs (rowid) in SQLite are 1.. musly is 0..
 
-        all_genres = cfg['all_genres'] if 'all_genres' in cfg else None
+        all_genres = genre_cfg['all_genres'] if 'all_genres' in genre_cfg else None
         acceptable_genres=set()
         if 'genres' in meta:
             acceptable_genres.update(meta['genres'])
-            if 'genres' in cfg:
+            if 'genres' in genre_cfg:
                 for genre in meta['genres']:
-                    for group in cfg['genres']:
+                    for group in genre_cfg['genres']:
                         if genre in group:
                             acceptable_genres.update(group)
 
@@ -203,7 +226,7 @@ def dump_api():
         resp=[]
         prev_id=-1
 
-        ignore_genre_for_all = ('ignoregenre' in cfg) and ('*' in cfg['ignoregenre'])
+        ignore_genre_for_all = ('ignoregenre' in genre_cfg) and ('*' in genre_cfg['ignoregenre'])
         tracks=[]
         for simtrack in simtracks:
             if simtrack['id']==prev_id:
@@ -224,7 +247,7 @@ def dump_api():
                 if filtered_due_to is not None:
                     _LOGGER.debug('DISCARD(%s): %s' % (filtered_due_to, str(track)))
                     continue
-            match_all_genres = ignore_genre_for_all or ('ignoregenre' in cfg and meta is not None and meta['artist'] in cfg['ignoregenre'])
+            match_all_genres = ignore_genre_for_all or ('ignoregenre' in genre_cfg and meta is not None and meta['artist'] in genre_cfg['ignoregenre'])
             sim = simtrack['sim'] + genre_adjust(meta, track, acceptable_genres, all_genres, match_all_genres)
             tracks.append({'path':mta.paths[simtrack['id']], 'sim':sim})
             if match_all_genres and len(tracks)==count:
@@ -282,6 +305,7 @@ def similar_api():
     no_repeat_artist = int(get_value(params, 'norepart', 0, isPost))
     no_repeat_album = int(get_value(params, 'norepalb', 0, isPost))
     exclude_christmas = int(get_value(params, 'filterxmas', '0', isPost))==1 and datetime.now().month!=12
+    genre_cfg = get_genre_cfg(config, params)
 
     if no_repeat_artist<0 or no_repeat_artist>200:
         no_repeat_artist = DEFAULT_NUM_PREV_TRACKS_FILTER_ARTIST
@@ -314,12 +338,12 @@ def similar_api():
     track_id_seed_metadata={} # Map from seed track's ID to its metadata
     acceptable_genres=set()
     seed_genres=set()
-    all_genres = cfg['all_genres'] if 'all_genres' in cfg else None
+    all_genres = genre_cfg['all_genres'] if 'all_genres' in genre_cfg else None
 
     if min_duration>0 or max_duration>0:
         _LOGGER.debug('Duration:%d .. %d' % (min_duration, max_duration))
 
-    ignore_genre_for_all = ('ignoregenre' in cfg) and ('*' in cfg['ignoregenre'])
+    ignore_genre_for_all = ('ignoregenre' in genre_cfg) and ('*' in genre_cfg['ignoregenre'])
     have_prev_tracks = 'previous' in params
     # Musly IDs of seed tracks
     track_ids = []
@@ -345,9 +369,9 @@ def similar_api():
                 # Get genres for this seed track - this takes its genres and gets any matching genres from config
                 if 'genres' in meta:
                     acceptable_genres.update(meta['genres'])
-                    if 'genres' in cfg:
+                    if 'genres' in genre_cfg:
                         for genre in meta['genres']:
-                            for group in cfg['genres']:
+                            for group in genre_cfg['genres']:
                                 if genre in group:
                                     acceptable_genres.update(group)
                 if 'title' in meta:
@@ -393,9 +417,9 @@ def similar_api():
                         # Get genres for this track - this takes its genres and gets any matching genres from config
                         if 'genres' in meta:
                             acceptable_genres.update(meta['genres'])
-                            if 'genres' in cfg:
+                            if 'genres' in genre_cfg:
                                 for genre in meta['genres']:
-                                    for group in cfg['genres']:
+                                    for group in genre_cfg['genres']:
                                         if genre in group:
                                             acceptable_genres.update(group)
             else:
@@ -414,7 +438,7 @@ def similar_api():
 
     matched_artists={}
     for track_id in track_ids:
-        match_all_genres = ignore_genre_for_all or ('ignoregenre' in cfg and track_id in track_id_seed_metadata and track_id_seed_metadata[track_id]['artist'] in cfg['ignoregenre'])
+        match_all_genres = ignore_genre_for_all or ('ignoregenre' in genre_cfg and track_id in track_id_seed_metadata and track_id_seed_metadata[track_id]['artist'] in genre_cfg['ignoregenre'])
 
         # Query musly for similar tracks
         _LOGGER.debug('Query musly for %d similar tracks to index: %d' % (num_sim, track_id))
@@ -444,7 +468,7 @@ def similar_api():
                 elif (min_duration>0 or max_duration>0) and not filters.check_duration(min_duration, max_duration, meta):
                     _LOGGER.debug('DISCARD(duration) ID:%d Path:%s Similarity:%f Meta:%s' % (simtrack['id'], mta.paths[simtrack['id']], simtrack['sim'], json.dumps(meta, cls=SetEncoder)))
                     skip_track_ids.add(simtrack['id'])
-                elif match_genre and not match_all_genres and not filters.genre_matches(cfg, acceptable_genres, meta):
+                elif match_genre and not match_all_genres and not filters.genre_matches(genre_cfg, acceptable_genres, meta):
                     _LOGGER.debug('DISCARD(genre) ID:%d Path:%s Similarity:%f Meta:%s' % (simtrack['id'], mta.paths[simtrack['id']], simtrack['sim'], json.dumps(meta, cls=SetEncoder)))
                     skip_track_ids.add(simtrack['id'])
                 elif exclude_christmas and filters.is_christmas(meta):
