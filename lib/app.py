@@ -187,7 +187,7 @@ def dump_api():
     mus = similarity_app.get_musly()
     cfg = similarity_app.get_config()
     tdb = tracks_db.TracksDb(cfg)
-    genre_cfg = get_genre_cfg(config, params)
+    genre_cfg = get_genre_cfg(cfg, params)
 
     # Strip LMS root path from track path
     root = cfg['paths']['lms']
