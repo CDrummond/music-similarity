@@ -21,6 +21,9 @@ DEFAULT_NUM_PREV_TRACKS_FILTER_ALBUM  = 25   # Try to ensure album is not in pre
 NUM_SIMILAR_TRACKS_FACTOR             = 25   # Request count*NUM_SIMILAR_TRACKS_FACTOR from musly
 SHUFFLE_FACTOR                        = 2    # How many (shuffle_factor*count) tracks to shuffle?
 MIN_MUSLY_NUM_SIM                     = 5000 # Min number of tracs to query musly for
+DEFAULT_NO_GENRE_MATCH_ADJUSTMENT     = 15
+DEFAULT_GENRE_GROUP_MATCH_ADJUSTMENT  = 7
+
 
 class SimilarityApp(Flask):
     def init(self, args, app_config, jukebox_path):
@@ -86,21 +89,21 @@ def decode(url, root):
     return cue.convert_from_cue_path(u)
 
 
-def genre_adjust(seed, entry, acceptable_genres, all_genres, match_all_genres):
+def genre_adjust(seed, entry, acceptable_genres, all_genres, match_all_genres, no_genre_match_adj, genre_group_adj):
     if match_all_genres:
         return 0.0
     if 'genres' not in seed:
-        return 0.15
+        return no_genre_match_adj
     if 'genres' not in entry:
-        return 0.15
+        return no_genre_match_adj
     if len(seed['genres'].intersection(entry['genres']))>0:
         # Exact genre match
         return 0.0
     if (acceptable_genres is not None and len(entry['genres'].intersection(acceptable_genres))==0) or \
        (acceptable_genres is None and all_genres is not None and len(entry['genres'].intersection(all_genres))==0):
-        return 0.15
+        return no_genre_match_adj
     # Genre in group
-    return 0.075
+    return genre_group_adj
 
 
 def append_list(orig, to_add, min_count):
@@ -195,6 +198,9 @@ def dump_api():
     ess_enabled = cfg['essentia']['enabled']
 
     track = decode(params['track'][0], root)
+    no_repeat_artist = int(get_value(params, 'norepart', 0, isPost))
+    no_genre_match_adj = int(get_value(params, 'nogenrematchadj', DEFAULT_NO_GENRE_MATCH_ADJUSTMENT, isPost))/100.0
+    genre_group_adj = int(get_value(params, 'genregroupadj', DEFAULT_GENRE_GROUP_MATCH_ADJUSTMENT, isPost))/100.0
     _LOGGER.debug('S TRACK %s -> %s' % (params['track'][0], track))
 
     # Check that musly knows about this track
@@ -249,8 +255,9 @@ def dump_api():
                 if filtered_due_to is not None:
                     _LOGGER.debug('DISCARD(%s): %s' % (filtered_due_to, str(track)))
                     continue
+
             match_all_genres = ignore_genre_for_all or ('ignoregenre' in genre_cfg and meta is not None and meta['artist'] in genre_cfg['ignoregenre'])
-            sim = simtrack['sim'] + genre_adjust(meta, track, acceptable_genres, all_genres, match_all_genres)
+            sim = simtrack['sim'] + genre_adjust(meta, track, acceptable_genres, all_genres, match_all_genres, no_genre_match_adj, genre_group_adj)
             tracks.append({'path':mta.paths[simtrack['id']], 'sim':sim})
             if match_all_genres and len(tracks)==count:
                 break
@@ -307,6 +314,8 @@ def similar_api():
     no_repeat_artist = int(get_value(params, 'norepart', 0, isPost))
     no_repeat_album = int(get_value(params, 'norepalb', 0, isPost))
     exclude_christmas = int(get_value(params, 'filterxmas', '0', isPost))==1 and datetime.now().month!=12
+    no_genre_match_adj = int(get_value(params, 'nogenrematchadj', DEFAULT_NO_GENRE_MATCH_ADJUSTMENT, isPost))/100.0
+    genre_group_adj = int(get_value(params, 'genregroupadj', DEFAULT_GENRE_GROUP_MATCH_ADJUSTMENT, isPost))/100.0
 
     if no_repeat_artist<0 or no_repeat_artist>200:
         no_repeat_artist = DEFAULT_NUM_PREV_TRACKS_FILTER_ARTIST
@@ -458,7 +467,7 @@ def similar_api():
                 meta = similar_tracks[prev_idx] if prev_idx>=0 else tdb.get_metadata(simtrack['id']+1) # IDs (rowid) in SQLite are 1.. musly is 0..
                 if prev_idx>=0:
                     # Seen from previous seed, so set similarity to lowest value
-                    sim = simtrack['sim'] + genre_adjust(track_id_seed_metadata[track_id], meta, seed_genres, all_genres, match_all_genres)
+                    sim = simtrack['sim'] + genre_adjust(track_id_seed_metadata[track_id], meta, seed_genres, all_genres, match_all_genres, no_genre_match_adj, genre_group_adj)
                     if similar_tracks[prev_idx]['similarity']>sim:
                         _LOGGER.debug('SEEN %d before, prev:%f, current:%f' % (simtrack['id'], similar_tracks[prev_idx]['similarity'], sim))
                         similar_tracks[prev_idx]['similarity']=sim
@@ -510,7 +519,7 @@ def similar_api():
                         continue
 
                     key = '%s::%s::%s' % (meta['artist'], meta['album'], meta['albumartist'] if 'albumartist' in meta and meta['albumartist'] is not None else '')
-                    sim = simtrack['sim'] + genre_adjust(track_id_seed_metadata[track_id], meta, seed_genres, all_genres, match_all_genres)
+                    sim = simtrack['sim'] + genre_adjust(track_id_seed_metadata[track_id], meta, seed_genres, all_genres, match_all_genres, no_genre_match_adj, genre_group_adj)
 
                     _LOGGER.debug('USABLE ID:%d Path:%s Similarity:%f AdjSim:%s Meta:%s' % (simtrack['id'], mta.paths[simtrack['id']], simtrack['sim'], sim, json.dumps(meta, cls=SetEncoder)))
                     similar_tracks.append({'path':mta.paths[simtrack['id']], 'similarity':sim})
