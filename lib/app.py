@@ -143,12 +143,12 @@ def get_album_key(track):
 def get_genre_cfg(config, params):
     ''' Get genre settings from URL or config '''
     genre_cfg={}
-    if 'ignoregenre' in params:
+    if 'ignoregenre' in params and params['ignoregenre'] is not None:
         genre_cfg['ignoregenre'] = set(params['ignoregenre'])
     elif 'ignoregenre' in config:
         genre_cfg['ignoregenre'] = config['ignoregenre']
 
-    if 'genregroups' in params:
+    if 'genregroups' in params and params['genregroups'] is not None:
         genre_cfg['all_genres']=set()
         genre_cfg['genres']=[]
         for i in range(len(params['genregroups'])):
