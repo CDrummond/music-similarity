@@ -139,16 +139,17 @@ class TracksDb(object):
 
 
     def add(self, path, musly, essentia):
-        if essentia is None:
-            if self.file_already_analysed(path):
+        if essentia is not None:
+            if self.file_entry_exists(path):
+                self.cursor.execute('UPDATE tracks SET danceable=?, aggressive=?, electronic=?, acoustic=?, happy=?, party=?, relaxed=?, sad=?, dark=?, tonal=?, voice=?, bpm=?)  WHERE file=?', (essentia['danceable'], essentia['aggressive'], essentia['electronic'], essentia['acoustic'], essentia['happy'], essentia['party'], essentia['relaxed'], essentia['sad'], essentia['dark'], essentia['tonal'], essentia['voice'], essentia['bpm'], path))
+            else:
+                self.cursor.execute('INSERT INTO tracks (file, danceable, aggressive, electronic, acoustic, happy, party, relaxed, sad, dark, tonal, voice, bpm) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', (path, essentia['danceable'], essentia['aggressive'], essentia['electronic'], essentia['acoustic'], essentia['happy'], essentia['party'], essentia['relaxed'], essentia['sad'], essentia['dark'], essentia['tonal'], essentia['voice'], essentia['bpm']))
+
+        if musly is not None:
+            if self.file_entry_exists(path):
                 self.cursor.execute('UPDATE tracks SET vals=? WHERE file=?', (musly, path))
             else:
                 self.cursor.execute('INSERT INTO tracks (file, vals) VALUES (?, ?)', (path, musly))
-        else:
-            if self.file_already_analysed(path):
-                self.cursor.execute('UPDATE tracks SET danceable=?, aggressive=?, electronic=?, acoustic=?, happy=?, party=?, relaxed=?, sad=?, dark=?, tonal=?, voice=?, bpm=?, vals=?)  WHERE file=?', (essentia['danceable'], essentia['aggressive'], essentia['electronic'], essentia['acoustic'], essentia['happy'], essentia['party'], essentia['relaxed'], essentia['sad'], essentia['dark'], essentia['tonal'], essentia['voice'], essentia['bpm'], musly, path))
-            else:
-                self.cursor.execute('INSERT INTO tracks (file, danceable, aggressive, electronic, acoustic, happy, party, relaxed, sad, dark, tonal, voice, bpm, vals) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', (path, essentia['danceable'], essentia['aggressive'], essentia['electronic'], essentia['acoustic'], essentia['happy'], essentia['party'], essentia['relaxed'], essentia['sad'], essentia['dark'], essentia['tonal'], essentia['voice'], essentia['bpm'], musly))
 
 
     def get_metadata(self, i):
@@ -175,6 +176,9 @@ class TracksDb(object):
 
 
     def update_metadata(self, path, meta):
+        if not self.file_entry_exists(path):
+            self.cursor.execute('INSERT INTO tracks (file) VALUES (?)', (path))
+
         if not 'albumartist' in meta or meta['albumartist'] is None:
             if not 'genres' in meta or meta['genres'] is None:
                 self.cursor.execute('UPDATE tracks SET title=?, artist=?, album=?, duration=? WHERE file=?', (meta['title'], meta['artist'], meta['album'], meta['duration'], path))
@@ -232,12 +236,17 @@ class TracksDb(object):
         self.commit()
 
 
-    def file_already_analysed(self, path):
+    def file_entry_exists(self, path):
+        self.cursor.execute('SELECT rowid FROM tracks WHERE file=?', (path,))
+        return self.cursor.fetchone() is not None
+
+
+    def file_analysed_with_musly(self, path):
         self.cursor.execute('SELECT vals FROM tracks WHERE file=?', (path,))
         return self.cursor.fetchone() is not None
 
 
-    def file_already_analysed_with_essentia(self, path):
+    def file_analysed_with_essentia(self, path):
         self.cursor.execute('SELECT bpm FROM tracks WHERE file=?', (path,))
         row = self.cursor.fetchone()
         return row is not None and row[0] is not None

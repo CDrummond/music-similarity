@@ -15,26 +15,33 @@ AUDIO_EXTENSIONS = ['m4a', 'mp3', 'ogg', 'flac', 'opus']
 
 
 def analyze_audiofile(pipe, libmusly, essentia_extractor, index, db_path, abs_path, extract_len, extract_start, essentia_cache, tmp_path):
-    mus = musly.Musly(libmusly, True)
-    mres = mus.analyze_file(db_path, abs_path, extract_len, extract_start)
-    if len(essentia_extractor)>1:
+    resp = {'index':index, 'ok':False}
+
+    if extract_len>0:
+        mus = musly.Musly(libmusly, True)
+        mres = mus.analyze_file(db_path, abs_path, extract_len, extract_start)
+        resp['ok'] = mres['ok']
+        resp['musly'] = pickle.dumps(bytes(mres['mtrack']), protocol=4)
+
+    if len(essentia_extractor)>1 and (extract_len<=0 or resp['ok']):
         eres = essentia_analysis.analyse_track(index, essentia_extractor, db_path, abs_path, tmp_path, essentia_cache)
-        ok = mres['ok'] and eres is not None
-        pipe.send({'index':index, 'ok':ok, 'musly':pickle.dumps(bytes(mres['mtrack']), protocol=4), 'essentia':eres})
-    else:
-        pipe.send({'index':index, 'ok':mres['ok'], 'musly':pickle.dumps(bytes(mres['mtrack']), protocol=4)})
+        resp['ok'] = eres is not None
+        resp['essentia'] =  eres
+
+    pipe.send(resp);
     pipe.close()
 
 
-def analyze_file(index, total, db_path, abs_path, config, tmp_path):
+def analyze_file(index, total, db_path, abs_path, config, tmp_path, musly_analysis, essentia_analysis):
     if 'stop' in config and os.path.exists(config['stop']):
         return None
     _LOGGER.debug("[{}/{} {}%] Analyze: {}".format(index+1, total, int((index+1)*100/total), db_path))
     pout, pin = Pipe(duplex=False)
     
     essentia_cache = config['paths']['cache'] if 'cache' in config['paths'] else "-"
-    extractor = config['essentia']['extractor'] if config['essentia']['enabled'] else "-"
-    p = Process(target=analyze_audiofile, args=(pin, config['musly']['lib'], extractor, index, db_path, abs_path, config['musly']['extractlen'], config['musly']['extractstart'], essentia_cache, tmp_path))
+    extractor = config['essentia']['extractor'] if essentia_analysis and config['essentia']['enabled'] else "-"
+    musly_extractlen = config['musly']['extractlen'] if musly_analysis else 0
+    p = Process(target=analyze_audiofile, args=(pin, config['musly']['lib'], extractor, index, db_path, abs_path, musly_extractlen, config['musly']['extractstart'], essentia_cache, tmp_path))
     p.start()
     r = pout.recv()
     p.terminate()
@@ -51,7 +58,7 @@ def process_files(config, trks_db, allfiles, tmp_path):
     inserts_since_commit = 0
     with ThreadPoolExecutor(max_workers=config['threads']) as executor:
         for i in range(numtracks):
-            futures = executor.submit(analyze_file, i, numtracks, allfiles[i]['db'], allfiles[i]['abs'], config, tmp_path)
+            futures = executor.submit(analyze_file, i, numtracks, allfiles[i]['db'], allfiles[i]['abs'], config, tmp_path, allfiles[i]['musly'], allfiles[i]['essentia'])
             futures_list.append(futures)
         for future in futures_list:
             try:
@@ -80,10 +87,15 @@ def get_files_to_analyse(trks_db, lms_db, lms_path, path, files, local_root_len,
     if len(parts)>1 and parts[1].lower() in AUDIO_EXTENSIONS:
         if os.path.exists(parts[0]+'.cue'):
             for track in cue.get_cue_tracks(lms_db, lms_path, path, local_root_len, tmp_path):
-                if meta_only or not trks_db.file_already_analysed(track['file'][tmp_path_len:]) or (essentia_enabled and not trks_db.file_already_analysed_with_essentia(track['file'][tmp_path_len:])):
-                    files.append({'abs':track['file'], 'db':track['file'][tmp_path_len:], 'track':track, 'src':path})
-        elif meta_only or not trks_db.file_already_analysed(path[local_root_len:]) or (essentia_enabled and not trks_db.file_already_analysed_with_essentia(path[local_root_len:])):
-            files.append({'abs':path, 'db':path[local_root_len:]})
+                musly = not meta_only and not trks_db.file_analysed_with_musly(track['file'][tmp_path_len:])
+                essentia = not meta_only and essentia_enabled and not trks_db.file_analysed_with_essentia(track['file'][tmp_path_len:])
+                if meta_only or musly or essentia:
+                    files.append({'abs':track['file'], 'db':track['file'][tmp_path_len:], 'track':track, 'src':path, 'musly':musly, 'essentia':essentia})
+        else:
+            musly = not meta_only and not trks_db.file_analysed_with_musly(path[local_root_len:])
+            essentia = not meta_only and essentia_enabled and not trks_db.file_analysed_with_essentia(path[local_root_len:])
+            if meta_only or musly or essentia:
+                files.append({'abs':path, 'db':path[local_root_len:], 'musly':musly, 'essentia':essentia})
 
 
 def analyse_files(config, path, remove_tracks, meta_only, jukebox):
