@@ -75,30 +75,30 @@ def process_files(config, trks_db, allfiles, tmp_path):
                 pass
 
 
-def get_files_to_analyse(trks_db, lms_db, lms_path, path, files, local_root_len, tmp_path, tmp_path_len, meta_only, essentia_enabled):
+def get_files_to_analyse(trks_db, lms_db, lms_path, path, files, local_root_len, tmp_path, tmp_path_len, meta_only, force, essentia_enabled):
     if not os.path.exists(path):
         _LOGGER.error("'%s' does not exist" % path)
         return
     if os.path.isdir(path):
         for e in sorted(os.listdir(path)):
-            get_files_to_analyse(trks_db, lms_db, lms_path, os.path.join(path, e), files, local_root_len, tmp_path, tmp_path_len, meta_only, essentia_enabled)
+            get_files_to_analyse(trks_db, lms_db, lms_path, os.path.join(path, e), files, local_root_len, tmp_path, tmp_path_len, meta_only, force, essentia_enabled)
 
     parts = path.rsplit('.', 1)
     if len(parts)>1 and parts[1].lower() in AUDIO_EXTENSIONS:
         if os.path.exists(parts[0]+'.cue'):
             for track in cue.get_cue_tracks(lms_db, lms_path, path, local_root_len, tmp_path):
-                musly = not meta_only and not trks_db.file_analysed_with_musly(track['file'][tmp_path_len:])
-                essentia = not meta_only and essentia_enabled and not trks_db.file_analysed_with_essentia(track['file'][tmp_path_len:])
+                musly = not meta_only and ('m' in force or not trks_db.file_analysed_with_musly(track['file'][tmp_path_len:]))
+                essentia = not meta_only and ('e' in force or essentia_enabled and not trks_db.file_analysed_with_essentia(track['file'][tmp_path_len:]))
                 if meta_only or musly or essentia:
                     files.append({'abs':track['file'], 'db':track['file'][tmp_path_len:], 'track':track, 'src':path, 'musly':musly, 'essentia':essentia})
         else:
-            musly = not meta_only and not trks_db.file_analysed_with_musly(path[local_root_len:])
-            essentia = not meta_only and essentia_enabled and not trks_db.file_analysed_with_essentia(path[local_root_len:])
+            musly = not meta_only and ('m' in force or not trks_db.file_analysed_with_musly(path[local_root_len:]))
+            essentia = not meta_only and ('e' in force or essentia_enabled and not trks_db.file_analysed_with_essentia(path[local_root_len:]))
             if meta_only or musly or essentia:
                 files.append({'abs':path, 'db':path[local_root_len:], 'musly':musly, 'essentia':essentia})
 
 
-def analyse_files(config, path, remove_tracks, meta_only, jukebox):
+def analyse_files(config, path, remove_tracks, meta_only, force, jukebox):
     _LOGGER.debug('Analyse %s' % path)
     trks_db = tracks_db.TracksDb(config)
     lms_db = sqlite3.connect(config['lmsdb']) if 'lmsdb' in config else None
@@ -113,7 +113,7 @@ def analyse_files(config, path, remove_tracks, meta_only, jukebox):
 
     with tempfile.TemporaryDirectory(dir=temp_dir) as tmp_path:
         _LOGGER.debug('Temp folder: %s' % tmp_path)
-        get_files_to_analyse(trks_db, lms_db, lms_path, path, files, local_root_len, tmp_path+'/', len(tmp_path)+1, meta_only, essentia_enabled)
+        get_files_to_analyse(trks_db, lms_db, lms_path, path, files, local_root_len, tmp_path+'/', len(tmp_path)+1, meta_only, force, essentia_enabled)
         _LOGGER.debug('Num tracks to update: %d' % len(files))
         cue.split_cue_tracks(files, config['threads'])
         added_tracks = len(files)>0
