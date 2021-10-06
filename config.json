@@ -3,14 +3,14 @@
   "lib":"lib/x86-64/fedora/libmusly.so",
   "styletracks":1000,
   "styletracksmethod":"genres",
-  "extractstart":-48,
-  "extractlen":30
+  "extractlen":120,
+  "extractstart":-210
  },
  "essentia":{
   "enabled":true,
   "extractor":"essentia/bin/x86-64/essentia_streaming_extractor_music",
-  "bpm":50,
-  "attr":0.2
+  "bpm":20,
+  "attr":0.4
  },
  "paths":{
   "db":"/home/user/.local/share/music-similarity/",

@@ -63,9 +63,9 @@ def read_config(path, analyse):
 
     if config['essentia']['enabled']:
         if not 'bpm' in config['essentia']:
-            config['essentia']['bpm']=30
+            config['essentia']['bpm']=20
         if not 'attr' in config['essentia']:
-            config['essentia']['attr']=0.2
+            config['essentia']['attr']=0.4
         if not 'extractor' in config['essentia']:
             _LOGGER.error("'essentia.extractor' not in config file")
             exit(-1)
@@ -74,9 +74,9 @@ def read_config(path, analyse):
         _LOGGER.error("'musly.lib' not in config file" % key)
         exit(-1)
     if not 'extractlen' in config['musly']:
-        config['musly']['extractlen']=30
+        config['musly']['extractlen']=120
     if not 'extractstart' in config['musly']:
-        config['musly']['extractstart']=-48
+        config['musly']['extractstart']=-210
     if not 'styletracks' in config['musly']:
         config['musly']['styletracks']=1000
     if not 'styletracksmethod' in config['musly']:

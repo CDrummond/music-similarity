@@ -198,14 +198,14 @@ the following format:
   "lib":"lib/x86-64/fedora/libmusly.so",
   "styletracks":1000,
   "styletracksmethod":"genres",
-  "extractstart":-48,
-  "extractlen":30
+  "extractlen":120,
+  "extractstart":-210
  },
  "essentia":{
   "enabled":true,
   "extractor":"essentia/bin/x86-64/essentia_streaming_extractor_music",
-  "bpm":30,
-  "attr":0.2
+  "bpm":20,
+  "attr":0.4
  },
  "paths":{
   "db":"/home/user/.local/share/music-similarity/",
@@ -251,7 +251,7 @@ zero or greater than the file length, then the whole file will be decoded. Note,
 however, that only a maximum of 5 minutes is used for analysis.
 * `musly.extractstart` The starting position in seconds of the excerpt to
 decode. If zero, decoding starts at the beginning. If negative, the excerpt is
-centred in the file, but starts at -`extractstart` the latest. If positive and
+centred in the file, but starts at `-extractstart` the latest. If positive and
 `extractstart`+`extractlen` exceeds the file length, then the excerpt is taken
 from the end of the file.
 * `essentia.enabled` should be set to true if Essentia is to be used for
