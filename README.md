@@ -134,14 +134,14 @@ the default value.
 `shuffle` if set to `1` will cause extra tracks to be located, this list
 shuffled, and then the desired `count` tracks taken from this shuffled list.
 
-The API will use Musly to get the similarity between all tracks and each seed
-track, and sort this by similarity (most similar first). The Essentia attributes
-are then used to filter out some tracks (e.g. by checking BPM, etc.). Initially
-the API will ignore tracks from the same artist or album of the seed tracks (and
-any previous in the list, any albums from the (e.g.) 25 `previous` tracks, or
-albums from the last (e.g.) 15 `previous` tracks). If, because of this
-filtering, there are less than the requested amount then the highest similarity
-tracks from the filtered-out lists are chosen.
+The API will use Musly and/or Essentia to get the similarity between all tracks
+and each seed track, and sort this by similarity (most similar first). The
+Essentia attributes may then used to filter out some tracks (e.g. by checking
+BPM, etc.). Initially the API will ignore tracks from the same artist or album
+of the seed tracks (and any previous in the list, any albums from the (e.g.) 25
+`previous` tracks, or albums from the last (e.g.) 15 `previous` tracks). If,
+because of this filtering, there are less than the requested amount then the
+highest similarity tracks from the filtered-out lists are chosen.
 
 Metadata for tracks is stored in an SQLite database, this has an `ignore` column
 which if set to `1` will cause the API to not use this track if it is returned
@@ -205,7 +205,8 @@ the following format:
   "enabled":true,
   "extractor":"essentia/bin/x86-64/essentia_streaming_extractor_music",
   "bpm":20,
-  "attr":0.4
+  "attr":0.4,
+  "weight":0.0
  },
  "paths":{
   "db":"/home/user/.local/share/music-similarity/",
@@ -263,6 +264,12 @@ is relative to `music-similarity.py`
 attribute that is in the range 0.8 .. 1.0 a candidate must be in the range
 0.8-`essentia.attr` .. 1.0, and for each attribute in the range 0.0 .. 0.2 a
 candidate must be in the range 0.0 .. 0.2+`essentia.attr`
+* `essentia.weight` By default Musly is used for similarity score, and Essentia
+is used to filter tracks. However, if you set `essentia.weight` to higher than
+0.0 (and less than or equal to 1.0) then Essentia can also be used to score
+similarity based upon the Essentia attributes. This value then configures the
+percentage give to each metric. e.g. an `essentia.weight` of 0.4 will cause the
+similarity score to be base 60% Musly 40% Essentia.
 * `paths.db` should be the path where the SQLite and jukebox files created by
 this app can be written to or can be read from.
 * `paths.local` should be the path where this script can access your music

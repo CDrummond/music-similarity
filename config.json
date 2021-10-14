@@ -10,7 +10,8 @@
   "enabled":true,
   "extractor":"essentia/bin/x86-64/essentia_streaming_extractor_music",
   "bpm":20,
-  "attr":0.4
+  "attr":0.4,
+  "weight":0.0
  },
  "paths":{
   "db":"/home/user/.local/share/music-similarity/",

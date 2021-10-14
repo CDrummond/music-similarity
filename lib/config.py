@@ -66,6 +66,8 @@ def read_config(path, analyse):
             config['essentia']['bpm']=20
         if not 'attr' in config['essentia']:
             config['essentia']['attr']=0.4
+        if not 'weight' in config['essentia'] or float(config['essentia']['weight'])<0 or float(config['essentia']['weight'])>1:
+            config['essentia']['weight'] = 0.0
         if not 'extractor' in config['essentia']:
             _LOGGER.error("'essentia.extractor' not in config file")
             exit(-1)

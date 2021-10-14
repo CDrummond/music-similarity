@@ -272,6 +272,28 @@ class Musly(object):
         return mtrackids
 
 
+    def get_all_similars(self, mtracks, mtrackids, seedtrackid):
+        numtracks = len(mtracks)
+        mtrackids_type = ctypes.c_int * numtracks
+        mtracks_type = (ctypes.POINTER(self.mtrack_type)) * numtracks
+        msims_type = ctypes.c_float * numtracks
+        msims = msims_type()
+        # int musly_jukebox_similarity (musly_jukebox *  jukebox, musly_track *  seed_track, musly_trackid  seed_trackid, musly_track **  tracks, musly_trackid *  trackids, int  num_tracks, float *  similarities
+        self.mus.musly_jukebox_similarity.argtypes = [ctypes.POINTER(MuslyJukebox), ctypes.POINTER(ctypes.c_float), ctypes.c_int, ctypes.POINTER(mtracks_type), ctypes.POINTER(mtrackids_type), ctypes.c_int, ctypes.POINTER(msims_type) ]
+
+        seedtrack = mtracks[seedtrackid].contents
+
+        if (self.mus.musly_jukebox_similarity(self.mj, seedtrack, ctypes.c_int(seedtrackid), ctypes.pointer(mtracks), ctypes.pointer(mtrackids), ctypes.c_int(numtracks), ctypes.pointer(msims))) == -1:
+            _LOGGER.error("musly_jukebox_similarity")
+            return None
+
+        rtracks=[]
+        for i in mtrackids:
+            #_LOGGER.debug("get_similars: mtrack id: {:3} sim: {:8.6f}".format(i, msims[i]))
+            rtracks.append({'id':i, 'sim':msims[i]})
+        return rtracks
+
+
     def get_similars(self, mtracks, mtrackids, seedtrackid, rnumtracks):
         numtracks = len(mtracks)
         if rnumtracks>numtracks:
@@ -284,7 +306,7 @@ class Musly(object):
         rsims = rsims_type()
         rtrackids_type = ctypes.c_int * rnumtracks
         rtrackids = rtrackids_type()
-        # int musly_jukebox_similarity (musly_jukebox *  jukebox, musly_track *  seed_track, musly_trackid  seed_trackid, musly_track **  tracks, musly_trackid *  trackids, int  num_tracks, float *  similarities 
+        # int musly_jukebox_similarity (musly_jukebox *  jukebox, musly_track *  seed_track, musly_trackid  seed_trackid, musly_track **  tracks, musly_trackid *  trackids, int  num_tracks, float *  similarities
         self.mus.musly_jukebox_similarity.argtypes = [ctypes.POINTER(MuslyJukebox), ctypes.POINTER(ctypes.c_float), ctypes.c_int, ctypes.POINTER(mtracks_type), ctypes.POINTER(mtrackids_type), ctypes.c_int, ctypes.POINTER(msims_type) ]
         # musly_findmin(const float* values, const musly_trackid* ids, int count, float* min_values, musly_trackid* min_ids, int min_count, int ordered)
         self.mus.musly_findmin.argtypes = [ctypes.POINTER(msims_type), ctypes.POINTER(mtrackids_type), ctypes.c_int, ctypes.POINTER(rsims_type), ctypes.POINTER(rtrackids_type), ctypes.c_int, ctypes.c_int ]

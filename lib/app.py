@@ -48,10 +48,14 @@ class SimilarityApp(Flask):
             ids = self.mus.add_tracks(tracks, app_config['musly']['styletracks'], app_config['musly']['styletracksmethod'], tdb)
             self.mus.write_jukebox(jukebox_path)
 
-        tdb.close()
         self.mta=musly.MuslyTracksAdded(paths, tracks, ids)
         if app_config['essentia']['enabled']:
-            _LOGGER.debug('Will use Essentia attributes to filter tracks')
+            if app_config['essentia']['weight']>0.0:
+                from . import essentia_sim
+                essentia_sim.init(tdb)
+            else:
+                _LOGGER.debug('Will use Essentia attributes to filter tracks')
+        tdb.close()
 
     def get_config(self):
         return self.app_config
@@ -104,6 +108,41 @@ def genre_adjust(seed, entry, acceptable_genres, all_genres, match_all_genres, n
         return no_genre_match_adj
     # Genre in group
     return genre_group_adj
+
+
+def get_similars(track_id, mus, num_sim, mta, tdb, ess_weight):
+    tracks = []
+    if ess_weight>=0.99:
+        from . import essentia_sim
+        _LOGGER.debug('Get similar tracks to %d from Essentia' % track_id)
+        et = essentia_sim.get_similars(track_id)
+        idx = 0
+        for track in et:
+            tracks.append({'id':idx, 'sim':track})
+            idx+=1
+        return sorted(tracks, key=lambda k: k['sim'])
+
+    if ess_weight<=0.01:
+        _LOGGER.debug('Get %d similar tracks to %d from Musly' % (num_sim, track_id))
+        return mus.get_similars(mta.mtracks, mta.mtrackids, track_id, num_sim)
+
+    _LOGGER.debug('Get similar tracks to %d from Musly' % track_id)
+    mt = mus.get_all_similars(mta.mtracks, mta.mtrackids, track_id)
+
+    from . import essentia_sim
+    _LOGGER.debug('Get similar tracks to %d from Essentia' % track_id)
+    et = essentia_sim.get_similars(track_id)
+    num_et = len(et)
+    tracks = []
+    _LOGGER.debug('Merge similarity scores')
+    for track in mt:
+        if math.isnan(track['sim']):
+            continue
+        i = track['id']
+        esval = et[i] if i<num_et else track['sim']
+        tracks.append({'id':i, 'sim':(track['sim']*(1.0-ess_weight)) + (esval*ess_weight)})
+
+    return sorted(tracks, key=lambda k: k['sim'])
 
 
 def append_list(orig, to_add, min_count):
@@ -196,6 +235,7 @@ def dump_api():
     root = cfg['paths']['lms']
 
     ess_enabled = cfg['essentia']['enabled']
+    ess_weight = cfg['essentia']['weight'] if ess_enabled else 0.0
 
     track = decode(params['track'][0], root)
     no_repeat_artist = int(get_value(params, 'norepart', 0, isPost))
@@ -229,7 +269,7 @@ def dump_api():
         num_sim = count * 50
         if num_sim<MIN_MUSLY_NUM_SIM:
             num_sim = MIN_MUSLY_NUM_SIM
-        simtracks = mus.get_similars( mta.mtracks, mta.mtrackids, track_id, num_sim )
+        simtracks = get_similars(track_id, mus, num_sim, mta, tdb, ess_weight)
 
         resp=[]
         prev_id=-1
@@ -332,6 +372,7 @@ def similar_api():
     root = cfg['paths']['lms']
 
     ess_enabled = cfg['essentia']['enabled']
+    ess_weight = cfg['essentia']['weight'] if ess_enabled else 0.0
 
     # Similar tracks
     similar_tracks=[]
@@ -452,9 +493,8 @@ def similar_api():
     for track_id in track_ids:
         match_all_genres = ignore_genre_for_all or ('ignoregenre' in genre_cfg and track_id in track_id_seed_metadata and track_id_seed_metadata[track_id]['artist'] in genre_cfg['ignoregenre'])
 
-        # Query musly for similar tracks
-        _LOGGER.debug('Query musly for %d similar tracks to index: %d' % (num_sim, track_id))
-        simtracks = mus.get_similars( mta.mtracks, mta.mtrackids, track_id, num_sim )
+        # Query musly and/or essentia for similar tracks
+        simtracks = get_similars(track_id, mus, num_sim, mta, tdb, ess_weight)
         accepted_tracks = 0
         for simtrack in simtracks:
             if math.isnan(simtrack['sim']):
