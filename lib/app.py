@@ -209,6 +209,29 @@ def get_genre_cfg(config, params):
     return genre_cfg
 
 
+def get_essentia_cfg(config, params):
+    ''' Get essentia(attrib) settings from URL or config '''
+    ess_cfg={'enabled': config['essentia']['enabled'], 'bpm': config['essentia']['bpm'], 'attr': config['essentia']['attr'], 'weight': config['essentia']['weight']}
+    if config['essentia']['enabled']:
+        if 'maxbpmdiff' in params and params['maxbpmdiff'] is not None:
+            ess_cfg['bpm'] = int(params['maxbpmdiff'])
+        else:
+            ess_cfg['bpm'] = config['essentia']['bpm']
+
+        if 'maxattribdiff' in params and params['maxattribdiff'] is not None:
+            ess_cfg['attr'] = int(params['maxattribdiff'])/100.0
+        else:
+            ess_cfg['attr'] = config['essentia']['attr']
+
+        if 'attribweight' in params and params['attribweight'] is not None:
+            ess_cfg['weight'] = int(params['attribweight'])/100.0
+        else:
+            ess_cfg['weight'] = config['essentia']['weight']
+
+    _LOGGER.debug('Essentia(attrib) cfg: %s' % json.dumps(ess_cfg, cls=SetEncoder))
+    return ess_cfg
+
+
 @similarity_app.route('/api/dump', methods=['GET', 'POST'])
 def dump_api():
     isPost = False
@@ -233,12 +256,13 @@ def dump_api():
     cfg = similarity_app.get_config()
     tdb = tracks_db.TracksDb(cfg)
     genre_cfg = get_genre_cfg(cfg, params)
+    ess_cfg = get_essentia_cfg(cfg, params)
 
     # Strip LMS root path from track path
     root = cfg['paths']['lms']
 
-    ess_enabled = cfg['essentia']['enabled']
-    ess_weight = cfg['essentia']['weight'] if ess_enabled else 0.0
+    ess_enabled = ess_cfg['enabled']
+    ess_weight = ess_cfg['weight'] if ess_enabled else 0.0
 
     track = decode(params['track'][0], root)
     no_repeat_artist = int(get_value(params, 'norepart', 0, isPost))
@@ -294,7 +318,7 @@ def dump_api():
             if simtrack['id']!=track_id and 'title' in track and 'title' in meta and track['title'] == meta['title']:
                 continue
             if ess_enabled:
-                filtered_due_to = filters.check_attribs(meta, track, cfg['essentia']['bpm'], cfg['essentia']['attr'])
+                filtered_due_to = filters.check_attribs(meta, track, ess_cfg['bpm'], ess_cfg['attr'])
                 if filtered_due_to is not None:
                     _LOGGER.debug('DISCARD(%s): %s' % (filtered_due_to, str(track)))
                     continue
@@ -370,12 +394,13 @@ def similar_api():
     cfg = similarity_app.get_config()
     tdb = tracks_db.TracksDb(cfg)
     genre_cfg = get_genre_cfg(cfg, params)
+    ess_cfg = get_essentia_cfg(cfg, params)
 
     # Strip LMS root path from track path
     root = cfg['paths']['lms']
 
-    ess_enabled = cfg['essentia']['enabled']
-    ess_weight = cfg['essentia']['weight'] if ess_enabled else 0.0
+    ess_enabled = ess_cfg['enabled']
+    ess_weight = ess_cfg['weight'] if ess_enabled else 0.0
 
     # Similar tracks
     similar_tracks=[]
@@ -531,7 +556,7 @@ def similar_api():
                     skip_track_ids.add(simtrack['id'])
                 else:
                     if ess_enabled:
-                        filtered_due_to = filters.check_attribs(track_id_seed_metadata[track_id], meta, cfg['essentia']['bpm'], cfg['essentia']['attr'])
+                        filtered_due_to = filters.check_attribs(track_id_seed_metadata[track_id], meta, ess_cfg['bpm'], ess_cfg['attr'])
                         if filtered_due_to is not None:
                             _LOGGER.debug('FILTERED(attribs(%s)) ID:%d Path:%s Similarity:%f Meta:%s' % (filtered_due_to, simtrack['id'], mta.paths[simtrack['id']], simtrack['sim'], json.dumps(meta, cls=SetEncoder)))
                             set_filtered(simtrack, mta, filtered_tracks, 'attribs')
