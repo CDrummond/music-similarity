@@ -8,7 +8,7 @@
 import argparse, json, logging, math, os, random, sqlite3, urllib
 from datetime import datetime
 from flask import Flask, abort, request
-from . import cue, filters, tracks_db, musly
+from . import cue, essentia_sim, filters, tracks_db, musly
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -51,7 +51,6 @@ class SimilarityApp(Flask):
         self.mta=musly.MuslyTracksAdded(paths, tracks, ids)
         if app_config['essentia']['enabled']:
             if app_config['essentia']['weight']>0.0:
-                from . import essentia_sim
                 essentia_sim.init(tdb)
             else:
                 _LOGGER.debug('Will use Essentia attributes to filter tracks')
@@ -113,9 +112,8 @@ def genre_adjust(seed, entry, acceptable_genres, all_genres, match_all_genres, n
 def get_similars(track_id, mus, num_sim, mta, tdb, ess_weight):
     tracks = []
     if ess_weight>=0.99:
-        from . import essentia_sim
         _LOGGER.debug('Get similar tracks to %d from Essentia' % track_id)
-        et = essentia_sim.get_similars(track_id)
+        et = essentia_sim.get_similars(tdb, track_id)
         idx = 0
         for track in et:
             tracks.append({'id':idx, 'sim':track})
@@ -129,9 +127,8 @@ def get_similars(track_id, mus, num_sim, mta, tdb, ess_weight):
     _LOGGER.debug('Get similar tracks to %d from Musly' % track_id)
     mt = mus.get_all_similars(mta.mtracks, mta.mtrackids, track_id)
 
-    from . import essentia_sim
     _LOGGER.debug('Get similar tracks to %d from Essentia' % track_id)
-    et = essentia_sim.get_similars(track_id)
+    et = essentia_sim.get_similars(tdb, track_id)
     num_et = len(et)
     tracks = []
     _LOGGER.debug('Merge similarity scores')
