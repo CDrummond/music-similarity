@@ -329,7 +329,7 @@ The Police/
 Then call:
 
 ```
-./update-db.py --db music-similarity.db --ignore ignore.txt
+./scripts/update-db.py --db music-similarity.db --ignore ignore.txt
 ```
 
 This sets the `ignore` column to 1 for all items whose file starts with one of
@@ -344,7 +344,7 @@ seed tracks.
 
 If you have previous results from [musly-server](https://github.com/CDrummond/musly-server)
 and [essentia-analyzer](https://github.com/CDrummond/essentia-analyzer) then you
-can use `merge-musly-essentia-dbs.py` to merge the contents of their DBs into a
+can use `scripts/merge-musly-essentia-dbs.py` to merge the contents of their DBs into a
 single DB required for music-similarity.
 
 
