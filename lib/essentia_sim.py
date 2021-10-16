@@ -53,7 +53,8 @@ def init(db):
         tree = cKDTree(attrib_list)
             
 
-def get_similars(track_id):
+def get_similars(db, track_id):
+    init(db)
     global min_bpm, bpm_range, max_sim, attrib_list, tree, num_tracks
     distances, indexes = tree.query(numpy.array([attrib_list[track_id]]), k=num_tracks)
 
