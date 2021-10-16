@@ -186,7 +186,10 @@ def get_genre_cfg(config, params):
     ''' Get genre settings from URL or config '''
     genre_cfg={}
     if 'ignoregenre' in params and params['ignoregenre'] is not None:
-        genre_cfg['ignoregenre'] = set(params['ignoregenre'])
+        ignore=[]
+        for item in params['ignoregenre']:
+            ignore.append(tracks_db.normalize_artist(item))
+        genre_cfg['ignoregenre'] = set(ignore)
     elif 'ignoregenre' in config:
         genre_cfg['ignoregenre'] = config['ignoregenre']
 
