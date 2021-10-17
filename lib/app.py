@@ -432,12 +432,15 @@ def similar_api():
                 track_id_seed_metadata[track_id]=meta
                 # Get genres for this seed track - this takes its genres and gets any matching genres from config
                 if 'genres' in meta:
-                    acceptable_genres.update(meta['genres'])
+                    seed_genres.update(meta['genres'])
+                    # Only add genres from configured groups to acceptable_genres
+                    #acceptable_genres.update(meta['genres'])
                     if 'genres' in genre_cfg:
                         for genre in meta['genres']:
                             for group in genre_cfg['genres']:
                                 if genre in group:
                                     acceptable_genres.update(group)
+                                    seed_genres.update(group)
                 if 'title' in meta:
                     filter_out['titles'].add(meta['title'])
                 if not have_prev_tracks:
@@ -450,8 +453,6 @@ def similar_api():
             trk_count += 1
         else:
             _LOGGER.debug('Could not locate %s in DB' % track)
-
-    seed_genres.update(acceptable_genres)
 
     if have_prev_tracks:
         trk_count = 0
@@ -480,7 +481,8 @@ def similar_api():
                     if match_genre:
                         # Get genres for this track - this takes its genres and gets any matching genres from config
                         if 'genres' in meta:
-                            acceptable_genres.update(meta['genres'])
+                            # Only add genres from configured groups to acceptable_genres
+                            #acceptable_genres.update(meta['genres'])
                             if 'genres' in genre_cfg:
                                 for genre in meta['genres']:
                                     for group in genre_cfg['genres']:
@@ -491,7 +493,7 @@ def similar_api():
             trk_count += 1
 
     _LOGGER.debug('Seed genres: %s' % seed_genres)
-    if match_genre:
+    if match_genre and len(acceptable_genres)>0:
         _LOGGER.debug('Acceptable genres: %s' % acceptable_genres)
 
     similarity_count = int(count * SHUFFLE_FACTOR) if shuffle and (count<20 or len(track_ids)<10) else count

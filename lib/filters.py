@@ -17,17 +17,12 @@ def genre_matches(config, seed_genres, track):
     if 'genres' not in track or len(track['genres'])<1:
         return True # Track has no genre? Then can't filter out...
 
-    # Ignore genre for an artist?
-    if 'ignoregenre' in config and track['artist'] in config['ignoregenre']:
-        return True
-
     if len(seed_genres)<1:
-        # No filtering for seed track genres
-        if 'all_genres' in config:
-            if len(track['genres'].intersection(config['all_genres']))>0:
-                # Track's genre is in config list, but not in seeds, so filter out track
-                return False
-        # No seed genres, and track's genre not in filters, so accept track
+        # Seed is not in a genre group, but candidate track is in a genre group - so filter out track
+        if 'all_genres' in config and len(track['genres'].intersection(config['all_genres']))>0:
+            return False
+
+        # No seed genres, and track's genre not in group, so accept track
         return True
 
     return len(seed_genres.intersection(track['genres']))>0
