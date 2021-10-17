@@ -11,7 +11,6 @@ import argparse
 import os
 import sqlite3
 import sys
-from lib import version
 
 
 def info(s):
@@ -42,7 +41,7 @@ def ignore(conn, cursor, f):
 
 
 if __name__=='__main__':
-    parser = argparse.ArgumentParser(description='Update Music Simliartiy DB (v%s)' % version.MUSIC_SIMILARITY_VERSION)
+    parser = argparse.ArgumentParser(description='Update Music Simliartiy DB')
     parser.add_argument('-d', '--db', type=str, help='Database file', default='music-similarity.db')
     parser.add_argument('-i', '--ignore', type=str, help='Path to file containing items to ignore', default=None)
     args = parser.parse_args()
