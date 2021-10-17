@@ -221,7 +221,6 @@ the following format:
   ["Dance", "Disco", "Hip-Hop", "Pop", "Pop/Folk", "Pop/Rock", "R&B", "Reggae", "Soul", "Trance"],
   ["Gothic Metal", "Heavy Metal", "Power Metal", "Progressive Metal", "Progressive Rock", "Symphonic Metal", "Symphonic Power Metal"]
  ],
- "ignoregenre":["Artist"],
  "normalize":{
   "artist":["feet", "ft", "featuring"],
   "album":["deluxe edition", "remastered"],
@@ -290,13 +289,6 @@ track, etc. This config item should hole the path to the LMS database file. This
 is only required for analysis, and only if you have CUE files. `ffmpeg` is
 required to split tracks.
 * `genres` This is as described above.
-* `ignoregenre` List of artists where genre filtering (excluding christmas)
-should be ignored. To apply to all artists, use '*' - e.g. `"ignoregenre":"*"`
-When calculating a track's similarity, the similarity score is adjusted based
-upon whether a track's genre matches another, is in the same group, or does not
-match. If an artist is listed in `ignoregenre` then it is implied that it
-matches all genres. Therefore, setting `"ignoregenre":"*"` effectively disables
-this adjusting of similarity score based upon genre.
 * `normalize.artist` List of strings to split artist names, e.g. "A ft. B"
 becomes "A" (periods are automatically removed). This is then used to aid
 filtering of tracks - i.e. to prevent artists from being repeated in a mix.
@@ -312,7 +304,7 @@ all interfaces on your network.
 many calls to `ffmpeg` are made concurrently, and how many concurrent tracks
 Musly and Essentia are asked to analyse. Defaults to CPU count, if not set.
 
-*NOTE* `genres` and `ignoregenre` can now be configured directly in the
+*NOTE* `genres` can now be configured directly in the
 [LMS Music Similarity Plugin](https://github.com/CDrummond/lms-musicsimilarity),
 therfore there is no need to add these to `config.json`
 
