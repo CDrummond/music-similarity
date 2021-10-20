@@ -220,6 +220,13 @@ def get_essentia_cfg(config, params):
     return ess_cfg
 
 
+def get_music_path(params, cfg):
+    path = params['mpath'] if 'mpath' in params else cfg['paths']['lms']
+    if not path.endswith('/'):
+        path += '/'
+    return path
+
+
 @similarity_app.route('/api/dump', methods=['GET', 'POST'])
 def dump_api():
     isPost = False
@@ -247,7 +254,7 @@ def dump_api():
     ess_cfg = get_essentia_cfg(cfg, params)
 
     # Strip LMS root path from track path
-    root = cfg['paths']['lms']
+    root = get_music_path(params, cfg)
 
     ess_enabled = ess_cfg['enabled']
     ess_weight = ess_cfg['weight'] if ess_enabled else 0.0
@@ -382,7 +389,7 @@ def similar_api():
     ess_cfg = get_essentia_cfg(cfg, params)
 
     # Strip LMS root path from track path
-    root = cfg['paths']['lms']
+    root = get_music_path(params, cfg)
 
     ess_enabled = ess_cfg['enabled']
     ess_weight = ess_cfg['weight'] if ess_enabled else 0.0

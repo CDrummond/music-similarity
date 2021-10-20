@@ -33,12 +33,20 @@ def read_config(path, analyse):
             _LOGGER.error("'%s' not in config file" % key)
             exit(-1)
 
-    for key in ['local', 'lms', 'db']:
-        if not key in config['paths']:
-            _LOGGER.error("'paths.%s' not in config file" % key)
+    if analyse:
+        for key in ['local', 'lms', 'db']:
+            if not key in config['paths']:
+                _LOGGER.error("'paths.%s' not in config file" % key)
+                exit(-1)
+            if (key=='db' and not os.path.exists(config['paths'][key])) or (analyse and key=='local' and not os.path.exists(config['paths'][key])):
+                _LOGGER.error("'%s' does not exist" % config['paths'][key])
+                exit(-1)
+    else:
+        if not 'db' in config['paths']:
+            _LOGGER.error("'paths.db' not in config file")
             exit(-1)
-        if (key=='db' and not os.path.exists(config['paths'][key])) or (analyse and key=='local' and not os.path.exists(config['paths'][key])):
-            _LOGGER.error("'%s' does not exist" % config['paths'][key])
+        if not os.path.exists(config['paths']['db']):
+            _LOGGER.error("'%s' does not exist" % config['paths']['db'])
             exit(-1)
 
     for key in config['paths']:
@@ -68,7 +76,7 @@ def read_config(path, analyse):
             config['essentia']['attr']=0.4
         if not 'weight' in config['essentia'] or float(config['essentia']['weight'])<0 or float(config['essentia']['weight'])>1:
             config['essentia']['weight'] = 0.0
-        if not 'extractor' in config['essentia']:
+        if analyse and not 'extractor' in config['essentia']:
             _LOGGER.error("'essentia.extractor' not in config file")
             exit(-1)
 

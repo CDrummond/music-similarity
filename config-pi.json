@@ -1,0 +1,12 @@
+{
+ "musly":{
+  "lib":"lib/armv7l/raspbian-buster/libmusly.so"
+ },
+ "essentia":{
+  "enabled":true
+ },
+ "paths":{
+  "db":"/home/pi/music-similarity/"
+ },
+ "port":11000
+}

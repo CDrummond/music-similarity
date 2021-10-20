@@ -9,8 +9,9 @@ This library needs to be compiled, and `config.json` (from this API project)
 updated to store the location of this library. This repo contains pre-built
 versions for:
 
-1. Fedora 64-bit
-2. Raspbian Buster 32-bit
+1. Fedora 64-bit - `lib/x86-64/fedora/libmusly.so`
+2. Raspbian Buster 32-bit, *not* linked to libav, therefore cannot be used for anlysis - `lib/armv7l/raspbian-buster/libmusly.so`
+3. Raspbian Buster 32-bit, linked against libav - `lib/armv7l/raspbian-buster/libav/libmusly.so`
 
 **macOS**
 
