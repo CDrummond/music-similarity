@@ -10,7 +10,8 @@ updated to store the location of this library. This repo contains pre-built
 versions for:
 
 1. Fedora 64-bit - `lib/x86-64/fedora/libmusly.so`
-2. Raspbian Buster 32-bit, *not* linked to libav, therefore cannot be used for anlysis - `lib/armv7l/raspbian-buster/libmusly.so`
+2. Raspbian Buster 32-bit, *not* linked to libav, therefore cannot be used for
+analysis - `lib/armv7l/raspbian-buster/libmusly.so`
 3. Raspbian Buster 32-bit, linked against libav - `lib/armv7l/raspbian-buster/libav/libmusly.so`
 
 **macOS**
@@ -240,47 +241,52 @@ function, by default 1000 random tracks is chosen. This config item can be used
 to alter this. Note, however, the larger the number here the longer it takes to
 for this call to complete. As a rough guide it takes ~1min per 1000 tracks.
 If you change this config item after the jukebox is written you will need to
-delete the jukebox file and restart the server.
+delete the jukebox file and restart the server. Only used if analyising tracks.
 * `musly.styletracksmethod` configures how tracks are chosen for styletracks. If
 set to `genres` (which is the default if not set) then the meta-data db is
 queried for how many track each genre has and tracks are chosen for each of
 these genres based upon the percentage of tracks in a genre. If set to `albums`
 then at least one track from each album is used. If set to anything else then
-random tracks are chosen.
+random tracks are chosen. Only used if analyising tracks.
 * `musly.extractlen` The maximum length in seconds of the file to decode. If
 zero or greater than the file length, then the whole file will be decoded. Note,
-however, that only a maximum of 5 minutes is used for analysis.
+however, that only a maximum of 5 minutes is used for analysis. Only used if
+analyising tracks.
 * `musly.extractstart` The starting position in seconds of the excerpt to
 decode. If zero, decoding starts at the beginning. If negative, the excerpt is
 centred in the file, but starts at `-extractstart` the latest. If positive and
 `extractstart`+`extractlen` exceeds the file length, then the excerpt is taken
-from the end of the file.
+from the end of the file. Only used if analyising tracks.
 * `essentia.enabled` should be set to true if Essentia is to be used for
 filtering.
 * `essentia.extractor` should contain the path to the Essentia extractor - path
-is relative to `music-similarity.py`
-* `essentia.bpm` Specify max BPM difference when filtering tracks.
+is relative to `music-similarity.py` Only required if analyising tracks.
+* `essentia.bpm` Specify max BPM difference when filtering tracks. Not required
+in config, as will be sent by LMS plugin.
 * `essentia.attr` Specify max difference in Essentia attributes. For each seed
 attribute that is in the range 0.8 .. 1.0 a candidate must be in the range
 0.8-`essentia.attr` .. 1.0, and for each attribute in the range 0.0 .. 0.2 a
-candidate must be in the range 0.0 .. 0.2+`essentia.attr`
+candidate must be in the range 0.0 .. 0.2+`essentia.attr` Not required in
+config, as will be sent by LMS plugin.
 * `essentia.weight` By default Musly is used for similarity score, and Essentia
 is used to filter tracks. However, if you set `essentia.weight` to higher than
 0.0 (and less than or equal to 1.0) then Essentia can also be used to score
 similarity based upon the Essentia attributes. This value then configures the
 percentage give to each metric. e.g. an `essentia.weight` of 0.4 will cause the
-similarity score to be base 60% Musly 40% Essentia.
+similarity score to be base 60% Musly 40% Essentia.  Not required in config, as
+will be sent by LMS plugin.
 * `paths.db` should be the path where the SQLite and jukebox files created by
 this app can be written to or can be read from.
 * `paths.local` should be the path where this script can access your music
 files. This can be different to `path.lms` if you are running analysis on a
-different machine to where you would run the script as the API server. Thi
+different machine to where you would run the script as the API server. This
 script will only store the paths relative to this location - eg.
 `paths.local=/home/music/` then `/home/music/A/b.mp3` will be stored as
-`A/b.mp3`.
+`A/b.mp3`. Only required if analysing tracks.
 * `paths.lms` should be the path where LMS accesses your music files. The API
 server will remove this path from API calls, so that it can look up tracks in
-its database by their relative path.
+its database by their relative path. Only required if analysing tracks - the
+LMS plugin will send this path to this service when obtaining similar tracks.
 * `paths.tmp` When analysing music, this script will create a temporary folder
 to hold separate CUE file tracks. The path passed here needs to be writable.
 This config item is only used for analysis.
