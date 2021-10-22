@@ -69,7 +69,7 @@ def createZip(version):
     info("Creating ZIPs")
     os.chdir('..')
     cmd=["zip", "-r", "%s/%s-all-%s.zip" % (APP_NAME, APP_NAME, version), "%s/essentia" % APP_NAME]
-    for f in ["ChangeLog", "config.json", "LICENSE", "%s.py" % APP_NAME, "%s.service" % APP_NAME, "README.md", "scripts"]:
+    for f in ["ChangeLog", "config.json", "LICENSE", "%s.py" % APP_NAME, "%s.service" % APP_NAME, "README.md", "scripts", "docs"]:
         cmd.append("%s/%s" % (APP_NAME, f))
     for e in os.listdir("%s/lib" % APP_NAME):
         if e.endswith(".py") or e in ["armv7l", "x86-64"]:
