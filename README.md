@@ -153,7 +153,7 @@ be used as seed tracks.
 
 This API is intended to be used by [LMS Music Similarity Plugin](https://github.com/CDrummond/lms-musicsimilarity)
 
-Genres are configured via the `genres` section of `config.json`, using the
+Genres may be configured via the `genres` section of `config.json`, using the
 following syntax:
 
 ```
