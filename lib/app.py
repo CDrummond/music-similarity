@@ -14,7 +14,7 @@ _LOGGER = logging.getLogger(__name__)
 
 
 DEFAULT_TRACKS_TO_RETURN              = 5    # Number of tracks to return, if none specified
-MIN_TRACKS_TO_RETURN                  = 5    # Min value for 'count' parameter
+MIN_TRACKS_TO_RETURN                  = 1    # Min value for 'count' parameter
 MAX_TRACKS_TO_RETURN                  = 50   # Max value for 'count' parameter
 DEFAULT_NUM_PREV_TRACKS_FILTER_ARTIST = 15   # Try to ensure artist is not in previous N tracks
 DEFAULT_NUM_PREV_TRACKS_FILTER_ALBUM  = 25   # Try to ensure album is not in previous N tracks
