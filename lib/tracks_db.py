@@ -14,7 +14,7 @@ from . import cue, tags
 DB_FILE = 'music-similarity.db'
 GENRE_SEPARATOR = ';'
 _LOGGER = logging.getLogger(__name__)
-ESSENTIA_ATTRIBS = ['danceable', 'aggressive', 'electronic', 'acoustic', 'happy', 'party', 'relaxed', 'sad', 'dark', 'tonal', 'voice', 'bpm']
+ESSENTIA_ATTRIBS = ['danceable', 'aggressive', 'electronic', 'acoustic', 'happy', 'party', 'relaxed', 'sad', 'dark', 'tonal', 'voice', 'bpm', 'key']
 
 album_rem = ['anniversary edition', 'deluxe edition', 'expanded edition', 'extended edition', 'special edition', 'deluxe', 'deluxe version', 'extended deluxe', 'super deluxe', 're-issue', 'remastered', 'mixed', 'remixed and remastered']
 artist_rem = ['feat', 'ft', 'featuring']
@@ -80,53 +80,37 @@ class TracksDb(object):
         self.use_essentia = config['essentia']['enabled']
         self.conn = sqlite3.connect(path)
         self.cursor = self.conn.cursor()
-        self.cursor.execute('''CREATE TABLE IF NOT EXISTS tracks (
-                    file varchar UNIQUE NOT NULL,
-                    title varchar,
-                    artist varchar,
-                    album varchar,
-                    albumartist varchar,
-                    genre varchar,
-                    duration integer,
-                    ignore integer,
-                    danceable integer,
-                    aggressive integer,
-                    electronic integer,
-                    acoustic integer,
-                    happy integer,
-                    party integer,
-                    relaxed integer,
-                    sad integer,
-                    dark integer,
-                    tonal integer,
-                    voice integer,
-                    bpm integer,
-                    vals blob NOT NULL)''')
-        self.cursor.execute('CREATE UNIQUE INDEX IF NOT EXISTS tracks_idx ON tracks(file)')
+        for table in ['tracks', 'tracks_tmp']:
+            self.cursor.execute('''CREATE TABLE IF NOT EXISTS %s (
+                        file varchar UNIQUE NOT NULL,
+                        title varchar,
+                        artist varchar,
+                        album varchar,
+                        albumartist varchar,
+                        genre varchar,
+                        duration integer,
+                        ignore integer,
+                        danceable integer,
+                        aggressive integer,
+                        electronic integer,
+                        acoustic integer,
+                        happy integer,
+                        party integer,
+                        relaxed integer,
+                        sad integer,
+                        dark integer,
+                        tonal integer,
+                        voice integer,
+                        bpm integer,
+                        key varchar,
+                        vals blob NOT NULL)''' % table)
+            # Add 'key' column - will fail if already exists (which it should, but older instances might not have it)
+            try:
+                self.cursor.execute('ALTER TABLE %s ADD COLUMN key varchar default null' % table)
+            except:
+                pass
 
-        # Create temp table for rowid re-calc
-        self.cursor.execute('''CREATE TABLE IF NOT EXISTS tracks_tmp (
-                    file varchar UNIQUE NOT NULL,
-                    title varchar,
-                    artist varchar,
-                    album varchar,
-                    albumartist varchar,
-                    genre varchar,
-                    duration integer,
-                    ignore integer,
-                    danceable integer,
-                    aggressive integer,
-                    electronic integer,
-                    acoustic integer,
-                    happy integer,
-                    party integer,
-                    relaxed integer,
-                    sad integer,
-                    dark integer,
-                    tonal integer,
-                    voice integer,
-                    bpm integer,
-                    vals blob)''')
+        self.cursor.execute('CREATE UNIQUE INDEX IF NOT EXISTS tracks_idx ON tracks(file)')
 
 
     def commit(self):
@@ -147,9 +131,9 @@ class TracksDb(object):
 
         if essentia is not None:
             if self.file_entry_exists(path):
-                self.cursor.execute('UPDATE tracks SET danceable=?, aggressive=?, electronic=?, acoustic=?, happy=?, party=?, relaxed=?, sad=?, dark=?, tonal=?, voice=?, bpm=? WHERE file=?', (essentia['danceable'], essentia['aggressive'], essentia['electronic'], essentia['acoustic'], essentia['happy'], essentia['party'], essentia['relaxed'], essentia['sad'], essentia['dark'], essentia['tonal'], essentia['voice'], essentia['bpm'], path))
+                self.cursor.execute('UPDATE tracks SET danceable=?, aggressive=?, electronic=?, acoustic=?, happy=?, party=?, relaxed=?, sad=?, dark=?, tonal=?, voice=?, bpm=?, key=? WHERE file=?', (essentia['danceable'], essentia['aggressive'], essentia['electronic'], essentia['acoustic'], essentia['happy'], essentia['party'], essentia['relaxed'], essentia['sad'], essentia['dark'], essentia['tonal'], essentia['voice'], essentia['bpm'], essentia['key'], path))
             else:
-                self.cursor.execute('INSERT INTO tracks (file, danceable, aggressive, electronic, acoustic, happy, party, relaxed, sad, dark, tonal, voice, bpm) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', (path, essentia['danceable'], essentia['aggressive'], essentia['electronic'], essentia['acoustic'], essentia['happy'], essentia['party'], essentia['relaxed'], essentia['sad'], essentia['dark'], essentia['tonal'], essentia['voice'], essentia['bpm']))
+                self.cursor.execute('INSERT INTO tracks (file, danceable, aggressive, electronic, acoustic, happy, party, relaxed, sad, dark, tonal, voice, bpm) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', (path, essentia['danceable'], essentia['aggressive'], essentia['electronic'], essentia['acoustic'], essentia['happy'], essentia['party'], essentia['relaxed'], essentia['sad'], essentia['dark'], essentia['tonal'], essentia['voice'], essentia['bpm'], essentia['key']))
 
 
     def get_metadata(self, i):

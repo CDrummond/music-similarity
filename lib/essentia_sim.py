@@ -42,9 +42,9 @@ def init(db):
         for row in cursor:
             attribs=[]
             for attr in range(len(tracks_db.ESSENTIA_ATTRIBS)):
-                if 'bpm'==tracks_db.ESSENTIA_ATTRIBS[attr]:
+                if 'bpm' == tracks_db.ESSENTIA_ATTRIBS[attr]:
                     attribs.append((row[attr]-min_bpm)/bpm_range)
-                else:
+                elif 'key' != tracks_db.ESSENTIA_ATTRIBS[attr]:
                     attribs.append(row[attr])
             attr_list.append(attribs)
             num_tracks+=1

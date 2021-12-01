@@ -14,6 +14,7 @@ def read_json_file(js):
     try:
         data = json.load(js)
 
+        key_scale = 'M' if data['tonal']['key_scale']=='major' else 'm'
         resp = {
                   'danceable': float(data['highlevel']['danceability']['all']['danceable']),
                   'aggressive': float(data['highlevel']['mood_aggressive']['all']['aggressive']),
@@ -26,7 +27,8 @@ def read_json_file(js):
                   'dark': float(data['highlevel']['timbre']['all']['dark']),
                   'tonal': float(data['highlevel']['tonal_atonal']['all']['tonal']),
                   'voice': float(data['highlevel']['voice_instrumental']['all']['voice']),
-                  'bpm': int(data['rhythm']['bpm'])
+                  'bpm': int(data['rhythm']['bpm']),
+                  'key': data['tonal']['key_key']+key_scale
                 }
         return resp
     except ValueError:

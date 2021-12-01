@@ -50,6 +50,27 @@ def check_duration(min_duration, max_duration, meta):
     return True
 
 
+# http://www.harmonic-mixing.com/Images/camelotHarmonicMixing.jpg
+# A flat => G sharp
+CAMELOT = {'BM':'1B', 'F#M':'2B', 'C#M':'3B', 'G#M':'4B', 'D#M':'5B', 'A#M':'6B', 'FM':'7B', 'CM':'8B', 'GM':'9B', 'DM':'10B', 'AM':'11B', 'EM':'12B',
+           'G#m':'1A', 'D#m':'2A', 'A#m':'3A', 'Fm':'4A', 'Cm':'5A', 'Gm':'6A', 'Dm':'7A', 'Am':'8A', 'Em':'9A', 'Bm':'10A', 'F#m':'11A', 'C#m':'12A'}
+
+camelot = None # Map from 1B, etc, to a set of matches
+
+def init_camelot():
+    global camelot
+    camelot = {}
+    for key in CAMELOT:
+        i = int(CAMELOT[key][:-1])
+        grp = CAMELOT[key][-1:]
+        match = set()
+        match.add(CAMELOT[key]) # Match same code
+        match.add('%d%s' % (i, 'B' if grp is 'A' else 'A')) # match (e.g) 3B -> 3A
+        match.add('%d%s' % (i-1 if i>1 else 12, grp))
+        match.add('%d%s' % (i+1 if i<12 else 1, grp))
+        camelot[CAMELOT[key]] = match
+
+
 def check_attribs(seed, candidate, max_bpm_diff, max_attr_diff):
     if 'bpm' not in seed or 'bpm' not in candidate:
         # No essentia attributes, so accept track
@@ -58,6 +79,18 @@ def check_attribs(seed, candidate, max_bpm_diff, max_attr_diff):
     if abs(seed['bpm']-candidate['bpm'])>max_bpm_diff:
         return 'bpm - %s/%s' % (seed['bpm'], candidate['bpm'])
 
+    # Use camelot codes to test if can mix keys
+    seed_cam = CAMELOT[seed['key']] if seed['key'] in CAMELOT else None
+    if seed_cam is not None:
+        candidate_cam = CAMELOT[candidate['key']] if candidate['key'] in CAMELOT else None
+        if candidate_cam is None:
+            return 'key - %s (%s) / %s (%s)' % (seed['key'], seed_cam, candidate['key'], 'None')
+        global camelot
+        if camelot is None:
+            init_camelot()
+        if candidate_cam not in camelot[seed_cam]:
+            return 'key - %s (%s) / %s (%s)' % (seed['key'], seed_cam, candidate['key'], candidate_cam)
+
     ess_attr_high = 1.0 - ESS_ATTR_LIM
     ess_attr_low = ESS_ATTR_LIM
     # Determine the 4 most accurate Essentia attributes, and filter on those
@@ -65,7 +98,7 @@ def check_attribs(seed, candidate, max_bpm_diff, max_attr_diff):
     if not 'ess' in seed:
         attr=[]
         for ess in tracks_db.ESSENTIA_ATTRIBS:
-            if ess != 'bpm' and ((seed[ess]>=ess_attr_high and seed[ess]<1.0) or (seed[ess]>0.000001 and seed[ess]<=ess_attr_low)):
+            if ess != 'bpm' and ess != 'key' and ((seed[ess]>=ess_attr_high and seed[ess]<1.0) or (seed[ess]>0.000001 and seed[ess]<=ess_attr_low)):
                attr.append({'key':ess, 'val':abs(0.5-seed[ess])})
         attr=sorted(attr, key=lambda k: -1*k['val'])[:4]
         seed['ess']=[]

@@ -26,7 +26,7 @@ def analyze_audiofile(pipe, libmusly, essentia_extractor, index, db_path, abs_pa
     if len(essentia_extractor)>1 and (extract_len<=0 or resp['ok']):
         eres = essentia_analysis.analyse_track(index, essentia_extractor, db_path, abs_path, tmp_path, essentia_cache)
         resp['ok'] = eres is not None
-        resp['essentia'] =  eres
+        resp['essentia'] = eres
 
     pipe.send(resp);
     pipe.close()
@@ -65,7 +65,8 @@ def process_files(config, trks_db, allfiles, tmp_path):
                 result = future.result()
                 if result['ok']:
                     eres = result['essentia'] if 'essentia' in result else None
-                    trks_db.add(allfiles[result['index']]['db'], result['musly'], eres)
+                    mres = result['musly'] if 'musly' in result else None
+                    trks_db.add(allfiles[result['index']]['db'], mres, eres)
                     inserts_since_commit += 1
                     if inserts_since_commit >= 500:
                         inserts_since_commit = 0
