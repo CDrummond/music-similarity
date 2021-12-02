@@ -133,7 +133,7 @@ class TracksDb(object):
             if self.file_entry_exists(path):
                 self.cursor.execute('UPDATE tracks SET danceable=?, aggressive=?, electronic=?, acoustic=?, happy=?, party=?, relaxed=?, sad=?, dark=?, tonal=?, voice=?, bpm=?, key=? WHERE file=?', (essentia['danceable'], essentia['aggressive'], essentia['electronic'], essentia['acoustic'], essentia['happy'], essentia['party'], essentia['relaxed'], essentia['sad'], essentia['dark'], essentia['tonal'], essentia['voice'], essentia['bpm'], essentia['key'], path))
             else:
-                self.cursor.execute('INSERT INTO tracks (file, danceable, aggressive, electronic, acoustic, happy, party, relaxed, sad, dark, tonal, voice, bpm) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', (path, essentia['danceable'], essentia['aggressive'], essentia['electronic'], essentia['acoustic'], essentia['happy'], essentia['party'], essentia['relaxed'], essentia['sad'], essentia['dark'], essentia['tonal'], essentia['voice'], essentia['bpm'], essentia['key']))
+                self.cursor.execute('INSERT INTO tracks (file, danceable, aggressive, electronic, acoustic, happy, party, relaxed, sad, dark, tonal, voice, bpm, key) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', (path, essentia['danceable'], essentia['aggressive'], essentia['electronic'], essentia['acoustic'], essentia['happy'], essentia['party'], essentia['relaxed'], essentia['sad'], essentia['dark'], essentia['tonal'], essentia['voice'], essentia['bpm'], essentia['key']))
 
 
     def get_metadata(self, i):
