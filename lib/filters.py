@@ -65,7 +65,7 @@ def init_camelot():
         grp = CAMELOT[key][-1:]
         match = set()
         match.add(CAMELOT[key]) # Match same code
-        match.add('%d%s' % (i, 'B' if grp is 'A' else 'A')) # match (e.g) 3B -> 3A
+        match.add('%d%s' % (i, 'B' if grp == 'A' else 'A')) # match (e.g) 3B -> 3A
         match.add('%d%s' % (i-1 if i>1 else 12, grp))
         match.add('%d%s' % (i+1 if i<12 else 1, grp))
         camelot[CAMELOT[key]] = match
