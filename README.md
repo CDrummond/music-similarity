@@ -13,6 +13,7 @@ for:
 2. Raspbian Buster 32-bit, *not* linked to libav, therefore cannot be used for
 analysis - `lib/armv7l/raspbian-buster/libmusly.so`
 3. Raspbian Buster 32-bit, linked against libav - `lib/armv7l/raspbian-buster/libav/libmusly.so`
+4. Windows built with MinGW32, requires 32bit Python - `lib/windows/libmusly.dll`
 
 **macOS**
 
