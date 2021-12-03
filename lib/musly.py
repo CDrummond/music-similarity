@@ -4,7 +4,7 @@ Musly - access libmusly functions
 (c) 2020 Caig Drummond - modified for use in musly-server
 '''
 
-import ctypes, math, random, pickle, sqlite3, logging, pathlib, os
+import ctypes, math, random, pickle, sqlite3, logging, os, pathlib, platform
 from collections import namedtuple
 from sys import version_info
 from . import tracks_db
@@ -16,6 +16,7 @@ __version__ = '0.0.3'
 
 _LOGGER = logging.getLogger(__name__)
 MUSLY_DECODER = b"libav"
+MUSLY_DECODER_WINDOWS = b"ffmpeg"
 MUSLY_METHOD = b"timbre"
 
 MuslyTracksAdded = namedtuple("MuslyTracksAdded", "paths mtracks mtrackids")
@@ -30,10 +31,24 @@ class MuslyJukebox(ctypes.Structure):
 
 class Musly(object):
     def __init__(self, libmusly, quiet=False):
+        decoder_name = MUSLY_DECODER
         if not libmusly.startswith('/'):
             libmusly = os.path.join(pathlib.Path(__file__).parent.parent, libmusly)
         if not quiet:
             _LOGGER.debug('Init Musly')
+
+        if platform.system() == 'Windows':
+            decoder_name = MUSLY_DECODER_WINDOWS
+            # Load MinGW libraries under Windows
+            for lib in ['libgcc_s_dw2-1', 'libstdc++-6']:
+                try:
+                    libpath = libmusly.replace('libmusly.', '%s.' % lib)
+                    ctypes.CDLL(libpath)
+                    if not quiet:
+                        _LOGGER.debug("Using: %s" % libpath)
+                except:
+                    pass
+
         try:
             libresample = libmusly.replace('libmusly.', 'libmusly_resample.')
             ctypes.CDLL(libresample)
@@ -41,10 +56,10 @@ class Musly(object):
                 _LOGGER.debug("Using: %s" % libresample)
         except:
             pass
-        self.libmusly = libmusly
+
         self.mus = ctypes.CDLL(libmusly)
         if not quiet:
-            _LOGGER.debug("Using: %s" % libmusly)
+            _LOGGER.debug("Using: %s (%s)" % (libmusly, str(decoder_name)))
 
         # setup func calls
 
@@ -74,7 +89,7 @@ class Musly(object):
         self.mus.musly_track_analyze_audiofile.argtypes = [ctypes.POINTER(MuslyJukebox), ctypes.c_char_p, ctypes.c_float, ctypes.c_float, ctypes.POINTER(ctypes.c_float)]
 
         # init
-        self.decoder = ctypes.c_char_p(MUSLY_DECODER);
+        self.decoder = ctypes.c_char_p(decoder_name);
         self.method = ctypes.c_char_p(MUSLY_METHOD)
 
         self.mj = self.mus.musly_jukebox_poweron(self.method, self.decoder)

@@ -5,7 +5,7 @@
 # GPLv3 license.
 #
 
-import argparse, json, logging, math, os, random, sqlite3, urllib
+import argparse, json, logging, math, os, random, re, sqlite3, urllib
 from datetime import datetime
 from flask import Flask, abort, request
 from . import cue, essentia_sim, filters, tracks_db, musly
@@ -90,6 +90,19 @@ def decode(url, root):
     if u.startswith(root):
         u=u[len(root):]
     return cue.convert_from_cue_path(u)
+
+
+def encode(root, path, add_file_protocol):
+    full_path = '%s%s' % (root, path)
+    if path.find(cue.CUE_TRACK)>0:
+        return cue.convert_to_cue_url(full_path)
+    if add_file_protocol:
+        # Check if windows path, if so don't encode first ':'
+        if re.match(r'^/[A-Za-z]:', full_path):
+            return 'file://%s%s' % (full_path[:3], urllib.parse.quote(full_path[3:]))
+        else:
+            return 'file://%s' % urllib.parse.quote(full_path)
+    return full_path
 
 
 def genre_adjust(seed, entry, acceptable_genres, all_genres, no_genre_match_adj, genre_group_adj):
@@ -222,6 +235,10 @@ def get_essentia_cfg(config, params):
 
 def get_music_path(params, cfg):
     path = params['mpath'] if 'mpath' in params else cfg['paths']['lms']
+    if re.match(r'^[A-Za-z]:\\', path):
+        # LMS will supply (e.g.) c:\Users\user\Music and we want /C:/Users/user/Music/
+        # This is because tracks will be file:///C:/Users/user/Music
+        path = '/'+path.replace('\\', '/')
     if not path.endswith('/'):
         path += '/'
     return path
@@ -255,9 +272,11 @@ def dump_api():
 
     # Strip LMS root path from track path
     root = get_music_path(params, cfg)
+    _LOGGER.debug('Music root: %s' % root)
 
     ess_enabled = ess_cfg['enabled']
     ess_weight = ess_cfg['weight'] if ess_enabled else 0.0
+    add_file_protocol = params['track'][0].startswith('file://')
 
     track = decode(params['track'][0], root)
     no_repeat_artist = int(get_value(params, 'norepart', 0, isPost))
@@ -328,7 +347,7 @@ def dump_api():
             if txt:
                 resp.append("%s\t%f" % (track['path'], track['sim']))
             elif txt_url:
-                resp.append(cue.convert_to_cue_url('%s%s' % (root, track['path'])))
+                resp.append(encode(root, track['path'], add_file_protocol))
             else:
                 resp.append({'file':track['path'], 'sim':track['sim']})
             if len(resp)>=count:
@@ -390,6 +409,7 @@ def similar_api():
 
     # Strip LMS root path from track path
     root = get_music_path(params, cfg)
+    _LOGGER.debug('Music root: %s' % root)
 
     ess_enabled = ess_cfg['enabled']
     ess_weight = ess_cfg['weight'] if ess_enabled else 0.0
@@ -419,6 +439,8 @@ def similar_api():
     # Musly IDs of seed tracks
     track_ids = []
     trk_count = 0
+    add_file_protocol = params['track'][0].startswith('file://')
+
     for trk in params['track']:
         track = decode(trk, root)
         _LOGGER.debug('S TRACK %s -> %s' % (trk, track))
@@ -631,8 +653,8 @@ def similar_api():
 
     track_list = []
     for track in similar_tracks:
-        path = '%s%s' % (root, track['path'])
-        track_list.append(cue.convert_to_cue_url(path))
+        path = encode(root, track['path'], add_file_protocol)
+        track_list.append(path)
         _LOGGER.debug('Path:%s %f' % (path, track['similarity']))
 
     tdb.close()

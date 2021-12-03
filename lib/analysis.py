@@ -88,15 +88,17 @@ def get_files_to_analyse(trks_db, lms_db, lms_path, path, files, local_root_len,
     if len(parts)>1 and parts[1].lower() in AUDIO_EXTENSIONS:
         if os.path.exists(parts[0]+'.cue'):
             for track in cue.get_cue_tracks(lms_db, lms_path, path, local_root_len, tmp_path):
-                musly = not meta_only and ('m' in force or not trks_db.file_analysed_with_musly(track['file'][tmp_path_len:]))
-                essentia = not meta_only and ('e' in force or essentia_enabled and not trks_db.file_analysed_with_essentia(track['file'][tmp_path_len:]))
+                db_path = track['file'][tmp_path_len:].replace('\\', '/')
+                musly = not meta_only and ('m' in force or not trks_db.file_analysed_with_musly(db_path))
+                essentia = not meta_only and ('e' in force or essentia_enabled and not trks_db.file_analysed_with_essentia(db_path))
                 if meta_only or musly or essentia:
-                    files.append({'abs':track['file'], 'db':track['file'][tmp_path_len:], 'track':track, 'src':path, 'musly':musly, 'essentia':essentia})
+                    files.append({'abs':track['file'], 'db':db_path, 'track':track, 'src':path, 'musly':musly, 'essentia':essentia})
         else:
-            musly = not meta_only and ('m' in force or not trks_db.file_analysed_with_musly(path[local_root_len:]))
-            essentia = not meta_only and ('e' in force or essentia_enabled and not trks_db.file_analysed_with_essentia(path[local_root_len:]))
+            db_path = path[local_root_len:].replace('\\', '/')
+            musly = not meta_only and ('m' in force or not trks_db.file_analysed_with_musly(db_path))
+            essentia = not meta_only and ('e' in force or essentia_enabled and not trks_db.file_analysed_with_essentia(db_path))
             if meta_only or musly or essentia:
-                files.append({'abs':path, 'db':path[local_root_len:], 'musly':musly, 'essentia':essentia})
+                files.append({'abs':path, 'db':db_path, 'musly':musly, 'essentia':essentia})
 
 
 def analyse_files(config, path, remove_tracks, meta_only, force, jukebox):
