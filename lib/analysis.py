@@ -5,7 +5,7 @@
 # GPLv3 license.
 #
 
-import logging, os, pickle, random, sqlite3, tempfile
+import logging, os, pickle, random, signal, sqlite3, tempfile
 from . import cue, essentia_analysis, tracks_db, musly
 from concurrent.futures import ThreadPoolExecutor
 from multiprocessing import Process, Pipe
@@ -13,6 +13,11 @@ from multiprocessing import Process, Pipe
 _LOGGER = logging.getLogger(__name__)
 AUDIO_EXTENSIONS = ['m4a', 'mp3', 'ogg', 'flac', 'opus']
 
+should_stop = False
+def sig_handler(signum, frame):
+    global should_stop
+    should_stop = True
+    _LOGGER.info('Intercepted CTRL-C, stopping (might take a few seconds)...')
 
 def analyze_audiofile(pipe, libmusly, essentia_extractor, index, db_path, abs_path, extract_len, extract_start, essentia_cache, tmp_path):
     resp = {'index':index, 'ok':False}
@@ -33,7 +38,8 @@ def analyze_audiofile(pipe, libmusly, essentia_extractor, index, db_path, abs_pa
 
 
 def analyze_file(index, total, db_path, abs_path, config, tmp_path, musly_analysis, essentia_analysis):
-    if 'stop' in config and os.path.exists(config['stop']):
+    global should_stop
+    if should_stop:
         return None
     _LOGGER.debug("[{}/{} {}%] Analyze: {}".format(index+1, total, int((index+1)*100/total), db_path))
     pout, pin = Pipe(duplex=False)
@@ -102,6 +108,7 @@ def get_files_to_analyse(trks_db, lms_db, lms_path, path, files, local_root_len,
 
 
 def analyse_files(config, path, remove_tracks, meta_only, force, jukebox):
+    signal.signal(signal.SIGINT, sig_handler)
     _LOGGER.debug('Analyse %s' % path)
     trks_db = tracks_db.TracksDb(config)
     lms_db = sqlite3.connect(config['lmsdb']) if 'lmsdb' in config else None
