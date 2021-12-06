@@ -1,6 +1,6 @@
 {
  "musly":{
-  "lib":"lib/armv7l/raspbian-buster/libmusly.so"
+  "lib":"lib/linux/armv7l/raspbian-buster/libmusly.so"
  },
  "essentia":{
   "enabled":true

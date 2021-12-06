@@ -1,6 +1,6 @@
 {
  "musly":{
-  "lib":"lib/x86-64/fedora/libmusly.so",
+  "lib":"lib/linux/x86-64/fedora/libmusly.so",
   "styletracks":1000,
   "styletracksmethod":"genres",
   "extractlen":120,

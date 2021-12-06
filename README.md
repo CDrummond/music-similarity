@@ -9,10 +9,10 @@ This library needs to be compiled, and `config.json` (from this project) updated
 to store the location of this library. This repo contains pre-built versions
 for:
 
-1. Fedora 64-bit - `lib/x86-64/fedora/libmusly.so`
+1. Fedora 64-bit - `lib/linux/x86-64/fedora/libmusly.so`
 2. Raspbian Buster 32-bit, *not* linked to libav, therefore cannot be used for
-analysis - `lib/armv7l/raspbian-buster/libmusly.so`
-3. Raspbian Buster 32-bit, linked against libav - `lib/armv7l/raspbian-buster/libav/libmusly.so`
+analysis - `lib/linux/armv7l/raspbian-buster/libmusly.so`
+3. Raspbian Buster 32-bit, linked against libav - `lib/linux/armv7l/raspbian-buster/libav/libmusly.so`
 4. Windows built with MinGW32, requires 32-bit Python - `lib/windows/mingw32/libmusly.dll`
 5. Windows built with MinGW64, requires 64-bit Python - `lib/windows/mingw64/libmusly.dll`
 
