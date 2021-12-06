@@ -40,7 +40,7 @@ class Musly(object):
         if platform.system() == 'Windows':
             decoder_name = MUSLY_DECODER_WINDOWS
             # Load MinGW libraries under Windows
-            for lib in ['libgcc_s_dw2-1', 'libstdc++-6']:
+            for lib in ['libgcc_s_dw2-1', 'libgcc_s_seh-1', 'libstdc++-6']:
                 try:
                     libpath = libmusly.replace('libmusly.', '%s.' % lib)
                     ctypes.CDLL(libpath)

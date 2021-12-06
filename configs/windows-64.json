@@ -1,6 +1,6 @@
 {
  "musly":{
-  "lib":"lib\\windows\\libmusly.dll",
+  "lib":"lib\\windows\\mingw64\\libmusly.dll",
   "styletracks":1000,
   "styletracksmethod":"genres",
   "extractlen":120,
