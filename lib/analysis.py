@@ -13,13 +13,15 @@ from multiprocessing import Process, Pipe
 _LOGGER = logging.getLogger(__name__)
 AUDIO_EXTENSIONS = ['m4a', 'mp3', 'ogg', 'flac', 'opus']
 
+
 should_stop = False
 def sig_handler(signum, frame):
     global should_stop
     should_stop = True
     _LOGGER.info('Intercepted CTRL-C, stopping (might take a few seconds)...')
 
-def analyze_audiofile(pipe, libmusly, essentia_extractor, index, db_path, abs_path, extract_len, extract_start, essentia_cache, tmp_path):
+
+def analyze_audiofile(pipe, libmusly, essentia_extractor, index, db_path, abs_path, extract_len, extract_start, essentia_cache, essentia_highlevel, tmp_path):
     resp = {'index':index, 'ok':False}
 
     if extract_len>0:
@@ -29,7 +31,7 @@ def analyze_audiofile(pipe, libmusly, essentia_extractor, index, db_path, abs_pa
         resp['musly'] = pickle.dumps(bytes(mres['mtrack']), protocol=4)
 
     if len(essentia_extractor)>1 and (extract_len<=0 or resp['ok']):
-        eres = essentia_analysis.analyse_track(index, essentia_extractor, db_path, abs_path, tmp_path, essentia_cache)
+        eres = essentia_analysis.analyse_track(index, essentia_extractor, db_path, abs_path, tmp_path, essentia_cache, essentia_highlevel)
         resp['ok'] = eres is not None
         resp['essentia'] = eres
 
@@ -47,7 +49,7 @@ def analyze_file(index, total, db_path, abs_path, config, tmp_path, musly_analys
     essentia_cache = config['paths']['cache'] if 'cache' in config['paths'] else "-"
     extractor = config['essentia']['extractor'] if essentia_analysis and config['essentia']['enabled'] else "-"
     musly_extractlen = config['musly']['extractlen'] if musly_analysis else 0
-    p = Process(target=analyze_audiofile, args=(pin, config['musly']['lib'], extractor, index, db_path, abs_path, musly_extractlen, config['musly']['extractstart'], essentia_cache, tmp_path))
+    p = Process(target=analyze_audiofile, args=(pin, config['musly']['lib'], extractor, index, db_path, abs_path, musly_extractlen, config['musly']['extractstart'], essentia_cache, config['essentia']['highlevel'], tmp_path))
     p.start()
     r = pout.recv()
     p.terminate()

@@ -16,26 +16,28 @@ def read_json_file(js):
 
         key_scale = 'M' if data['tonal']['key_scale']=='major' else 'm'
         resp = {
-                  'danceable': float(data['highlevel']['danceability']['all']['danceable']),
-                  'aggressive': float(data['highlevel']['mood_aggressive']['all']['aggressive']),
-                  'electronic': float(data['highlevel']['mood_electronic']['all']['electronic']),
-                  'acoustic': float(data['highlevel']['mood_acoustic']['all']['acoustic']),
-                  'happy': float(data['highlevel']['mood_happy']['all']['happy']),
-                  'party': float(data['highlevel']['mood_party']['all']['party']),
-                  'relaxed': float(data['highlevel']['mood_relaxed']['all']['relaxed']),
-                  'sad': float(data['highlevel']['mood_sad']['all']['sad']),
-                  'dark': float(data['highlevel']['timbre']['all']['dark']),
-                  'tonal': float(data['highlevel']['tonal_atonal']['all']['tonal']),
-                  'voice': float(data['highlevel']['voice_instrumental']['all']['voice']),
                   'bpm': int(data['rhythm']['bpm']),
+                  'loudness': float(data['lowlevel']['average_loudness']),
                   'key': data['tonal']['key_key']+key_scale
-                }
+               }
+        if 'highlevel' in data:
+            resp['danceable']=float(data['highlevel']['danceability']['all']['danceable'])
+            resp['aggressive']=float(data['highlevel']['mood_aggressive']['all']['aggressive'])
+            resp['electronic']=float(data['highlevel']['mood_electronic']['all']['electronic'])
+            resp['acoustic']=float(data['highlevel']['mood_acoustic']['all']['acoustic'])
+            resp['happy']=float(data['highlevel']['mood_happy']['all']['happy'])
+            resp['party']=float(data['highlevel']['mood_party']['all']['party'])
+            resp['relaxed']=float(data['highlevel']['mood_relaxed']['all']['relaxed'])
+            resp['sad']=float(data['highlevel']['mood_sad']['all']['sad'])
+            resp['dark']=float(data['highlevel']['timbre']['all']['dark'])
+            resp['tonal']=float(data['highlevel']['tonal_atonal']['all']['tonal'])
+            resp['voice']=float(data['highlevel']['voice_instrumental']['all']['voice'])
         return resp
     except ValueError:
         return None
 
 
-def analyse_track(idx, extractor, db_path, abs_path, tmp_path, cache_dir):
+def analyse_track(idx, extractor, db_path, abs_path, tmp_path, cache_dir, highlevel):
     # Try to load previous JSON
     if len(cache_dir)>1:
         jsfile = "%s/%s.json" % (cache_dir, db_path)
@@ -63,7 +65,10 @@ def analyse_track(idx, extractor, db_path, abs_path, tmp_path, cache_dir):
         jsfile = "%s/essentia-%d.json" % (tmp_path, idx)
 
     if not os.path.exists(jsfile):
-        subprocess.call([extractor, abs_path, jsfile, os.path.join('essentia', 'profile')], shell=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, cwd=pathlib.Path(__file__).parent.parent.absolute())
+        cmd = [extractor, abs_path, jsfile]
+        if highlevel:
+            cmd = [extractor, abs_path, jsfile, os.path.join('essentia', 'profile')]
+        subprocess.call(cmd, shell=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, cwd=pathlib.Path(__file__).parent.parent.absolute())
     if not os.path.exists(jsfile):
         return None
     try:

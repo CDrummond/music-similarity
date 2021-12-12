@@ -7,8 +7,9 @@
   "extractstart":-210
  },
  "essentia":{
-  "enabled":false,
-  "extractor":"essentia\\bin\\x86-64/essentia_streaming_extractor_music"
+  "enabled":true,
+  "highlevel":false,
+  "extractor":"streaming_extractor_music.exe"
  },
  "paths":{
   "db":"C:\\Users\\user\\MusicSimilarity",

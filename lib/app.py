@@ -219,6 +219,16 @@ def get_essentia_cfg(config, params):
         else:
             ess_cfg['bpm'] = config['essentia']['bpm']
 
+        if 'maxloudnessdiff' in params and params['maxloudnessdiff'] is not None:
+            ess_cfg['loudness'] = int(params['maxloudnessdiff'])/10.0
+        else:
+            ess_cfg['loudness'] = config['essentia']['loudness']/10.0
+
+        if 'key' in params and params['filterkey'] is not None:
+            ess_cfg['key'] = int(params['filterkey'])==1
+        else:
+            ess_cfg['key'] = config['essentia']['key']
+
         if 'maxattribdiff' in params and params['maxattribdiff'] is not None:
             ess_cfg['attr'] = int(params['maxattribdiff'])/100.0
         else:
@@ -228,6 +238,9 @@ def get_essentia_cfg(config, params):
             ess_cfg['weight'] = int(params['attribweight'])/100.0
         else:
             ess_cfg['weight'] = config['essentia']['weight']
+
+        if not config['essentia']['highlevel']:
+            ess_cfg['weight'] = 0.0
 
     _LOGGER.debug('Essentia(attrib) cfg: %s' % json.dumps(ess_cfg, cls=SetEncoder))
     return ess_cfg
@@ -331,7 +344,7 @@ def dump_api():
             if simtrack['id']!=track_id and 'title' in track and 'title' in meta and track['title'] == meta['title']:
                 continue
             if ess_enabled:
-                filtered_due_to = filters.check_attribs(meta, track, ess_cfg['bpm'], ess_cfg['attr'])
+                filtered_due_to = filters.check_attribs(meta, track, ess_cfg)
                 if filtered_due_to is not None:
                     _LOGGER.debug('DISCARD(%s): %s' % (filtered_due_to, str(track)))
                     continue
@@ -569,7 +582,7 @@ def similar_api():
                     skip_track_ids.add(simtrack['id'])
                 else:
                     if ess_enabled:
-                        filtered_due_to = filters.check_attribs(track_id_seed_metadata[track_id], meta, ess_cfg['bpm'], ess_cfg['attr'])
+                        filtered_due_to = filtered_due_to = filters.check_attribs(track_id_seed_metadata[track_id], meta, ess_cfg)
                         if filtered_due_to is not None:
                             _LOGGER.debug('FILTERED(attribs(%s)) ID:%d Path:%s Similarity:%f Meta:%s' % (filtered_due_to, simtrack['id'], mta.paths[simtrack['id']], simtrack['sim'], json.dumps(meta, cls=SetEncoder)))
                             set_filtered(simtrack, mta, filtered_tracks, 'attribs')

@@ -29,6 +29,19 @@ not required for locating similar tracks. Therefore, if analysis is performed on
 one machine and similar tracks located on another (e.g. a Raspberry Pi) the
 contents of the `essentia` folder are not required on the similarity machine.
 
+Essentia binaries may be downloaded from [acousticbrainz.org](https://similarity.acousticbrainz.org/download).
+However, please note that these *only* support low-level analysis (bpm, key,
+loudness). To support high-level analysis (danceability, aggresiveness, etc.)
+you will need to compile your own build of essentia - or use the prebuilt binary
+if on Linux.
+
+- [Linux i386](http://ftp.acousticbrainz.org/pub/acousticbrainz/essentia-extractor-v2.1_beta2-linux-i686.tar.gz)
+- [Linux x86_64](http://ftp.acousticbrainz.org/pub/acousticbrainz/essentia-extractor-v2.1_beta2-linux-x86_64.tar.gz)
+- [Mac 64 bit](http://ftp.acousticbrainz.org/pub/acousticbrainz/essentia-extractor-v2.1_beta2-2-gbb40004-osx.tar.gz)
+- [Windows 32](http://ftp.acousticbrainz.org/pub/acousticbrainz/essentia-extractor-v2.1_beta2-1-ge3940c0-win-i686.zip)
+
+When using one of the above you *must* set `essentia.highlevel` to `false` in
+`config.json` Example configs can be found in the `configs` folder.
 
 ## Analysing Tracks
 

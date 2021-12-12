@@ -72,9 +72,17 @@ def read_config(path, analyse):
     if config['essentia']['enabled']:
         if not 'bpm' in config['essentia']:
             config['essentia']['bpm']=20
+        if not 'loudness' in config['essentia']:
+            config['essentia']['loudness']=10
+        if not 'key' in config['essentia']:
+            config['essentia']['key']=True
+        if not 'highlevel' in config['essentia']:
+            config['essentia']['highlevel']=False
         if not 'attr' in config['essentia']:
             config['essentia']['attr']=0.4
         if not 'weight' in config['essentia'] or float(config['essentia']['weight'])<0 or float(config['essentia']['weight'])>1:
+            config['essentia']['weight'] = 0.0
+        if not config['essentia']['highlevel']:
             config['essentia']['weight'] = 0.0
         if analyse and not 'extractor' in config['essentia']:
             _LOGGER.error("'essentia.extractor' not in config file")
