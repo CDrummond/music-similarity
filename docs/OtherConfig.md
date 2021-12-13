@@ -7,22 +7,19 @@ he LMS plugin when it asks for mixes:
  "essentia":{
   "bpm":20,
   "loudness":10,
-  "key":true,
+  "filterkey":true,
   "highlevel":false,
-  "attr":0.4,
+  "filterattrib":false,
   "weight":0.0
  }
 }
 
 * `essentia.bpm` Specify max BPM difference when filtering tracks.
 * `essentia.loudness` Specify max loudness difference when filtering tracks.
-* `essentia.key` Specify whether to filter on matching keys.
+* `essentia.filterkey` Specify whether to filter on matching keys.
 * `essentia.highlevel` Specify whether to support high-level Essentia analysis
 features.
-* `essentia.attr` Specify max difference in Essentia attributes. For each seed
-attribute that is in the range 0.8 .. 1.0 a candidate must be in the range
-0.8-`essentia.attr` .. 1.0, and for each attribute in the range 0.0 .. 0.2 a
-candidate must be in the range 0.0 .. 0.2+`essentia.attr`
+* `essentia.filterattrib` Specify whether to filter on attrributes or not.
 * `essentia.weight` By default Musly is used for similarity score, and Essentia
 is used to filter tracks. However, if you set `essentia.weight` to higher than
 0.0 (and less than or equal to 1.0) then Essentia can also be used to score

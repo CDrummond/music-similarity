@@ -11,7 +11,7 @@ from . import tracks_db
 VARIOUS_ARTISTS = ['various', 'various artists'] # Artist names are normalised, and coverted to lower case
 CHRISTMAS_GENRES = ['Christmas', 'Xmas']
 ESS_ATTR_LIM = 0.2
-
+ESS_ATTR_CANDIDATE = 0.1
 
 def genre_matches(config, seed_genres, track):
     if 'genres' not in track or len(track['genres'])<1:
@@ -82,7 +82,7 @@ def check_attribs(seed, candidate, ess_cfg):
     if ess_cfg['bpm']<150 and abs(seed['bpm']-candidate['bpm'])>ess_cfg['bpm']:
         return 'bpm - %s/%s' % (str(seed['bpm']), str(candidate['bpm']))
 
-    if ess_cfg['key']:
+    if ess_cfg['filterkey']:
         # Use camelot codes to test if can mix keys
         seed_cam = CAMELOT[seed['key']] if seed['key'] in CAMELOT else None
         if seed_cam is not None:
@@ -98,7 +98,7 @@ def check_attribs(seed, candidate, ess_cfg):
     if ess_cfg['loudness']<0.999999 and abs(seed['loudness']-candidate['loudness'])>ess_cfg['loudness']:
         return 'loudness - %s/%s' % (str(seed['loudness']), str(candidate['loudness']))
 
-    if ess_cfg['highlevel']:
+    if ess_cfg['highlevel'] and ess_cfg['filterattrib']:
         ess_attr_high = 1.0 - ESS_ATTR_LIM
         ess_attr_low = ESS_ATTR_LIM
         # Determine the 4 most accurate Essentia attributes, and filter on those
@@ -115,7 +115,7 @@ def check_attribs(seed, candidate, ess_cfg):
 
         for ess in seed['ess']:
             # Filter out tracks where attribute is in opposite end of spectrum
-            if (seed[ess]>=ess_attr_high and candidate[ess]<(ess_attr_high-max_attr_diff)) or (seed[ess]<=ess_attr_low and candidate[ess]>(ess_attr_low+max_attr_diff)):
+            if (seed[ess]>=ess_attr_high and candidate[ess]<(ess_attr_high-ESS_ATTR_CANDIDATE)) or (seed[ess]<=ess_attr_low and candidate[ess]>(ess_attr_low+ESS_ATTR_CANDIDATE)):
                 return '%s - %f/%f' % (ess, seed[ess], candidate[ess])
 
     return None

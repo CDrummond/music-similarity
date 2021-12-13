@@ -212,7 +212,7 @@ def get_genre_cfg(config, params):
 
 def get_essentia_cfg(config, params):
     ''' Get essentia(attrib) settings from URL or config '''
-    ess_cfg={'enabled': config['essentia']['enabled'], 'bpm': config['essentia']['bpm'], 'attr': config['essentia']['attr'], 'weight': config['essentia']['weight']}
+    ess_cfg={'enabled': config['essentia']['enabled']}
     if config['essentia']['enabled']:
         if 'maxbpmdiff' in params and params['maxbpmdiff'] is not None:
             ess_cfg['bpm'] = int(params['maxbpmdiff'])
@@ -220,27 +220,26 @@ def get_essentia_cfg(config, params):
             ess_cfg['bpm'] = config['essentia']['bpm']
 
         if 'maxloudnessdiff' in params and params['maxloudnessdiff'] is not None:
-            ess_cfg['loudness'] = int(params['maxloudnessdiff'])/10.0
+            ess_cfg['maxloudnessdiff'] = int(params['maxloudnessdiff'])/10.0
         else:
-            ess_cfg['loudness'] = config['essentia']['loudness']/10.0
+            ess_cfg['maxloudnessdiff'] = config['essentia']['maxloudnessdiff']/10.0
 
-        if 'key' in params and params['filterkey'] is not None:
-            ess_cfg['key'] = int(params['filterkey'])==1
+        if 'filterkey' in params and params['filterkey'] is not None:
+            ess_cfg['filterkey'] = int(params['filterkey'])==1
         else:
-            ess_cfg['key'] = config['essentia']['key']
+            ess_cfg['filterkey'] = config['essentia']['filterkey']
 
-        if 'maxattribdiff' in params and params['maxattribdiff'] is not None:
-            ess_cfg['attr'] = int(params['maxattribdiff'])/100.0
+        if 'filterattrib' in params and params['filterattrib'] is not None:
+            ess_cfg['filterattrib'] = int(params['filterattr'])==1
         else:
-            ess_cfg['attr'] = config['essentia']['attr']
-
-        if 'attribweight' in params and params['attribweight'] is not None:
-            ess_cfg['weight'] = int(params['attribweight'])/100.0
-        else:
-            ess_cfg['weight'] = config['essentia']['weight']
+            ess_cfg['filterattrib'] = config['essentia']['filterattrib']
 
         if not config['essentia']['highlevel']:
             ess_cfg['weight'] = 0.0
+        elif 'attribweight' in params and params['attribweight'] is not None:
+            ess_cfg['weight'] = int(params['attribweight'])/100.0
+        else:
+            ess_cfg['weight'] = config['essentia']['weight']
 
     _LOGGER.debug('Essentia(attrib) cfg: %s' % json.dumps(ess_cfg, cls=SetEncoder))
     return ess_cfg
