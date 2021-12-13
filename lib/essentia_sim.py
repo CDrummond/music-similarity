@@ -33,7 +33,7 @@ def init(db):
         attr_list = []
         cols = 'bpm, loudness' # From lowlevel
         for ess in tracks_db.ESSENTIA_HIGHLEVEL_ATTRIBS:
-            cols+=', '
+            cols+=', %s' % ess
 
         cursor.execute('SELECT %s FROM tracks' % cols)
         for row in cursor:
