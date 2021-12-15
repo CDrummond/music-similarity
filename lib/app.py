@@ -120,9 +120,9 @@ def genre_adjust(seed, entry, acceptable_genres, all_genres, no_genre_match_adj,
     return genre_group_adj
 
 
-def get_similars(track_id, mus, num_sim, mta, tdb, ess_weight):
+def get_similars(track_id, mus, num_sim, mta, tdb, ess_cfg):
     tracks = []
-    if ess_weight>=0.99:
+    if ess_cfg['enabled'] and ess_cfg['weight']>=0.99:
         _LOGGER.debug('Get similar tracks to %d from Essentia' % track_id)
         et = essentia_sim.get_similars(tdb, track_id)
         idx = 0
@@ -131,7 +131,7 @@ def get_similars(track_id, mus, num_sim, mta, tdb, ess_weight):
             idx+=1
         return sorted(tracks, key=lambda k: k['sim'])
 
-    if ess_weight<=0.01:
+    if not ess_cfg['enabled'] or ess_cfg['weight']<=0.01:
         _LOGGER.debug('Get %d similar tracks to %d from Musly' % (num_sim, track_id))
         return mus.get_similars(mta.mtracks, mta.mtrackids, track_id, num_sim)
 
@@ -286,8 +286,6 @@ def dump_api():
     root = get_music_path(params, cfg)
     _LOGGER.debug('Music root: %s' % root)
 
-    ess_enabled = ess_cfg['enabled']
-    ess_weight = ess_cfg['weight'] if ess_enabled else 0.0
     add_file_protocol = params['track'][0].startswith('file://')
 
     track = decode(params['track'][0], root)
@@ -322,7 +320,7 @@ def dump_api():
         num_sim = count * 50
         if num_sim<MIN_MUSLY_NUM_SIM:
             num_sim = MIN_MUSLY_NUM_SIM
-        simtracks = get_similars(track_id, mus, num_sim, mta, tdb, ess_weight)
+        simtracks = get_similars(track_id, mus, num_sim, mta, tdb, ess_cfg)
 
         resp=[]
         prev_id=-1
@@ -342,7 +340,7 @@ def dump_api():
                 continue
             if simtrack['id']!=track_id and 'title' in track and 'title' in meta and track['title'] == meta['title']:
                 continue
-            if ess_enabled:
+            if ess_cfg['enabled']:
                 filtered_due_to = filters.check_attribs(meta, track, ess_cfg)
                 if filtered_due_to is not None:
                     _LOGGER.debug('DISCARD(%s): %s' % (filtered_due_to, str(track)))
@@ -422,9 +420,6 @@ def similar_api():
     # Strip LMS root path from track path
     root = get_music_path(params, cfg)
     _LOGGER.debug('Music root: %s' % root)
-
-    ess_enabled = ess_cfg['enabled']
-    ess_weight = ess_cfg['weight'] if ess_enabled else 0.0
 
     # Similar tracks
     similar_tracks=[]
@@ -547,7 +542,7 @@ def similar_api():
     matched_artists={}
     for track_id in track_ids:
         # Query musly and/or essentia for similar tracks
-        simtracks = get_similars(track_id, mus, num_sim, mta, tdb, ess_weight)
+        simtracks = get_similars(track_id, mus, num_sim, mta, tdb, ess_cfg)
         accepted_tracks = 0
         for simtrack in simtracks:
             if math.isnan(simtrack['sim']):
@@ -580,7 +575,7 @@ def similar_api():
                     _LOGGER.debug('DISCARD(xmas) ID:%d Path:%s Similarity:%f Meta:%s' % (simtrack['id'], mta.paths[simtrack['id']], simtrack['sim'], json.dumps(meta, cls=SetEncoder)))
                     skip_track_ids.add(simtrack['id'])
                 else:
-                    if ess_enabled:
+                    if ess_cfg['enabled']:
                         filtered_due_to = filtered_due_to = filters.check_attribs(track_id_seed_metadata[track_id], meta, ess_cfg)
                         if filtered_due_to is not None:
                             _LOGGER.debug('FILTERED(attribs(%s)) ID:%d Path:%s Similarity:%f Meta:%s' % (filtered_due_to, simtrack['id'], mta.paths[simtrack['id']], simtrack['sim'], json.dumps(meta, cls=SetEncoder)))
