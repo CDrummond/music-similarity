@@ -661,7 +661,8 @@ def similar_api():
 
     if shuffle:
         random.shuffle(similar_tracks)
-        similar_tracks = similar_tracks[:count]
+
+    similar_tracks = similar_tracks[:count]
 
     track_list = []
     for track in similar_tracks:
