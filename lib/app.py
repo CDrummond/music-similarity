@@ -23,7 +23,8 @@ SHUFFLE_FACTOR                        = 2    # How many (shuffle_factor*count) t
 MIN_MUSLY_NUM_SIM                     = 5000 # Min number of tracs to query musly for
 DEFAULT_NO_GENRE_MATCH_ADJUSTMENT     = 15
 DEFAULT_GENRE_GROUP_MATCH_ADJUSTMENT  = 7
-
+WEIGHT_ALL_ESSENTIA                   = 0.99
+WEIGHT_ALL_MUSLY                      = 0.01
 
 class SimilarityApp(Flask):
     def init(self, args, app_config, jukebox_path):
@@ -122,7 +123,15 @@ def genre_adjust(seed, entry, acceptable_genres, all_genres, no_genre_match_adj,
 
 def get_similars(track_id, mus, num_sim, mta, tdb, ess_cfg):
     tracks = []
-    if ess_cfg['enabled'] and ess_cfg['weight']>=0.99:
+
+    if ess_cfg['enabled'] and ess_cfg['weight']>=WEIGHT_ALL_MUSLY:
+        # Init essentia KDTree. If essentia weight was configured in JSON config file
+        # then this will already have occured, so following call will do nothing. However,
+        # if its not set in the config but is set in URL params then we do need to
+        # initialise now.
+        essentia_sim.init(tdb)
+
+    if ess_cfg['enabled'] and ess_cfg['weight']>=WEIGHT_ALL_ESSENTIA:
         _LOGGER.debug('Get similar tracks to %d from Essentia' % track_id)
         et = essentia_sim.get_similars(tdb, track_id)
         idx = 0
@@ -131,7 +140,7 @@ def get_similars(track_id, mus, num_sim, mta, tdb, ess_cfg):
             idx+=1
         return sorted(tracks, key=lambda k: k['sim'])
 
-    if not ess_cfg['enabled'] or ess_cfg['weight']<=0.01:
+    if not ess_cfg['enabled'] or ess_cfg['weight']<WEIGHT_ALL_MUSLY:
         _LOGGER.debug('Get %d similar tracks to %d from Musly' % (num_sim, track_id))
         return mus.get_similars(mta.mtracks, mta.mtrackids, track_id, num_sim)
 
