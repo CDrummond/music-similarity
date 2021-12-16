@@ -681,6 +681,11 @@ def similar_api():
         return json.dumps(track_list)
 
 
+@similarity_app.route('/api/config', methods=['GET', 'POST'])
+def config_api():
+    return json.dumps(similarity_app.get_config())
+
+
 def start_app(args, config, jukebox_path):
     similarity_app.init(args, config, jukebox_path)
     _LOGGER.debug('Ready to process requests')
