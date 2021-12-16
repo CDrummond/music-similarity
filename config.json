@@ -2,7 +2,8 @@
  "paths":{
   "db":"~/.local/share/music-similarity/",
   "local":"~/Music/",
-  "lms":"~/Music/"
+  "lms":"~/Music/",
+  "cache":"~/.local/share/music-similarity/cache/"
  },
  "lmsdb":"~/lms/Cache/library.db"
 }
