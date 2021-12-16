@@ -143,12 +143,11 @@ the following basic items:
 * `paths.db` should be the path where the SQLite and jukebox files created by
 this app can be written to or can be read from.
 * `paths.local` should be the path where this script can access your music
-files. This can be different to `path.lms` if you are running analysis on a
-different machine to where you would run the script as the similarity server.
-This script will only store the paths relative to this location - eg.
-`paths.local=/home/music/` then `/home/music/A/b.mp3` will be stored as
-`A/b.mp3`. Only required if analysing tracks.
-
+files. This can be different to the path that LMS uses if you are running
+analysis on a different machine to where you would run the script as the
+similarity server. his script will only store the paths relative to this
+location - eg. `paths.local=/home/music/` then `/home/music/A/b.mp3` will be
+stored as `A/b.mp3`. Only required if analysing tracks.
 
 The `linux/x86-64`, `linux-armv7l`, and `windows` folders contain example config
 files for each system.
