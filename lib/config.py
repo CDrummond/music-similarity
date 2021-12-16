@@ -12,6 +12,17 @@ from . import tracks_db
 
 _LOGGER = logging.getLogger(__name__)
 
+
+def fix_path(path):
+    for e  in ['HOME', 'USERPROFILE', 'TMP']:
+        if e in os.environ:
+            if '$%s' % e in path:
+                path = path.replace('$%s' % e, os.environ[e])
+            elif '%%%s%%' % e in path:
+                path = path.replace('%%%s%%' % e, os.environ[e])
+    return path
+
+
 def read_config(path, analyse):
     config={}
 
@@ -28,6 +39,7 @@ def read_config(path, analyse):
         _LOGGER.error('Failed to read config file')
         exit(-1)
 
+    # Check required keys are present
     for key in ['musly', 'essentia', 'paths']:
         if not key in config:
             _LOGGER.error("'%s' not in config file" % key)
@@ -38,25 +50,41 @@ def read_config(path, analyse):
             if not key in config['paths']:
                 _LOGGER.error("'paths.%s' not in config file" % key)
                 exit(-1)
-            if (key=='db' and not os.path.exists(config['paths'][key])) or (analyse and key=='local' and not os.path.exists(config['paths'][key])):
-                _LOGGER.error("'%s' does not exist" % config['paths'][key])
-                exit(-1)
     else:
         if not 'db' in config['paths']:
             _LOGGER.error("'paths.db' not in config file")
             exit(-1)
+
+    # Ensure paths end with /
+    # and replace HOME, etc, env vars in paths
+    for key in config['paths']:
+        config['paths'][key] = fix_path(config['paths'][key])
+        if not config['paths'][key].endswith('/'):
+            config['paths'][key]=config['paths'][key]+'/'
+
+    if 'lmsdb' in config:
+        config['lmsdb'] = fix_path(config['lmsdb'])
+
+    # Check oaths exist
+    if analyse:
+        for key in ['local', 'lms', 'db']:
+            if (key=='db' and not os.path.exists(config['paths'][key])) or (analyse and key=='local' and not os.path.exists(config['paths'][key])):
+                _LOGGER.error("'%s' does not exist" % config['paths'][key])
+                exit(-1)
+    else:
         if not os.path.exists(config['paths']['db']):
             _LOGGER.error("'%s' does not exist" % config['paths']['db'])
             exit(-1)
 
-    for key in config['paths']:
-        if not config['paths'][key].endswith('/'):
-            config['paths'][key]=config['paths'][key]+'/'
+    if 'lmsdb' in config and not os.path.exists(config['lmsdb']):
+        _LOGGER.error("'%s' does not exist" % config['lmsdb'])
+        exit(-1)
 
     if 'tmp' in config['paths'] and not os.path.exists(config['paths']['tmp']):
         _LOGGER.error("'%s' does not exist" % config['paths']['tmp'])
         exit(-1)
 
+    # Cjeck general settings
     if not 'port' in config:
         config['port']=11000
 
@@ -66,6 +94,22 @@ def read_config(path, analyse):
     if not 'threads' in config:
         config['threads']=os.cpu_count()
 
+    # Check/default musly settings
+    if not 'lib' in config['musly']:
+        _LOGGER.error("'musly.lib' not in config file" % key)
+        exit(-1)
+    else:
+        config['musly']['lib'] = fix_path(config['musly']['lib'])
+    if not 'extractlen' in config['musly']:
+        config['musly']['extractlen']=120
+    if not 'extractstart' in config['musly']:
+        config['musly']['extractstart']=-210
+    if not 'styletracks' in config['musly']:
+        config['musly']['styletracks']=1000
+    if not 'styletracksmethod' in config['musly']:
+        config['musly']['styletracksmethod']='genres'
+
+    # Check/default essentia settings
     if not 'enabled' in config['essentia']:
         config['essentia']['enabled']=True
 
@@ -84,22 +128,14 @@ def read_config(path, analyse):
             config['essentia']['weight'] = 0.0
         if not config['essentia']['highlevel']:
             config['essentia']['weight'] = 0.0
-        if analyse and not 'extractor' in config['essentia']:
-            _LOGGER.error("'essentia.extractor' not in config file")
-            exit(-1)
+        if analyse:
+            if not 'extractor' in config['essentia']:
+                _LOGGER.error("'essentia.extractor' not in config file")
+                exit(-1)
+            else:
+                config['essentia']['extractor'] = fix_path(config['essentia']['extractor'])
 
-    if not 'lib' in config['musly']:
-        _LOGGER.error("'musly.lib' not in config file" % key)
-        exit(-1)
-    if not 'extractlen' in config['musly']:
-        config['musly']['extractlen']=120
-    if not 'extractstart' in config['musly']:
-        config['musly']['extractstart']=-210
-    if not 'styletracks' in config['musly']:
-        config['musly']['styletracks']=1000
-    if not 'styletracksmethod' in config['musly']:
-        config['musly']['styletracksmethod']='genres'
-
+    # Check genres, etc.
     if 'genres' in config:
         config['all_genres']=set()
         for i in range(len(config['genres'])):
