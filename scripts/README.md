@@ -28,3 +28,8 @@ If you have previous results from [musly-server](https://github.com/CDrummond/mu
 and [essentia-analyzer](https://github.com/CDrummond/essentia-analyzer) then you
 can use `scripts/merge-musly-essentia-dbs.py` to merge the contents of their DBs into a
 single DB required for music-similarity.
+
+
+# Release
+
+`mkrel.py` is used to create release ZIP files.
