@@ -135,7 +135,7 @@ the following basic items:
 {
  "paths":{
   "db":"/home/user/.local/share/music-similarity/",
-  "local":"/home/Music/",
+  "local":"/home/Music/"
  }
 }
 ```

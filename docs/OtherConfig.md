@@ -98,11 +98,13 @@ etc. as well as the path to your music files
 as LMS sees them.
 
 ```
+{
  "paths":{
-  "lms":"/media/Music/"
-  "tmp":"/tmp/",
+  "lms":"/media/Music/",
+  "tmp":"/tmp/"
  },
- "lmsdb":"/path/to/lms/Cache/library.db",
+ "lmsdb":"/path/to/lms/Cache/library.db"
+}
 ```
 
 * `paths.lms` should be the path where LMS accesses your music files.
