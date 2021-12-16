@@ -157,7 +157,7 @@ def get_similars(track_id, mus, num_sim, mta, tdb, ess_cfg):
             continue
         i = track['id']
         esval = et[i] if i<num_et else track['sim']
-        tracks.append({'id':i, 'sim':(track['sim']*(1.0-ess_weight)) + (esval*ess_weight)})
+        tracks.append({'id':i, 'sim':(track['sim']*(1.0-ess_cfg['weight'])) + (esval*ess_cfg['weight'])})
 
     return sorted(tracks, key=lambda k: k['sim'])
 
