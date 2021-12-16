@@ -1,0 +1,6 @@
+{
+ "paths":{
+  "db":"~/.local/share/music-similarity/",
+  "local":"~/Music/"
+ }
+}

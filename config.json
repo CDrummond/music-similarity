@@ -1,22 +1,8 @@
 {
- "musly":{
-  "lib":"lib/linux/x86-64/fedora/libmusly.so",
-  "styletracks":1000,
-  "styletracksmethod":"genres",
-  "extractlen":120,
-  "extractstart":-210
- },
- "essentia":{
-  "enabled":true,
-  "highlevel":true,
-  "extractor":"essentia/bin/x86-64/essentia_streaming_extractor_music"
- },
  "paths":{
-  "db":"/home/user/.local/share/music-similarity/",
-  "local":"/home/Music/",
-  "lms":"/media/Music/",
-  "tmp":"/tmp/"
+  "db":"~/.local/share/music-similarity/",
+  "local":"~/Music/",
+  "lms":"~/Music/"
  },
- "lmsdb":"/path/to/lms/Cache/library.db",
- "port":11000
+ "lmsdb":"~/lms/Cache/library.db"
 }

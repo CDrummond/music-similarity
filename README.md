@@ -1,20 +1,22 @@
 # Music Similarity
 
-Simple python3 script to create a mix of music tracks for LMS.
+This is a python3 script to analyse your music collection with Musly and
+(optionally) Essentia, and to provide a simple HTTP API allowing the creation
+of mix of similar music for LMS.
+
 
 ## Musly
 
-This service uses the [Musly audio music similarity library](https://github.com/CDrummond/musly)
-This library needs to be compiled, and `config.json` (from this project) updated
-to store the location of this library. This repo contains pre-built versions
-for:
+This script uses the [Musly audio music similarity library](https://github.com/CDrummond/musly)
+to annalyse tracks, and to locate similar tracks based upon timbre. This project
+contains the following pre-built versions of this library:
 
-1. Fedora 64-bit - `lib/linux/x86-64/fedora/libmusly.so`
-2. Raspbian Buster 32-bit, *not* linked to libav, therefore cannot be used for
-analysis - `lib/linux/armv7l/raspbian-buster/libmusly.so`
-3. Raspbian Buster 32-bit, linked against libav - `lib/linux/armv7l/raspbian-buster/libav/libmusly.so`
-4. Windows built with MinGW32, requires 32-bit Python - `lib/windows/mingw32/libmusly.dll`
-5. Windows built with MinGW64, requires 64-bit Python - `lib/windows/mingw64/libmusly.dll`
+1. Linux 64-bit - `linux/x86-64/libmusly.so`
+2. Raspbian 32-bit, *not* linked to libav, therefore cannot be used for
+analysis - `linux/armv7l/libmusly.so`
+3. Raspbian 32-bit, linked against libav - `linux/armv7l/raspbian-buster/libav/libmusly.so`
+4. Windows built with MinGW32, requires 32-bit Python - `windows/mingw32/libmusly.dll`
+5. Windows built with MinGW64, requires 64-bit Python - `windows/mingw64/libmusly.dll`
 
 
 **macOS**
@@ -24,39 +26,46 @@ Instructions, and binaries, for Musly on macOS can be found [here](https://githu
 
 ## Essentia
 
+Essentia is used to extract certain attributes about each track - e.g. which
+key its in, bpm, etc - and the similarity API can then be configured to use
+these attributes to filter the results (e.g. only accept tracks in a similar
+key, etc.)
+
 The Essentia binaries and models are only required for analysing tracks, and are
 not required for locating similar tracks. Therefore, if analysis is performed on
 one machine and similar tracks located on another (e.g. a Raspberry Pi) the
-contents of the `essentia` folder are not required on the similarity machine.
+contents of the `essentia` folder, and the Essentia extractor, are not required
+on the similarity machine.
 
 Essentia binaries may be downloaded from [acousticbrainz.org](https://similarity.acousticbrainz.org/download).
 However, please note that these *only* support low-level analysis (bpm, key,
 loudness). To support high-level analysis (danceability, aggresiveness, etc.)
-you will need to compile your own build of essentia - or use the prebuilt binary
-if on Linux.
+you will need to compile your own build of Essentia - or use the prebuilt binary
+if on Linux (`linux/x86-64/essentia_streaming_extractor_music`).
 
 - [Linux i386](http://ftp.acousticbrainz.org/pub/acousticbrainz/essentia-extractor-v2.1_beta2-linux-i686.tar.gz)
 - [Linux x86_64](http://ftp.acousticbrainz.org/pub/acousticbrainz/essentia-extractor-v2.1_beta2-linux-x86_64.tar.gz)
 - [Mac 64 bit](http://ftp.acousticbrainz.org/pub/acousticbrainz/essentia-extractor-v2.1_beta2-2-gbb40004-osx.tar.gz)
 - [Windows 32](http://ftp.acousticbrainz.org/pub/acousticbrainz/essentia-extractor-v2.1_beta2-1-ge3940c0-win-i686.zip)
 
-When using one of the above you *must* set `essentia.highlevel` to `false` in
-`config.json` Example configs can be found in the `configs` folder.
+If you download a new version of the extractor, place this within `linux`,
+`windows`, or `mac` sub-folder.
+
 
 ## Analysing Tracks
 
-Before starting the server your music needs to be analysed with Essentia and
-Musly. This is accomplished via:
+Before starting the server your music needs to be analysed with Musly and
+Essentia. This is accomplished via:
 
 ```
 ./music-similarity.py --analyse /path/to/music/folder
 ```
 
 This can take about 20hrs to process 25k tracks. The process analyses tracks
-with Essentia, analyses with Musly, adds them to Musly, initialises Musly's
-'jukebox' style with 1000 random tracks, and extracts certain tags. If re-run
-new tracks will be added, and old (non-existent) will be removed. Pass
-`--keep-old` to keep these old tracks.
+with with Musly, with Essentia, and initialises Musly's 'jukebox' style with
+1000 random tracks, and extracts certain tags. If re-run new tracks will be
+added, and old (non-existent) will be removed. Pass `--keep-old` to keep these
+old tracks.
 
 To analyse the Music path stored in the config file, the following shortcut can
 be used:
@@ -104,7 +113,7 @@ fails, recreate jukebox, test the jukebox, ...
 
 ## Similarity service
 
-`music-similarity` can be installed as a Systemd service, or started manually,
+`music-similarity` can be installed as a system service, or started manually,
 to provide a Music similarity service that can be called from the LMS plugin,
 etc.
 
@@ -116,79 +125,21 @@ etc.
 SQLite database is the same as the number in the 'jukebox'. If the number
 differs, the jukebox is recreated.
 
-To install as a systemd service:
-
-1. Edit `music-similarity.service` to ensure paths, etc, are correct
-2. Copy `music-similarity.service` to `/etc/systemd/system`
-3. `sudo systemctl daemon-reload`
-4. `sudo systemcrl enable music-similarity`
-5. `sudo systemctl start music-similarity`
-
 
 ## Configuration
 
 Configuration is read from a JSON file (default name is `config.json`). This has
-the following format:
+the following basic items:
 
 ```
 {
- "musly":{
-  "lib":"lib/x86-64/fedora/libmusly.so",
-  "styletracks":1000,
-  "styletracksmethod":"genres",
-  "extractlen":120,
-  "extractstart":-210
- },
- "essentia":{
-  "enabled":true,
-  "extractor":"essentia/bin/x86-64/essentia_streaming_extractor_music"
- },
  "paths":{
   "db":"/home/user/.local/share/music-similarity/",
   "local":"/home/Music/",
-  "lms":"/media/Music/",
-  "tmp":"/tmp/",
-  "cache:"",
- },
- "lmsdb":"/path/to/lms/Cache/library.db",
- "normalize":{
-  "artist":["feet", "ft", "featuring"],
-  "album":["deluxe edition", "remastered"],
-  "title"["demo", "radio edit"]
- },
- "port":11000,
- "host":"0.0.0.0",
- "threads":8
+ }
 }
 ```
 
-* `musly.lib` should contain the path the Musly shared library - path is
-relative to `music-similarity.py`
-* `musly.styletracks` A  subset of tracks is passed to Musly's `setmusicstyle`
-function, by default 1000 random tracks is chosen. This config item can be used
-to alter this. Note, however, the larger the number here the longer it takes to
-for this call to complete. As a rough guide it takes ~1min per 1000 tracks.
-If you change this config item after the jukebox is written you will need to
-delete the jukebox file and restart the server. Only used if analyising tracks.
-* `musly.styletracksmethod` configures how tracks are chosen for styletracks. If
-set to `genres` (which is the default if not set) then the meta-data db is
-queried for how many track each genre has and tracks are chosen for each of
-these genres based upon the percentage of tracks in a genre. If set to `albums`
-then at least one track from each album is used. If set to anything else then
-random tracks are chosen. Only used if analyising tracks.
-* `musly.extractlen` The maximum length in seconds of the file to decode. If
-zero or greater than the file length, then the whole file will be decoded. Note,
-however, that only a maximum of 5 minutes is used for analysis. Only used if
-analyising tracks.
-* `musly.extractstart` The starting position in seconds of the excerpt to
-decode. If zero, decoding starts at the beginning. If negative, the excerpt is
-centred in the file, but starts at `-extractstart` the latest. If positive and
-`extractstart`+`extractlen` exceeds the file length, then the excerpt is taken
-from the end of the file. Only used if analyising tracks.
-* `essentia.enabled` should be set to true if Essentia is to be used for
-filtering.
-* `essentia.extractor` should contain the path to the Essentia extractor - path
-is relative to `music-similarity.py` Only required if analyising tracks.
 * `paths.db` should be the path where the SQLite and jukebox files created by
 this app can be written to or can be read from.
 * `paths.local` should be the path where this script can access your music
@@ -197,66 +148,12 @@ different machine to where you would run the script as the similarity server.
 This script will only store the paths relative to this location - eg.
 `paths.local=/home/music/` then `/home/music/A/b.mp3` will be stored as
 `A/b.mp3`. Only required if analysing tracks.
-* `paths.lms` should be the path where LMS accesses your music files. The
-similarity server will remove this path from API calls, so that it can look up
-tracks in its database by their relative path. Only required if analysing
-tracks - the LMS plugin will send this path to this service when obtaining
-similar tracks.
-* `paths.tmp` When analysing music, this script will create a temporary folder
-to hold separate CUE file tracks. The path passed here needs to be writable.
-This config item is only used for analysis.
-* `lmsdb` During analysis, this script will also analyse individual CUE tracks.
-To do this it needs access to the LMS database file to know the position of each
-track, etc. This config item should hole the path to the LMS database file. This
-is only required for analysis, and only if you have CUE files. `ffmpeg` is
-required to split tracks.
-* `normalize.artist` List of strings to split artist names, e.g. "A ft. B"
-becomes "A" (periods are automatically removed). This is then used to aid
-filtering of tracks - i.e. to prevent artists from being repeated in a mix.
-* `normalize.album` List of strings to remove from album names. This is then
-used to aid filtering of tracks - i.e. to prevent albums from being repeated in
-a mix.
-* `normalize.title` List of strings to remove from titles. This is then
-used to aid filtering of tracks - i.e. to prevent duplicate tracks in the mix.
-* `port` This is the port number the similarity server is accessible on.
-* `host` IP address on which the similarity server will listen on. Use `0.0.0.0`
-to listen on all interfaces on your network.
-* `threads` Number of threads to use during analysis phase. This controls how
-many calls to `ffmpeg` are made concurrently, and how many concurrent tracks
-Musly and Essentia are asked to analyse. Defaults to CPU count, if not set.
 
 
-## Ignoring artists, albums, etc.
+The `linux/x86-64`, `linux-armv7l`, and `windows` folders contain example config
+files for each system.
 
-To mark certain items as 'ignored' (i.e. so that they are not added to mixes),
-create a text file where each line contains the unique path, e.g.:
-
-```
-AC-DC/Power Up/
-The Police/
-```
-
-Then call:
-
-```
-./scripts/update-db.py --db music-similarity.db --ignore ignore.txt
-```
-
-This sets the `ignore` column to 1 for all items whose file starts with one of
-the listed lines.
-
-Setting a track's `ignore` to `1` will exclude tracks from being added to
-mixes - but if they are already in the queue, then they can still be used as
-seed tracks.
-
-
-## Copying data from musly-server and essentia-analyzer
-
-If you have previous results from [musly-server](https://github.com/CDrummond/musly-server)
-and [essentia-analyzer](https://github.com/CDrummond/essentia-analyzer) then you
-can use `scripts/merge-musly-essentia-dbs.py` to merge the contents of their DBs into a
-single DB required for music-similarity.
-
+Please refer to docs/OtherConfig.md for all configuration items.
 
 ## Credits
 

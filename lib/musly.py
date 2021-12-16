@@ -57,7 +57,12 @@ class Musly(object):
         except:
             pass
 
-        self.mus = ctypes.CDLL(libmusly)
+        try:
+            self.mus = ctypes.CDLL(libmusly)
+        except:
+            _LOGGER.error('Failed to open Musly shared library (%s)!' % libmusly)
+            exit(-1)
+
         if not quiet:
             _LOGGER.debug("Using: %s (%s)" % (libmusly, str(decoder_name)))
 
