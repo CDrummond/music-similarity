@@ -7,13 +7,7 @@
 # GPLv3 license.
 #
 
-import hashlib
-import os
-import re
-import requests
-import shutil
-import subprocess
-import sys
+import hashlib, os, re, requests, shutil, subprocess, sys
 
 
 APP_NAME = "music-similarity"
@@ -65,40 +59,38 @@ def resetVersion():
     subprocess.call(['git', 'checkout', os.path.join('lib', 'version.py')], shell=False)
 
 
-def createOtherZip(config, libs, name):
+TOP_LEVEL_ITEMS = ["ChangeLog", "config.json", "LICENSE", "%s.py" % APP_NAME, "README.md", "requirements.txt", "lib", "scripts", "docs"]
+def createOtherZip(config, others, name):
     if config is not None:
         os.rename("%s/config.json" % APP_NAME, "%s/config-orig.json" % APP_NAME)
-        os.rename("%s/configs/%s.json" % (APP_NAME, config), "%s/config.json" % APP_NAME)
+        os.rename("%s/%s/config.json" % (APP_NAME, config), "%s/config.json" % APP_NAME)
     cmd=["zip", "-r", "%s/%s-%s-%s.zip" % (APP_NAME, APP_NAME, name, version)]
-    for f in ["ChangeLog", "config.json", "LICENSE", "%s.py" % APP_NAME, "README.md", "requirements.txt"]:
+    for f in TOP_LEVEL_ITEMS:
         cmd.append("%s/%s" % (APP_NAME, f))
-    if name == 'pi':
-        cmd.append("%s.service" % APP_NAME)
-    for e in os.listdir("%s/lib" % APP_NAME):
-        if e.endswith(".py"):
-            cmd.append("%s/lib/%s" % (APP_NAME, e))
-    for lib in libs:
-        cmd.append("%s/lib/%s" % (APP_NAME, lib))
+    for other in others:
+        cmd.append("%s/%s" % (APP_NAME, other))
     subprocess.call(cmd, shell=False)
     if config is not None:
-        os.rename("%s/config.json" % APP_NAME, "%s/configs/%s.json" % (APP_NAME, config))
+        os.rename("%s/config.json" % APP_NAME, "%s/%s/config.json" % (APP_NAME, config))
         os.rename("%s/config-orig.json" % APP_NAME, "%s/config.json" % APP_NAME)
 
 
 def createZip(version):
     info("Creating ZIPs")
+    if os.path.exists("lib/__pycache__"):
+        shutil.rmtree("lib/__pycache__")
     os.chdir('..')
-    cmd=["zip", "-r", "%s/%s-all-%s.zip" % (APP_NAME, APP_NAME, version), "%s/essentia" % APP_NAME]
-    for f in ["ChangeLog", "config.json", "LICENSE", "%s.py" % APP_NAME, "%s.service" % APP_NAME, "README.md", "requirements.txt", "scripts", "docs"]:
+    cmd=["zip", "-r", "%s/%s-all-%s.zip" % (APP_NAME, APP_NAME, version)]
+    for f in TOP_LEVEL_ITEMS:
         cmd.append("%s/%s" % (APP_NAME, f))
-    for e in os.listdir("%s/lib" % APP_NAME):
-        if e.endswith(".py") or e in ["armv7l", "x86-64"]:
-            cmd.append("%s/lib/%s" % (APP_NAME, e))
+    for f in ["essentia", "linux"]:
+        cmd.append("%s/%s" % (APP_NAME, f))
+    for f in ["mingw32", "mingw64", "config.json"]:
+        cmd.append("%s/windows/%s" % (APP_NAME, f))
     subprocess.call(cmd, shell=False)
-    createOtherZip("pi", ["linux/armv7l/raspbian-buster/libmusly.so"], "pi")
-    createOtherZip(None, ["linux/x86-64/fedora/libmusly.so"], "linux")
-    createOtherZip("windows-32", ["windows/mingw32/libmusly.dll", "windows/mingw32/libgcc_s_dw2-1.dll", "windows/mingw32/libstdc++-6.dll"], "windows32")
-    createOtherZip("windows-64", ["windows/mingw64/libmusly.dll", "windows/mingw64/libgcc_s_seh-1.dll", "windows/mingw64/libstdc++-6.dll"], "windows64")
+    createOtherZip("linux/armv7l", ["linux/armv7l/libmusly.so", "linux/%s.service" % APP_NAME], "pi")
+    createOtherZip("linux/x86-64", ["linux/x86-64/libmusly.so", "linux/%s.service" % APP_NAME, "linux/x86-64/essentia_streaming_extractor_music", "essentia"], "linux-x86-64")
+    createOtherZip("windows", ["windows/mingw32/libmusly.dll", "windows/mingw32/libgcc_s_dw2-1.dll", "windows/mingw32/libstdc++-6.dll", "windows/mingw64/libmusly.dll", "windows/mingw64/libgcc_s_seh-1.dll", "windows/mingw64/libstdc++-6.dll", "windows/ffmpeg.exe", "windows/ffprobe.exe", "windows/ffmpeg-LICENSE.txt", "windows/streaming_extractor_music.exe"], "windows")
     os.chdir(APP_NAME)
 
 
