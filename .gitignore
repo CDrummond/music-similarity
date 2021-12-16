@@ -1,1 +1,5 @@
 lib/__pycache__/
+windows/ffmpeg-LICENSE.txt
+windows/ffmpeg.exe
+windows/ffprobe.exe
+windows/streaming_extractor_music.exe
