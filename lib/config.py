@@ -34,28 +34,33 @@ def fix_path(path):
     return path
 
 
-def update_paths(config, sys, musly, essentia_extractor):
+def update_paths(config, analyse, sys, musly, essentia_extractor):
     '''
     Update paths settings for detected OS
     '''
-    # Update PATH - mainly for windows so that libmusly can find ffmpeg, etc.
-    if sys is not None:
-        exe_folder = os.path.join(pathlib.Path(__file__).parent.parent, sys)
-        if sys=='windows':
-            os.environ['PATH']='%s;%s' % (exe_folder, os.environ['PATH'])
-            _LOGGER.debug('Added %s to PATH' % exe_folder)
 
     # Set libmusy path, if not already in config
     if musly is not None and not 'lib' in config['musly']:
         _LOGGER.debug('musly.lib set to %s' % musly)
         config['musly']['lib']=musly
 
-    # Set exxentia extractor path, if not already in config
-    if essentia_extractor is not None and not 'extractor' in config['essentia']:
-        config['essentia']['extractor']=essentia_extractor
-        _LOGGER.debug('essentia.extractor set to %s' % essentia_extractor)
-        # Only Linux, for now, support highlevel analysis
-        if not 'highlevel' in config['essentia']:
+    # Update PATH - mainly for windows so that libmusly can find ffmpeg, etc.
+    if analyse:
+        if sys is not None:
+            exe_folder = os.path.join(pathlib.Path(__file__).parent.parent, sys)
+            if sys=='windows':
+                os.environ['PATH']='%s;%s' % (exe_folder, os.environ['PATH'])
+                _LOGGER.debug('Added %s to PATH' % exe_folder)
+
+        # Set exxentia extractor path, if not already in config
+        if essentia_extractor is not None and not 'extractor' in config['essentia']:
+            config['essentia']['extractor']=essentia_extractor
+            _LOGGER.debug('essentia.extractor set to %s' % essentia_extractor)
+            # Only Linux, for now, support highlevel analysis
+            if not 'highlevel' in config['essentia']:
+                config['essentia']['highlevel']= (sys == 'linux')
+                _LOGGER.debug('essentia.highlevel set to %s' % str(config['essentia']['highlevel']))
+    elif not 'highlevel' in config['essentia']:
             config['essentia']['highlevel']= (sys == 'linux')
             _LOGGER.debug('essentia.highlevel set to %s' % str(config['essentia']['highlevel']))
 
@@ -70,29 +75,29 @@ def setup_paths(config, analyse):
 
     if system == 'Linux':
         if proc == 'x86_64':
-            update_paths(config, 'linux', 'linux/x86-64/libmusly.so', 'linux/x86-64/essentia_streaming_extractor_music')
+            update_paths(config, analyse, 'linux', 'linux/x86-64/libmusly.so', 'linux/x86-64/essentia_streaming_extractor_music')
             return
         else: # TODO: Check on Pi
-            update_paths(config, 'linux', 'linux/armv7l/libmusly.so', None)
+            update_paths(config, analyse, 'linux', 'linux/armv7l/libmusly.so', None)
             return
     elif system == 'Windows':
         if proc == 'x86_64':
             if arch.startswith('64'): # 64-bit Python
-                update_paths(config, 'windows', 'windows\\mingw64\\libmusly.dll', 'windows\\streaming_extractor_music.exe')
+                update_paths(config, analyse, 'windows', 'windows\\mingw64\\libmusly.dll', 'windows\\streaming_extractor_music.exe')
                 return
             else:  # 32-bit Python
-                update_paths(config, 'windows', 'windows\\mingw32\\mingw64\\libmusly.dll', 'windows\\streaming_extractor_music.exe')
+                update_paths(config, analyse, 'windows', 'windows\\mingw32\\mingw64\\libmusly.dll', 'windows\\streaming_extractor_music.exe')
                 return
         else:  # 32-bit Windows?
-            update_paths(config, 'windows', 'windows\\mingw32\\mingw64\\libmusly.dll', 'windows\\streaming_extractor_music.exe')
+            update_paths(config, analyse, 'windows', 'windows\\mingw32\\mingw64\\libmusly.dll', 'windows\\streaming_extractor_music.exe')
             return
     #elif system == 'Darwin'
     # TODO: macOS - Intel/M1 ???
     #    if proc == 'x86_64':
-    #        update_paths(config, 'mac', 'mac/x86-64/libmusly.dylib', 'mac/x86-64/streaming_extractor_music')
+    #        update_paths(config, analyse, 'mac', 'mac/x86-64/libmusly.dylib', 'mac/x86-64/streaming_extractor_music')
     #        return
     #    else: # M1??? Can use x86_64 binaries on M1?
-    #        update_paths(config, 'mac', 'mac/m1/libmusly.dylib', 'mac/x86-64/streaming_extractor_music')
+    #        update_paths(config, analyse, 'mac', 'mac/m1/libmusly.dylib', 'mac/x86-64/streaming_extractor_music')
     #        return
 
     if not 'lib' in config['musly'] or (analyse and config['essentia']['enabled'] and not 'extractor' in config['essentia']):

@@ -286,6 +286,12 @@ class TracksDb(object):
         return row is not None and row[0] is not None
 
 
+    def file_analysed_with_essentia_highlevel(self, path):
+        self.cursor.execute('SELECT %s FROM tracks WHERE file=?' % ESSENTIA_HIGHLEVEL_ATTRIBS[0], (path,))
+        row = self.cursor.fetchone()
+        return row is not None and row[0] is not None
+
+
     def get_albums(self):
         albums = []
         self.cursor.execute('SELECT distinct albumartist, album FROM tracks')
