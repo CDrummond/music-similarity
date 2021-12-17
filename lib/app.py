@@ -62,7 +62,7 @@ class SimilarityApp(Flask):
             if not app_config['essentia']['enabled']:
                 tdb.close()
                 tdb = tracks_db.TracksDb(app_config)
-                _LOGGER.debug('Tracks have not been anaylsed with Essentia, attribute filtering disabled')
+                _LOGGER.debug('Tracks have not been analysed with Essentia, attribute filtering disabled')
             elif app_config['essentia']['highlevel'] and not highlevel:
                 app_config['essentia']['highlevel'] = False
                 tdb.close()
@@ -71,8 +71,7 @@ class SimilarityApp(Flask):
         if app_config['essentia']['enabled']:
             if app_config['essentia']['weight']>0.0:
                 essentia_sim.init(tdb)
-            else:
-                _LOGGER.debug('Will use Essentia attributes to filter tracks (%s)' % ('highlevel' if app_config['essentia']['highlevel'] else 'lowlevel'))
+            _LOGGER.debug('Will use Essentia attributes to filter tracks (%s)' % ('highlevel' if app_config['essentia']['highlevel'] else 'lowlevel'))
         tdb.close()
 
     def get_config(self):
