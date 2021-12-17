@@ -154,40 +154,45 @@ class Musly(object):
 
 
     def get_track_db(self, scursor, path):
-        scursor.execute('SELECT vals FROM tracks WHERE file=?', (path,))
-        row = scursor.fetchone()
-        if (row == None):
-            _LOGGER.debug("Culd not find {} in DB".format(path))
+        try:
+            scursor.execute('SELECT vals FROM tracks WHERE file=?', (path,))
+            row = scursor.fetchone()
+            if (row == None):
+                _LOGGER.debug("Culd not find {} in DB".format(path))
+                return None
+            else:
+                mtrack = self.mtrack_type()
+                smt_c = ctypes.c_char_p(pickle.loads(row[0]))
+                smt_f = ctypes.cast(smt_c, ctypes.POINTER(ctypes.c_float))
+                ctypes.memmove(mtrack, smt_f, self.mtracksize)
+                return mtrack
+        except:
             return None
-        else:
-            mtrack = self.mtrack_type()
-            smt_c = ctypes.c_char_p(pickle.loads(row[0]))
-            smt_f = ctypes.cast(smt_c, ctypes.POINTER(ctypes.c_float))
-            ctypes.memmove(mtrack, smt_f, self.mtracksize)
-            return mtrack
 
 
     def get_alltracks_db(self, scursor):
-        scursor.execute('SELECT count(vals) FROM tracks')
-        numtracks = scursor.fetchone()[0]
-        mtrack = self.mtrack_type()
-        mtracks_type = (ctypes.POINTER(self.mtrack_type)) * numtracks
-        mtracks = mtracks_type()
-
-        scursor.execute('SELECT file, vals FROM tracks')
-        i = 0
-        paths = [None] * numtracks
-        for row in scursor:
-#            _LOGGER.debug("get_alltracks_db [{:4}]: {}".format(i, row[0]))
-            paths[i] = row[0]
-            smt_c = ctypes.c_char_p(pickle.loads(row[1]))
-            smt_f = ctypes.cast(smt_c, ctypes.POINTER(ctypes.c_float))
-            ctypes.memmove(mtrack, smt_f, self.mtracksize)
-            mtracks[i] = ctypes.pointer(mtrack)
+        try:
+            scursor.execute('SELECT count(vals) FROM tracks')
+            numtracks = scursor.fetchone()[0]
             mtrack = self.mtrack_type()
-            i += 1
+            mtracks_type = (ctypes.POINTER(self.mtrack_type)) * numtracks
+            mtracks = mtracks_type()
 
-        return (paths, mtracks)
+            scursor.execute('SELECT file, vals FROM tracks')
+            i = 0
+            paths = [None] * numtracks
+            for row in scursor:
+                paths[i] = row[0]
+                smt_c = ctypes.c_char_p(pickle.loads(row[1]))
+                smt_f = ctypes.cast(smt_c, ctypes.POINTER(ctypes.c_float))
+                ctypes.memmove(mtrack, smt_f, self.mtracksize)
+                mtracks[i] = ctypes.pointer(mtrack)
+                mtrack = self.mtrack_type()
+                i += 1
+
+            return (paths, mtracks)
+        except:
+            return None, None
 
 
     def analyze_file(self, db_path, abs_path, extract_len, extract_start):

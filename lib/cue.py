@@ -5,10 +5,7 @@
 # GPLv3 license.
 #
 
-import logging
-import os
-import sqlite3
-import subprocess
+import logging, os, sqlite3, subprocess
 from urllib.parse import quote
 from concurrent.futures import ThreadPoolExecutor
 
@@ -17,7 +14,7 @@ _LOGGER = logging.getLogger(__name__)
 
 def get_cue_tracks(lms_db, lms_path, path, local_root_len, tmp_path):
     tracks=[]
-    if lms_db is not None:
+    if lms_db is not None and lms_path is not None:
         # Convert local path into LMS path...
         lms_full_path = '%s%s' % (lms_path, path[local_root_len:])
         # Get list of cue tracks from LMS db...

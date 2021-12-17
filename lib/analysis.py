@@ -43,7 +43,9 @@ def analyze_file(index, total, db_path, abs_path, config, tmp_path, musly_analys
     global should_stop
     if should_stop:
         return None
-    _LOGGER.debug("[{}/{} {}%] Analyze: {}".format(index+1, total, int((index+1)*100/total), db_path))
+    digits=len(str(total))
+    fmt="[{:>%d}  {:3}%%] {}" % ((digits*2)+1)
+    _LOGGER.debug(fmt.format("%d/%d" % (index+1, total), int((index+1)*100/total), db_path))
     pout, pin = Pipe(duplex=False)
     
     essentia_cache = config['paths']['cache'] if 'cache' in config['paths'] else "-"
@@ -61,6 +63,13 @@ def process_files(config, trks_db, allfiles, tmp_path):
     numtracks = len(allfiles)
     _LOGGER.info("Have {} files to analyze".format(numtracks))
     _LOGGER.info("Extraction length: {}s extraction start: {}s".format(config['musly']['extractlen'], config['musly']['extractstart']))
+    if config['essentia']['enabled']:
+        if config['essentia']['highlevel']:
+            _LOGGER.info("Analyzing with Musly and Essentia (high level)")
+        else:
+            _LOGGER.info("Analyzing with Musly and Essentia")
+    else:
+        _LOGGER.info("Analyzing with Musly")
     
     futures_list = []
     inserts_since_commit = 0
@@ -112,12 +121,12 @@ def get_files_to_analyse(trks_db, lms_db, lms_path, path, files, local_root_len,
 def analyse_files(config, path, remove_tracks, meta_only, force, jukebox):
     signal.signal(signal.SIGINT, sig_handler)
     _LOGGER.debug('Analyse %s' % path)
-    trks_db = tracks_db.TracksDb(config)
+    trks_db = tracks_db.TracksDb(config, True)
     lms_db = sqlite3.connect(config['lmsdb']) if 'lmsdb' in config else None
         
     files = []
     local_root_len = len(config['paths']['local'])
-    lms_path = config['paths']['lms']
+    lms_path = config['paths']['lms'] if 'lms' in config['paths'] else None
     temp_dir = config['paths']['tmp'] if 'tmp' in config['paths'] else None
     removed_tracks = trks_db.remove_old_tracks(config['paths']['local']) if remove_tracks and not meta_only else False
     mus = musly.Musly(config['musly']['lib'])

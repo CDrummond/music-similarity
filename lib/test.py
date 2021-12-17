@@ -5,10 +5,7 @@
 # GPLv3 license.
 #
 
-import logging
-import math
-import os
-import sys
+import logging, math, os, sys
 from . import tracks_db, musly
 
 _LOGGER = logging.getLogger(__name__)

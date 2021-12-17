@@ -70,7 +70,7 @@ def setup_paths(config, analyse):
 
     if system == 'Linux':
         if proc == 'x86_64':
-            update_paths(config, 'linux', 'linux/x86-64/libmusly.so', 'linux/x86_64/essentia_streaming_extractor_music')
+            update_paths(config, 'linux', 'linux/x86-64/libmusly.so', 'linux/x86-64/essentia_streaming_extractor_music')
             return
         else: # TODO: Check on Pi
             update_paths(config, 'linux', 'linux/armv7l/libmusly.so', None)
@@ -132,10 +132,14 @@ def check_binaries(config):
         apps.append('ffmpeg.exe')
         apps.append('ffprobe.exe')
 
-    if len(aps)>0:
+    if len(apps)>0:
         for app in apps:
             if which(app) is None:
-                exit_with_error('%s is not in PATH or is not executable' % app)
+                if config['essentia']['enabled'] and app == config['essentia']['extractor']:
+                    _LOGGER.info('Essentia extractor not in PATH, Essentia analysis disabled')
+                    config['essentia']['enabled'] = False
+                else:
+                    exit_with_error('%s is not in PATH or is not executable' % app)
 
 
 def read_config(path, analyse):

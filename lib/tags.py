@@ -5,8 +5,7 @@
 # GPLv3 license.
 #
 
-import json
-import logging
+import json, logging
 
 _LOGGER = logging.getLogger(__name__)
 

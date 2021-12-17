@@ -5,10 +5,7 @@
 # GPLv3 license.
 #
 
-import json
-import logging
-import os
-import sqlite3
+import json, logging, os, sqlite3
 from . import cue, tags
 
 DB_FILE = 'music-similarity.db'
@@ -76,83 +73,88 @@ def set_normalize_options(opts):
 
 
 class TracksDb(object):
-    def __init__(self, config):
+    def __init__(self, config, create=False):
         path = os.path.join(config['paths']['db'], DB_FILE)
         self.use_essentia = config['essentia']['enabled']
         self.use_essentia_hl = config['essentia']['enabled'] and config['essentia']['highlevel']
-        self.conn = sqlite3.connect(path)
-        self.cursor = self.conn.cursor()
-        for table in ['tracks', 'tracks_tmp']:
-            if config['essentia']['highlevel']:
-                self.cursor.execute('''CREATE TABLE IF NOT EXISTS %s (
-                            file varchar UNIQUE NOT NULL,
-                            title varchar,
-                            artist varchar,
-                            album varchar,
-                            albumartist varchar,
-                            genre varchar,
-                            duration integer,
-                            ignore integer,
-                            danceable integer,
-                            aggressive integer,
-                            electronic integer,
-                            acoustic integer,
-                            happy integer,
-                            party integer,
-                            relaxed integer,
-                            sad integer,
-                            dark integer,
-                            tonal integer,
-                            voice integer,
-                            bpm integer,
-                            loudness integer,
-                            key varchar,
-                            vals blob NOT NULL)''' % table)
-            else:
-                self.cursor.execute('''CREATE TABLE IF NOT EXISTS %s (
-                            file varchar UNIQUE NOT NULL,
-                            title varchar,
-                            artist varchar,
-                            album varchar,
-                            albumartist varchar,
-                            genre varchar,
-                            duration integer,
-                            ignore integer,
-                            bpm integer,
-                            loudness integer,
-                            key varchar,
-                            vals blob NOT NULL)''' % table)
+        self.conn = None
+        self.cursor = None
+        if create or os.path.exists(path):
+            self.conn = sqlite3.connect(path)
+            self.cursor = self.conn.cursor()
+            if create:
+                for table in ['tracks', 'tracks_tmp']:
+                    if config['essentia']['highlevel']:
+                        self.cursor.execute('''CREATE TABLE IF NOT EXISTS %s (
+                                    file varchar UNIQUE NOT NULL,
+                                    title varchar,
+                                    artist varchar,
+                                    album varchar,
+                                    albumartist varchar,
+                                    genre varchar,
+                                    duration integer,
+                                    ignore integer,
+                                    danceable integer,
+                                    aggressive integer,
+                                    electronic integer,
+                                    acoustic integer,
+                                    happy integer,
+                                    party integer,
+                                    relaxed integer,
+                                    sad integer,
+                                    dark integer,
+                                    tonal integer,
+                                    voice integer,
+                                    bpm integer,
+                                    loudness integer,
+                                    key varchar,
+                                    vals blob NOT NULL)''' % table)
+                    else:
+                        self.cursor.execute('''CREATE TABLE IF NOT EXISTS %s (
+                                    file varchar UNIQUE NOT NULL,
+                                    title varchar,
+                                    artist varchar,
+                                    album varchar,
+                                    albumartist varchar,
+                                    genre varchar,
+                                    duration integer,
+                                    ignore integer,
+                                    bpm integer,
+                                    loudness integer,
+                                    key varchar,
+                                    vals blob NOT NULL)''' % table)
 
-            # Add 'key' column - will fail if already exists (which it should, but older instances might not have it)
-# Add 'key' column - will fail if already exists (which it should, but older instances might not have it)
-            try:
-                self.cursor.execute('ALTER TABLE %s ADD COLUMN key varchar default null' % table)
-            except:
-                pass
-
-            # Add newcol column - will fail if already exists (which it should, but older instances might not have it)
-            try:
-                self.cursor.execute('ALTER TABLE %s ADD COLUMN loudness integer default null' % table)
-            except:
-                pass
-
-            if config['essentia']['highlevel']:
-                for col in ESSENTIA_HIGHLEVEL_ATTRIBS:
+                    # Add 'key' column - will fail if already exists (which it should, but older instances might not have it)
                     try:
-                        self.cursor.execute('ALTER TABLE %s ADD COLUMN %s integer default null' % (table, col))
+                        self.cursor.execute('ALTER TABLE %s ADD COLUMN key varchar default null' % table)
                     except:
                         pass
 
-        self.cursor.execute('CREATE UNIQUE INDEX IF NOT EXISTS tracks_idx ON tracks(file)')
+                    # Add newcol column - will fail if already exists (which it should, but older instances might not have it)
+                    try:
+                        self.cursor.execute('ALTER TABLE %s ADD COLUMN loudness integer default null' % table)
+                    except:
+                        pass
+
+                    if config['essentia']['highlevel']:
+                        for col in ESSENTIA_HIGHLEVEL_ATTRIBS:
+                            try:
+                                self.cursor.execute('ALTER TABLE %s ADD COLUMN %s integer default null' % (table, col))
+                            except:
+                                pass
+
+                self.cursor.execute('CREATE UNIQUE INDEX IF NOT EXISTS tracks_idx ON tracks(file)')
 
 
     def commit(self):
-        self.conn.commit()
+        if self.conn is not None:
+            self.conn.commit()
 
 
     def close(self):
-        self.cursor.close()
-        self.conn.close()
+        if self.conn is not None:
+            self.cursor.close()
+            self.conn.close()
 
 
     def add(self, path, musly, essentia):

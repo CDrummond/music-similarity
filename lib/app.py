@@ -40,6 +40,11 @@ class SimilarityApp(Flask):
         random.seed()
         ids = None
 
+        if paths is None or tracks is None:
+            _LOGGER.error('DB not initialised, have you analysed any tracks?')
+            tdb.close()
+            exit(-1)
+
         # If we can, load musly from jukebox...
         if os.path.exists(jukebox_path):
             ids = self.mus.get_jukebox_from_file(jukebox_path)
@@ -50,6 +55,13 @@ class SimilarityApp(Flask):
             self.mus.write_jukebox(jukebox_path)
 
         self.mta=musly.MuslyTracksAdded(paths, tracks, ids)
+
+        if app_config['essentia']['enabled'] and len(paths)>0 and not tdb.file_analysed_with_essentia(paths[0]):
+            app_config['essentia']['enabled'] = False
+            tdb.close()
+            tdb = tracks_db.TracksDb(app_config)
+            _LOGGER.debug('Tracks have not been anaylsed with Essentia, attribute filtering disabled')
+
         if app_config['essentia']['enabled']:
             if app_config['essentia']['weight']>0.0:
                 essentia_sim.init(tdb)

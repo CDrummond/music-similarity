@@ -19,7 +19,7 @@ if __name__=='__main__':
     parser = argparse.ArgumentParser(description='Music Similarity (v%s)' % version.MUSIC_SIMILARITY_VERSION)
     parser.add_argument('-c', '--config', type=str, help='Config file (default: config.json)', default='config.json')
     parser.add_argument('-l', '--log-level', action='store', choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG'], default='INFO', help='Set log level (default: %(default)s)')
-    parser.add_argument('-a', '--analyse', metavar='PATH', type=str, help="Analyse file/folder (use 'm' for configured musly folder)", default='')
+    parser.add_argument('-a', '--analyse', metavar='PATH', type=str, help="Analyse file/folder (use 'm' for configured music folder)", default='')
     parser.add_argument('-m', '--meta-only', action='store_true', default=False, help='Update metadata database only (used in conjuction with --analyse)')
     parser.add_argument('-k', '--keep-old', action='store_true', default=False, help='Do not remove non-existant tracks from DB (used in conjuction with --analyse)')
     parser.add_argument('-f', '--force', type=str, default='', help="Force rescan of specified data (use 'm' for musly, 'e' for essentia, 'me' for both; used in conjuction with --analyse)")
