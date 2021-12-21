@@ -7,9 +7,7 @@
 # GPLv3 license.
 #
 
-import argparse
-import logging
-import os
+import argparse, logging, os
 from lib import analysis, app, config, test, version
 
 JUKEBOX_FILE = 'music-similarity.jukebox'
@@ -26,7 +24,7 @@ if __name__=='__main__':
     parser.add_argument('-t', '--test', action='store_true', default=False, help='Test musly')
     parser.add_argument('-r', '--repeat', action='store_true', default=False, help='Repeat test until OK (used in conjuction with --test)')
     args = parser.parse_args()
-    logging.basicConfig(format='%(asctime)s %(levelname)-8s %(message)s', level=args.log_level, datefmt='%Y-%m-%d %H:%M:%S')
+    logging.basicConfig(format='%(asctime)s %(levelname).1s %(message)s', level=args.log_level, datefmt='%Y-%m-%d %H:%M:%S')
     cfg = config.read_config(args.config, args.analyse)
     _LOGGER.debug('Init DB')
     jukebox_file = os.path.join(cfg['paths']['db'], JUKEBOX_FILE)
