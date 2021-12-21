@@ -95,7 +95,7 @@ def createZip(version):
 
 
 version=sys.argv[1]
-if version!="test":
+if version!="test" and not version.startswith("alpha") and not version.startswith("beta"):
     checkVersion(version)
     checkVersionExists(version)
     updateVersion(version)
