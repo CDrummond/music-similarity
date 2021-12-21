@@ -44,7 +44,7 @@ def analyze_file(index, total, db_path, abs_path, config, tmp_path, musly_analys
     if should_stop:
         return None
     digits=len(str(total))
-    fmt="[{:>%d}  {:3}%%] {}" % ((digits*2)+1)
+    fmt="[{:>%d} {:3}%%] {}" % ((digits*2)+1)
     _LOGGER.debug(fmt.format("%d/%d" % (index+1, total), int((index+1)*100/total), db_path))
     pout, pin = Pipe(duplex=False)
     
