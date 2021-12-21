@@ -12,6 +12,7 @@ from multiprocessing import Process, Pipe
 
 _LOGGER = logging.getLogger(__name__)
 AUDIO_EXTENSIONS = ['m4a', 'mp3', 'ogg', 'flac', 'opus']
+TRACKS_PER_DB_COMMIT = 500
 
 
 should_stop = False
@@ -85,11 +86,15 @@ def process_files(config, trks_db, allfiles, tmp_path):
                     mres = result['musly'] if 'musly' in result else None
                     trks_db.add(allfiles[result['index']]['db'], mres, eres)
                     inserts_since_commit += 1
-                    if inserts_since_commit >= 500:
+                    if inserts_since_commit >= TRACKS_PER_DB_COMMIT:
                         inserts_since_commit = 0
                         trks_db.commit()
             except Exception as e:
-                _LOGGER.debug("Thread exception? - %s" % str(e))
+                global should_stop
+                if not should_stop:
+                    msg = str(e)
+                    if not "'NoneType' object is not subscriptable" in msg:
+                        _LOGGER.debug("Thread exception? - %s" % msg)
                 pass
 
 
