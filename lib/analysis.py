@@ -124,6 +124,7 @@ def get_files_to_analyse(trks_db, lms_db, lms_path, path, files, local_root_len,
 
 
 def analyse_files(config, path, remove_tracks, meta_only, force, jukebox):
+    global should_stop
     signal.signal(signal.SIGINT, sig_handler)
     _LOGGER.debug('Analyse %s' % path)
     trks_db = tracks_db.TracksDb(config, True)
@@ -152,10 +153,13 @@ def analyse_files(config, path, remove_tracks, meta_only, force, jukebox):
                     trks_db.set_metadata(file)
             trks_db.commit()
 
-            if removed_tracks or (added_tracks and not meta_only):
-                (paths, db_tracks) = mus.get_alltracks_db(trks_db.get_cursor())
-                mus.add_tracks(db_tracks, config['musly']['styletracks'], config['musly']['styletracksmethod'], trks_db)
-            trks_db.close()
-            if removed_tracks or not meta_only:
-                mus.write_jukebox(jukebox)
+            if should_stop:
+                trks_db.close()
+            else:
+                if removed_tracks or (added_tracks and not meta_only):
+                    (paths, db_tracks) = mus.get_alltracks_db(trks_db.get_cursor())
+                    mus.add_tracks(db_tracks, config['musly']['styletracks'], config['musly']['styletracksmethod'], trks_db)
+                trks_db.close()
+                if removed_tracks or not meta_only:
+                    mus.write_jukebox(jukebox)
     _LOGGER.debug('Finished analysis')
