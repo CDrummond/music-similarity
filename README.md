@@ -8,7 +8,7 @@ of mix of similar music for LMS.
 ## Musly
 
 This script uses the [Musly audio music similarity library](https://github.com/CDrummond/musly)
-to annalyse tracks, and to locate similar tracks based upon timbre. This project
+to analyse tracks, and to locate similar tracks based upon timbre. This project
 contains the following pre-built versions of this library:
 
 1. Linux 64-bit - `linux/x86-64/libmusly.so`
@@ -62,10 +62,10 @@ Essentia. This is accomplished via:
 ```
 
 This can take about 20hrs to process 25k tracks. The process analyses tracks
-with with Musly, with Essentia, and initialises Musly's 'jukebox' style with
-1000 random tracks, and extracts certain tags. If re-run new tracks will be
-added, and old (non-existent) will be removed. Pass `--keep-old` to keep these
-old tracks.
+with with Musly, with Essentia, initialises Musly's 'jukebox' style with 1000
+random tracks, and extracts certain tags. If re-run new tracks will be added,
+and old (non-existent) will be removed. Pass `--keep-old` to keep these old
+tracks.
 
 To analyse the Music path stored in the config file, the following shortcut can
 be used:
@@ -141,22 +141,22 @@ the following basic items:
 ```
 
 * `paths.db` should be the path where the SQLite and jukebox files created by
-this app can be written to or can be read from.
+this app can be written to / read from.
 * `paths.local` should be the path where this script can access your music
 files. This can be different to the path that LMS uses if you are running
 analysis on a different machine to where you would run the script as the
-similarity server. his script will only store the paths relative to this
-location - eg. `paths.local=/home/music/` then `/home/music/A/b.mp3` will be
-stored as `A/b.mp3`. Only required if analysing tracks.
+similarity server. This script will only store the paths relative to this
+location - eg. if `paths.local=/home/music/` then `/home/music/A/b.mp3` will
+be stored as `A/b.mp3`. Only required if analysing tracks.
 
 The `linux/x86-64`, `linux-armv7l`, and `windows` folders contain example config
 files for each system.
 
-Please refer to docs/OtherConfig.md for all configuration items.
+Please refer to `docs/OtherConfig.md` for all configuration items.
 
 ## Credits
 
 `lib/musly.py` (which is used as a python interface to the Musly library) is
-taken, and modified, from [Musly Integration for the Logitech Media Server](https://www.nexus0.net/pub/sw/lmsmusly)
+taken, and modified, from Roland0's [Musly Integration for LMS](https://www.nexus0.net/pub/sw/lmsmusly)
 
 The Essentia binary is taken from Roland0's [LMS Essentia Integration](https://www.nexus0.net/pub/sw/lmsessentia/)
