@@ -68,6 +68,8 @@ class Musly(object):
 
         # setup func calls
 
+        #self.mus.musly_debug.argtypes = [ctypes.c_int]
+        #self.mus.musly_debug(4)
         self.mus.musly_jukebox_trackcount.argtypes = [ctypes.POINTER(MuslyJukebox)]
         # int musly_track_size (musly_jukebox *  jukebox   )
         self.mus.musly_track_size.argtypes = [ctypes.POINTER(MuslyJukebox)]
@@ -107,7 +109,7 @@ class Musly(object):
 
 
     def jukebox_off(self):
-        self.mus.musly_jukebox_poweroff (self.mj)
+        self.mus.musly_jukebox_poweroff(self.mj)
 
 
     def get_jukebox_binsize(self):
