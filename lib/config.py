@@ -61,8 +61,8 @@ def update_paths(config, analyse, sys, musly, essentia_extractor):
                 config['essentia']['highlevel']= (sys == 'linux')
                 _LOGGER.debug('essentia.highlevel set to %s' % str(config['essentia']['highlevel']))
     elif not 'highlevel' in config['essentia']:
-            config['essentia']['highlevel']= (sys == 'linux')
-            _LOGGER.debug('essentia.highlevel set to %s' % str(config['essentia']['highlevel']))
+        config['essentia']['highlevel'] = (sys == 'linux')
+        _LOGGER.debug('essentia.highlevel set to %s' % str(config['essentia']['highlevel']))
 
 
 def setup_paths(config, analyse):
@@ -82,15 +82,11 @@ def setup_paths(config, analyse):
             update_paths(config, analyse, 'linux', 'linux/armv7l/libmusly.so', None)
             return
     elif system == 'Windows':
-        if proc == 'x86_64':
-            if arch.startswith('64'): # 64-bit Python
-                update_paths(config, analyse, 'windows', 'windows\\mingw64\\libmusly.dll', '%s\\windows\\streaming_extractor_music.exe' % root_folder)
-                return
-            else:  # 32-bit Python
-                update_paths(config, analyse, 'windows', 'windows\\mingw32\\mingw64\\libmusly.dll', '%s\\windows\\streaming_extractor_music.exe' % root_folder)
-                return
-        else:  # 32-bit Windows?
-            update_paths(config, analyse, 'windows', 'windows\\mingw32\\mingw64\\libmusly.dll', '%s\\windows\\streaming_extractor_music.exe' % root_folder)
+        if arch.startswith('64'): # 64-bit Python
+            update_paths(config, analyse, 'windows', 'windows\\mingw64\\libmusly.dll', '%s\\windows\\streaming_extractor_music.exe' % root_folder)
+            return
+        else:  # 32-bit Python
+            update_paths(config, analyse, 'windows', 'windows\\mingw32\\libmusly.dll', '%s\\windows\\streaming_extractor_music.exe' % root_folder)
             return
     #elif system == 'Darwin'
     # TODO: macOS - Intel/M1 ???
@@ -140,12 +136,18 @@ def check_binaries(config):
 
     if len(apps)>0:
         for app in apps:
-            if which(app) is None:
+            appPath = which(app)
+            if appPath is None:
                 if config['essentia']['enabled'] and app == config['essentia']['extractor']:
                     _LOGGER.info('Essentia extractor not in PATH, Essentia analysis disabled')
                     config['essentia']['enabled'] = False
                 else:
                     exit_with_error('%s is not in PATH or is not executable' % app)
+            else:
+                if app == appPath:
+                    _LOGGER.info('Found: %s' % appPath)
+                else:
+                    _LOGGER.info('Found: %s -> %s' % (app, appPath))
 
 
 def read_config(path, analyse):
@@ -255,8 +257,6 @@ def read_config(path, analyse):
             config['essentia']['filterattrib']=True
         if not 'weight' in config['essentia'] or float(config['essentia']['weight'])<0 or float(config['essentia']['weight'])>1:
             config['essentia']['weight']=0.0
-        if not config['essentia']['highlevel']:
-            config['essentia']['highlevel']=True
         if analyse:
             if not 'extractor' in config['essentia']:
                 exit_with_error("'essentia.extractor' not in config file")
