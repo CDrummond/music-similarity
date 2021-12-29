@@ -59,7 +59,7 @@ def resetVersion():
     subprocess.call(['git', 'checkout', os.path.join('lib', 'version.py')], shell=False)
 
 
-TOP_LEVEL_ITEMS = ["ChangeLog", "config.json", "LICENSE", "%s.py" % APP_NAME, "README.md", "requirements.txt", "lib", "scripts", "docs"]
+TOP_LEVEL_ITEMS = ["ChangeLog", "config.json", "LICENSE", "%s.py" % APP_NAME, "README.md", "INSTALL.md", "requirements.txt", "lib", "scripts", "docs"]
 def createOtherZip(config, others, name):
     if config is not None:
         os.rename("%s/config.json" % APP_NAME, "%s/config-orig.json" % APP_NAME)
