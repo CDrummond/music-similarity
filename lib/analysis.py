@@ -30,11 +30,15 @@ def analyze_audiofile(pipe, libmusly, essentia_extractor, index, db_path, abs_pa
         mres = mus.analyze_file(db_path, abs_path, extract_len, extract_start)
         resp['ok'] = mres['ok']
         resp['musly'] = pickle.dumps(bytes(mres['mtrack']), protocol=4)
+        if not resp['ok']:
+            resp['failed'] = 'Musly'
 
     if len(essentia_extractor)>1 and (extract_len<=0 or resp['ok']):
         eres = essentia_analysis.analyse_track(index, essentia_extractor, db_path, abs_path, tmp_path, essentia_cache, essentia_highlevel)
         resp['ok'] = eres is not None
         resp['essentia'] = eres
+        if not resp['ok']:
+            resp['failed'] = 'Essentia'
 
     pipe.send(resp);
     pipe.close()
@@ -89,6 +93,8 @@ def process_files(config, trks_db, allfiles, tmp_path):
                     if inserts_since_commit >= TRACKS_PER_DB_COMMIT:
                         inserts_since_commit = 0
                         trks_db.commit()
+                else:
+                    _LOGGER.error('Failed to analyze %s (%s failed)' % (allfiles[result['index']]['db'], result['failed']))
             except Exception as e:
                 global should_stop
                 if not should_stop:
