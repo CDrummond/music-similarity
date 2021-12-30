@@ -5,9 +5,16 @@
 # GPLv3 license.
 #
 
-import gzip, json, logging, os, pathlib, subprocess
+import gzip, json, logging, os, pathlib, platform, subprocess
 
 _LOGGER = logging.getLogger(__name__)
+IS_WINDOWS = platform.system() == 'Windows'
+
+
+def js_cache_name(path):
+    if IS_WINDOWS:
+        return path.encode('ascii', 'ignore').decode('utf-8')
+    return path
 
 
 def read_json_file(js):
@@ -40,7 +47,7 @@ def read_json_file(js):
 def analyse_track(idx, extractor, db_path, abs_path, tmp_path, cache_dir, highlevel):
     # Try to load previous JSON
     if len(cache_dir)>1:
-        jsfile = "%s/%s.json" % (cache_dir, db_path)
+        jsfile = "%s/%s.json" % (cache_dir, js_cache_name(db_path))
         jsfileGz = "%s.gz" % jsfile
         if os.path.exists(jsfile):
             # Plain, uncompressed
