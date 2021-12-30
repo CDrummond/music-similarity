@@ -13,7 +13,7 @@ IS_WINDOWS = platform.system() == 'Windows'
 
 def js_cache_name(path):
     if IS_WINDOWS:
-        return path.encode('ascii', 'ignore').decode('utf-8')
+        return path.encode('ascii', 'replace').decode('utf-8').replace('?', '_')
     return path
 
 
