@@ -6,7 +6,7 @@
 #
 
 import logging, os, pickle, random, signal, sqlite3, tempfile
-from . import cue, essentia_analysis, tracks_db, musly
+from . import cue, essentia_analysis, tags, tracks_db, musly
 from concurrent.futures import ThreadPoolExecutor
 from multiprocessing import Process, Pipe
 
@@ -53,7 +53,7 @@ def analyze_file(index, total, db_path, abs_path, config, tmp_path, musly_analys
     _LOGGER.debug(fmt.format("%d/%d" % (index+1, total), int((index+1)*100/total), db_path))
 
     # Check file has valid tags
-    meta = tags.read_tags(abs_path, tags.GENRE_SEPARATOR)
+    meta = tags.read_tags(abs_path, tracks_db.GENRE_SEPARATOR)
     if meta is None:
         return {'index':index, 'ok':False, 'reason':'Failed to read tags'}
 
