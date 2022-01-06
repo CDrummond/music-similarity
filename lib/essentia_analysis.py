@@ -47,7 +47,7 @@ def read_json_file(js):
 def analyse_track(idx, extractor, db_path, abs_path, tmp_path, cache_dir, highlevel):
     # Try to load previous JSON
     if len(cache_dir)>1:
-        jsfile = "%s/%s.json" % (cache_dir, js_cache_name(db_path))
+        jsfile = "%s.json" % os.path.join(cache_dir, js_cache_name(db_path))
         jsfileGz = "%s.gz" % jsfile
         if os.path.exists(jsfile):
             # Plain, uncompressed
@@ -69,7 +69,7 @@ def analyse_track(idx, extractor, db_path, abs_path, tmp_path, cache_dir, highle
             except:
                 pass
     else:
-        jsfile = "%s/essentia-%d.json" % (tmp_path, idx)
+        jsfile = os.path.join(tmp_path, "essentia-%d.json" % idx)
 
     if not os.path.exists(jsfile):
         cmd = [extractor, abs_path, jsfile]

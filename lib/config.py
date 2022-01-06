@@ -180,8 +180,8 @@ def read_config(path, analyse):
     # and replace HOME, etc, env vars in paths
     for key in config['paths']:
         config['paths'][key] = fix_path(config['paths'][key])
-        if not config['paths'][key].endswith('/'):
-            config['paths'][key]=config['paths'][key]+'/'
+        if not config['paths'][key].endswith(os.sep):
+            config['paths'][key]=config['paths'][key]+os.sep
 
     if 'lmsdb' in config:
         config['lmsdb'] = fix_path(config['lmsdb'])
