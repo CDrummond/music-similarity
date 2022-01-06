@@ -51,13 +51,13 @@ def analyse_track(idx, extractor, db_path, abs_path, tmp_path, cache_dir, highle
         jsfileGz = "%s.gz" % jsfile
         if os.path.exists(jsfile):
             # Plain, uncompressed
-            with open(jsfile, 'r') as js:
+            with open(jsfile, 'r', encoding='utf8') as js:
                 resp = read_json_file(js)
                 if resp is not None:
                     return resp
         elif os.path.exists(jsfileGz):
             # GZIP compressed
-            with gzip.open(jsfileGz, 'r') as js:
+            with gzip.open(jsfileGz, 'r', encoding='utf8') as js:
                 resp = read_json_file(js)
                 if resp is not None:
                     return resp
@@ -80,7 +80,7 @@ def analyse_track(idx, extractor, db_path, abs_path, tmp_path, cache_dir, highle
         return None
     try:
         resp = None
-        with open(jsfile, 'r') as js:
+        with open(jsfile, 'r', encoding='utf8') as js:
             resp = read_json_file(js)
         if len(cache_dir)>1:
             try:
