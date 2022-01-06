@@ -1,7 +1,7 @@
 '''
 Musly - access libmusly functions
 (c) 2017 R.S.U. / GPL v3 / https://www.nexus0.net/pub/sw/lmsmusly
-(c) 2020 Caig Drummond - modified for use in musly-server
+(c) 2020-2022 Caig Drummond - modified for use in music-similarity
 '''
 
 import ctypes, math, random, pickle, sqlite3, logging, os, pathlib, platform

@@ -3,7 +3,7 @@
 #
 # Analyse files with Essentia and Musly, and provide an API to retrieve similar tracks
 #
-# Copyright (c) 2020-2021 Craig Drummond <craig.p.drummond@gmail.com>
+# Copyright (c) 2020-2022 Craig Drummond <craig.p.drummond@gmail.com>
 # GPLv3 license.
 #
 
