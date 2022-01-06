@@ -282,6 +282,12 @@ def read_config(path, analyse):
     if 'normalize' in config:
         tracks_db.set_normalize_options(config['normalize'])
 
+    if not 'minduration' in config:
+        config['minduration']=30
+
+    if not 'maxduration' in config:
+        config['maxduration']=30*60
+
     if analyse:
         check_binaries(config)
 

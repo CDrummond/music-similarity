@@ -172,7 +172,9 @@ Misc
 {
  "port":11000,
  "host":"0.0.0.0",
- "threads":8
+ "threads":8,
+ "minduration":30,
+ "maxduration":1800
 }
 ```
 
@@ -182,3 +184,5 @@ to listen on all interfaces on your network.
 * `threads` Number of threads to use during analysis phase. This controls how
 many calls to `ffmpeg` are made concurrently, and how many concurrent tracks
 Musly and Essentia are asked to analyse. Defaults to CPU count, if not set.
+* `minduration` Only analyse tracks with duration >= this.
+* `maxduration` Only analyse tracks with duration <= this.

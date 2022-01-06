@@ -31,14 +31,14 @@ def analyze_audiofile(pipe, libmusly, essentia_extractor, index, db_path, abs_pa
         resp['ok'] = mres['ok']
         resp['musly'] = pickle.dumps(bytes(mres['mtrack']), protocol=4)
         if not resp['ok']:
-            resp['failed'] = 'Musly'
+            resp['reason'] = 'Musly analysis failed'
 
     if len(essentia_extractor)>1 and (extract_len<=0 or resp['ok']):
         eres = essentia_analysis.analyse_track(index, essentia_extractor, db_path, abs_path, tmp_path, essentia_cache, essentia_highlevel)
         resp['ok'] = eres is not None
         resp['essentia'] = eres
         if not resp['ok']:
-            resp['failed'] = 'Essentia'
+            resp['reason'] = 'Essentia analysis failed'
 
     pipe.send(resp);
     pipe.close()
@@ -51,8 +51,20 @@ def analyze_file(index, total, db_path, abs_path, config, tmp_path, musly_analys
     digits=len(str(total))
     fmt="[{:>%d} {:3}%%] {}" % ((digits*2)+1)
     _LOGGER.debug(fmt.format("%d/%d" % (index+1, total), int((index+1)*100/total), db_path))
+
+    # Check file has valid tags
+    meta = tags.read_tags(abs_path, tags.GENRE_SEPARATOR)
+    if meta is None:
+        return {'index':index, 'ok':False, 'reason':'Failed to read tags'}
+
+    if 'duration' not in meta or meta['duration']<config['minduration'] or meta['duration']>config['maxduration']:
+        return {'index':index, 'ok':False, 'reason':'Duration not in range'}
+
+    if (not essentia_analysis or (essentia_analysis and not config['essentia']['enabled'])) and not musly_analysis:
+        return {'index':index, 'ok':False, 'reason':'Invalid config'}
+
     pout, pin = Pipe(duplex=False)
-    
+
     essentia_cache = config['paths']['cache'] if 'cache' in config['paths'] else "-"
     extractor = config['essentia']['extractor'] if essentia_analysis and config['essentia']['enabled'] else "-"
     musly_extractlen = config['musly']['extractlen'] if musly_analysis else 0
@@ -61,6 +73,7 @@ def analyze_file(index, total, db_path, abs_path, config, tmp_path, musly_analys
     r = pout.recv()
     p.terminate()
     p.join()
+    r['meta'] = meta
     return r
 
 
@@ -88,13 +101,14 @@ def process_files(config, trks_db, allfiles, tmp_path):
                 if result['ok']:
                     eres = result['essentia'] if 'essentia' in result else None
                     mres = result['musly'] if 'musly' in result else None
-                    trks_db.add(allfiles[result['index']]['db'], mres, eres)
+                    meta = result['meta'] if 'meta' in result else meta
+                    trks_db.add(allfiles[result['index']]['db'], mres, eres, meta)
                     inserts_since_commit += 1
                     if inserts_since_commit >= TRACKS_PER_DB_COMMIT:
                         inserts_since_commit = 0
                         trks_db.commit()
                 else:
-                    _LOGGER.error('Failed to analyze %s (%s failed)' % (allfiles[result['index']]['db'], result['failed']))
+                    _LOGGER.error('Failed to analyze %s (%s)' % (allfiles[result['index']]['db'], result['reason']))
             except Exception as e:
                 global should_stop
                 if not should_stop:
@@ -152,11 +166,13 @@ def analyse_files(config, path, remove_tracks, meta_only, force, jukebox):
         added_tracks = len(files)>0
         if added_tracks or removed_tracks:
             if added_tracks:
-                if not meta_only:
+                if meta_only:
+                    _LOGGER.debug('Read metadata')
+                    for f in files:
+                        trks_db.set_metadata(f)
+                else:
                     process_files(config, trks_db, files, tmp_path)
-                _LOGGER.debug('Save metadata')
-                for file in files:
-                    trks_db.set_metadata(file)
+
             trks_db.commit()
 
             if should_stop:

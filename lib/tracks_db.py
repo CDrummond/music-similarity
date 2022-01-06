@@ -157,7 +157,7 @@ class TracksDb(object):
             self.conn.close()
 
 
-    def add(self, path, musly, essentia):
+    def add(self, path, musly, essentia, meta):
         if musly is not None:
             if self.file_entry_exists(path):
                 self.cursor.execute('UPDATE tracks SET vals=? WHERE file=?', (musly, path))
@@ -175,6 +175,8 @@ class TracksDb(object):
                     self.cursor.execute('UPDATE tracks SET danceable=?, aggressive=?, electronic=?, acoustic=?, happy=?, party=?, relaxed=?, sad=?, dark=?, tonal=?, voice=? WHERE file=?', (essentia['danceable'], essentia['aggressive'], essentia['electronic'], essentia['acoustic'], essentia['happy'], essentia['party'], essentia['relaxed'], essentia['sad'], essentia['dark'], essentia['tonal'], essentia['voice'], path))
                 except:
                     pass
+        if meta is not None:
+            self.update_metadata(path, meta)
 
 
     def get_metadata(self, i):
