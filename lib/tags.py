@@ -80,15 +80,18 @@ def read_tags(path, genre_separator):
 
     audio = get_ogg_or_flac(path)
     if audio:
-        tags = {'title':str(audio['TITLE'][0]), 'artist':str(audio['ARTIST'][0]), 'album':str(audio['ALBUM'][0]), 'duration':int(audio.info.length), 'albumartist':None, 'genres':None}
-        if 'ALBUMARTIST' in audio:
-            tags['albumartist']=str(audio['ALBUMARTIST'][0])
-        if 'GENRE' in audio:
-            tags['genres']=[]
-            for g in audio['GENRE']:
-                tags['genres'].append(str(g))
-        #_LOGGER.debug('OGG File: %s Meta: %s' % (path, json.dumps(tags)))
-        return tags
+        try:
+            tags = {'title':str(audio['TITLE'][0]), 'artist':str(audio['ARTIST'][0]), 'album':str(audio['ALBUM'][0]), 'duration':int(audio.info.length), 'albumartist':None, 'genres':None}
+            if 'ALBUMARTIST' in audio:
+                tags['albumartist']=str(audio['ALBUMARTIST'][0])
+            if 'GENRE' in audio:
+                tags['genres']=[]
+                for g in audio['GENRE']:
+                    tags['genres'].append(str(g))
+            #_LOGGER.debug('OGG File: %s Meta: %s' % (path, json.dumps(tags)))
+            return tags
+        except:
+            pass
 
     _LOGGER.debug('File:%s Meta:NONE' % path)
     return None
