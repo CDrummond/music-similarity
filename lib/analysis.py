@@ -171,8 +171,14 @@ def analyse_files(config, path, remove_tracks, meta_only, force, jukebox):
             if added_tracks:
                 if meta_only:
                     _LOGGER.debug('Read metadata')
+                    total=len(files)
+                    digits=len(str(total))
+                    fmt="[{:>%d} {:3}%%] {}" % ((digits*2)+1)
+                    index = 0
                     for f in files:
+                        _LOGGER.debug(fmt.format("%d/%d" % (index+1, total), int((index+1)*100/total), f['db']))
                         trks_db.set_metadata(f)
+                        index +=1
                 else:
                     process_files(config, trks_db, files, tmp_path)
 
