@@ -13,7 +13,7 @@ from multiprocessing import Process, Pipe
 _LOGGER = logging.getLogger(__name__)
 AUDIO_EXTENSIONS = ['m4a', 'mp3', 'ogg', 'flac', 'opus']
 TRACKS_PER_DB_COMMIT_MUSLY = 500
-TRACKS_PER_DB_COMMIT_ESSENTIA = 100 # Analysing with Essentia is slower, so commit DB more often it this is enabled
+TRACKS_PER_DB_COMMIT_ESSENTIA = 100 # Analysing with Essentia is slower, so commit DB more often if this is enabled
 
 
 should_stop = False
