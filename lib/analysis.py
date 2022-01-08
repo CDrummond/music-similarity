@@ -61,6 +61,11 @@ def analyze_file(index, total, db_path, abs_path, config, tmp_path, musly_analys
     if 'duration' in meta and meta['duration']>0 and ((config['minduration']>0 and meta['duration']<config['minduration']) or (config['maxduration']>0 and meta['duration']>config['maxduration'])):
         return {'index':index, 'ok':False, 'reason':'Duration not in range'}
 
+    if 'genres' in meta and config['excludegenres'] is not None:
+        for genre in meta['genres']:
+            if genre in config['excludegenres']:
+                return {'index':index, 'ok':False, 'reason':'Excluding genre (%s)' % genre}
+
     if (not essentia_analysis or (essentia_analysis and not config['essentia']['enabled'])) and not musly_analysis:
         return {'index':index, 'ok':False, 'reason':'Invalid config'}
 

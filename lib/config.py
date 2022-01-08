@@ -272,6 +272,11 @@ def read_config(path, analyse):
             config['genres'][i]=set(config['genres'][i])
             config['all_genres'].update(config['genres'][i])
 
+    if 'excludegenres' in config and len(config['excludegenres'])>0:
+        config['excludegenres']=set(config['excludegenres'])
+    else:
+        config['excludegenres']=None
+
     if 'ignoregenre' in config:
         if isinstance(config['ignoregenre'], list):
             ignore=[]

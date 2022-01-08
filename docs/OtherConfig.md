@@ -174,7 +174,10 @@ Misc
  "host":"0.0.0.0",
  "threads":8,
  "minduration":30,
- "maxduration":1800
+ "maxduration":1800,
+ "excludegenres":[
+   "Podcast", "Audiobook"
+ ]
 }
 ```
 
@@ -186,3 +189,5 @@ many calls to `ffmpeg` are made concurrently, and how many concurrent tracks
 Musly and Essentia are asked to analyse. Defaults to CPU count, if not set.
 * `minduration` Only analyse tracks with duration >= this.
 * `maxduration` Only analyse tracks with duration <= this.
+* `excludegenres` List of genres that should be excluded from analysis. Any
+tracks that have a genre from this list will not be analysed.
