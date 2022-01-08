@@ -58,7 +58,7 @@ def analyze_file(index, total, db_path, abs_path, config, tmp_path, musly_analys
     if meta is None:
         return {'index':index, 'ok':False, 'reason':'Failed to read tags'}
 
-    if 'duration' not in meta or meta['duration']<config['minduration'] or meta['duration']>config['maxduration']:
+    if 'duration' in meta and meta['duration']>0 and ((config['minduration']>0 and meta['duration']<config['minduration']) or (config['maxduration']>0 and meta['duration']>config['maxduration'])):
         return {'index':index, 'ok':False, 'reason':'Duration not in range'}
 
     if (not essentia_analysis or (essentia_analysis and not config['essentia']['enabled'])) and not musly_analysis:
