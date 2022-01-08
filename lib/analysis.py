@@ -12,7 +12,8 @@ from multiprocessing import Process, Pipe
 
 _LOGGER = logging.getLogger(__name__)
 AUDIO_EXTENSIONS = ['m4a', 'mp3', 'ogg', 'flac', 'opus']
-TRACKS_PER_DB_COMMIT = 500
+TRACKS_PER_DB_COMMIT_MUSLY = 500
+TRACKS_PER_DB_COMMIT_ESSENTIA = 100 # Analysing with Essentia is slower, so commit DB more often it this is enabled
 
 
 should_stop = False
@@ -91,6 +92,8 @@ def process_files(config, trks_db, allfiles, tmp_path):
     
     futures_list = []
     inserts_since_commit = 0
+
+    tracks_per_db_commit = TRACKS_PER_DB_COMMIT_ESSENTIA if config['essentia']['enabled'] else TRACKS_PER_DB_COMMIT_MUSLY
     with ThreadPoolExecutor(max_workers=config['threads']) as executor:
         for i in range(numtracks):
             futures = executor.submit(analyze_file, i, numtracks, allfiles[i]['db'], allfiles[i]['abs'], config, tmp_path, allfiles[i]['musly'], allfiles[i]['essentia'])
@@ -104,7 +107,7 @@ def process_files(config, trks_db, allfiles, tmp_path):
                     meta = result['meta'] if 'meta' in result else meta
                     trks_db.add(allfiles[result['index']]['db'], mres, eres, meta)
                     inserts_since_commit += 1
-                    if inserts_since_commit >= TRACKS_PER_DB_COMMIT:
+                    if inserts_since_commit >= tracks_per_db_commit:
                         inserts_since_commit = 0
                         trks_db.commit()
                 else:
