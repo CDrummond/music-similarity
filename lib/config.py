@@ -262,6 +262,8 @@ def read_config(path, analyse):
                 exit_with_error("'essentia.extractor' not in config file")
             else:
                 config['essentia']['extractor'] = fix_path(config['essentia']['extractor'])
+    else:
+        config['essentia']['highlevel']=False
 
     # Check genres, etc.
     if 'genres' in config:

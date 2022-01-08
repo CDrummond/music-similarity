@@ -68,7 +68,7 @@ class SimilarityApp(Flask):
                 tdb.close()
                 tdb = tracks_db.TracksDb(app_config)
 
-        if app_config['essentia']['enabled']:
+        if app_config['essentia']['enabled'] and app_config['essentia']['highlevel']:
             if app_config['essentia']['weight']>0.0:
                 essentia_sim.init(tdb)
             _LOGGER.debug('Will use Essentia attributes to filter tracks (%s)' % ('highlevel' if app_config['essentia']['highlevel'] else 'lowlevel'))
@@ -141,14 +141,14 @@ def genre_adjust(seed, entry, acceptable_genres, all_genres, no_genre_match_adj,
 def get_similars(track_id, mus, num_sim, mta, tdb, ess_cfg):
     tracks = []
 
-    if ess_cfg['enabled'] and ess_cfg['weight']>=WEIGHT_ALL_MUSLY:
+    if ess_cfg['enabled'] and ess_cfg['highlevel'] and ess_cfg['weight']>=WEIGHT_ALL_MUSLY:
         # Init essentia KDTree. If essentia weight was configured in JSON config file
         # then this will already have occured, so following call will do nothing. However,
         # if its not set in the config but is set in URL params then we do need to
         # initialise now.
         essentia_sim.init(tdb)
 
-    if ess_cfg['enabled'] and ess_cfg['weight']>=WEIGHT_ALL_ESSENTIA:
+    if ess_cfg['enabled'] and ess_cfg['highlevel'] and ess_cfg['weight']>=WEIGHT_ALL_ESSENTIA:
         _LOGGER.debug('Get similar tracks to %d from Essentia' % track_id)
         et = essentia_sim.get_similars(tdb, track_id)
         idx = 0
@@ -157,7 +157,7 @@ def get_similars(track_id, mus, num_sim, mta, tdb, ess_cfg):
             idx+=1
         return sorted(tracks, key=lambda k: k['sim'])
 
-    if not ess_cfg['enabled'] or ess_cfg['weight']<WEIGHT_ALL_MUSLY:
+    if not ess_cfg['enabled'] or not ess_cfg['highlevel'] or ess_cfg['weight']<WEIGHT_ALL_MUSLY:
         _LOGGER.debug('Get %d similar tracks to %d from Musly' % (num_sim, track_id))
         return mus.get_similars(mta.mtracks, mta.mtrackids, track_id, num_sim)
 
