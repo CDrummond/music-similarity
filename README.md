@@ -19,11 +19,6 @@ analysis - `linux/armv7l/libmusly.so`
 5. Windows built with MinGW64, requires 64-bit Python - `windows/mingw64/libmusly.dll`
 6. macOS i386/64-bit, compiled by AF-1 - `mac/i386/libmusly.dylib`
 
-**macOS**
-
-The Musly library has been built by AF-1 and a copy taken from their
-[github repo.](https://github.com/AF-1/sobras/tree/main/lms-music-similarity_on_macos)
-
 
 ## Essentia
 
@@ -161,3 +156,6 @@ Please refer to `docs/OtherConfig.md` for all configuration items.
 taken, and modified, from Roland0's [Musly Integration for LMS](https://www.nexus0.net/pub/sw/lmsmusly)
 
 The Essentia binary is taken from Roland0's [LMS Essentia Integration](https://www.nexus0.net/pub/sw/lmsessentia/)
+
+The macOS build of the Musly library has been built by AF-1 and a copy taken
+from their [github repo.](https://github.com/AF-1/sobras/tree/main/lms-music-similarity_on_macos)
