@@ -1,0 +1,5 @@
+Installation
+============
+
+- Install Python3
+- ??

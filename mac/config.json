@@ -1,0 +1,6 @@
+{
+ "paths":{
+  "db":"~/MusicSimilarity/",
+  "local":"~/Music/"
+ }
+}

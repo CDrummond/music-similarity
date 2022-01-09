@@ -3,3 +3,4 @@ windows/ffmpeg-LICENSE.txt
 windows/ffmpeg.exe
 windows/ffprobe.exe
 windows/streaming_extractor_music.exe
+mac/streaming_extractor_music

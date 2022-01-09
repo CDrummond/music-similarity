@@ -91,10 +91,10 @@ def setup_paths(config, analyse):
     #elif system == 'Darwin'
     # TODO: macOS - Intel/M1 ???
     #    if proc == 'x86_64':
-    #        update_paths(config, analyse, 'mac', 'mac/x86-64/libmusly.dylib', '%s/mac/x86-64/streaming_extractor_music' % root_folder)
+    #        update_paths(config, analyse, 'mac', 'mac/x86-64/libmusly.dylib', '%s/mac/streaming_extractor_music' % root_folder)
     #        return
     #    else: # M1??? Can use x86_64 binaries on M1?
-    #        update_paths(config, analyse, 'mac', 'mac/m1/libmusly.dylib', '%s/mac/x86-64/streaming_extractor_music' % root_folder)
+    #        update_paths(config, analyse, 'mac', 'mac/m1/libmusly.dylib', '%s/mac/streaming_extractor_music' % root_folder)
     #        return
 
     if not 'lib' in config['musly'] or (analyse and config['essentia']['enabled'] and not 'extractor' in config['essentia']):
