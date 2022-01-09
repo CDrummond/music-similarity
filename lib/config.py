@@ -88,11 +88,10 @@ def setup_paths(config, analyse):
         else:  # 32-bit Python
             update_paths(config, analyse, 'windows', 'windows\\mingw32\\libmusly.dll', '%s\\windows\\streaming_extractor_music.exe' % root_folder)
             return
-    #elif system == 'Darwin'
-    # TODO: macOS - Intel/M1 ???
-    #    if proc == 'x86_64':
-    #        update_paths(config, analyse, 'mac', 'mac/x86-64/libmusly.dylib', '%s/mac/streaming_extractor_music' % root_folder)
-    #        return
+    elif system == 'Darwin'
+        if proc == 'i386':
+            update_paths(config, analyse, 'mac', 'mac/i386/libmusly.dylib', '%s/mac/streaming_extractor_music' % root_folder)
+            return
     #    else: # M1??? Can use x86_64 binaries on M1?
     #        update_paths(config, analyse, 'mac', 'mac/m1/libmusly.dylib', '%s/mac/streaming_extractor_music' % root_folder)
     #        return

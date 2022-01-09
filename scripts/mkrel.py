@@ -99,7 +99,7 @@ def createZip(version):
     createOtherZip("linux", "armv7l", ["linux/armv7l/libmusly.so", "linux/%s.service" % APP_NAME], "pi")
     createOtherZip("linux", "x86-64", ["linux/x86-64/libmusly.so", "linux/%s.service" % APP_NAME, "linux/x86-64/essentia_streaming_extractor_music", "essentia"], "linux-x86-64")
     createOtherZip("windows", None, ["windows/mingw32/libmusly.dll", "windows/mingw32/libgcc_s_dw2-1.dll", "windows/mingw32/libstdc++-6.dll", "windows/mingw64/libmusly.dll", "windows/mingw64/libgcc_s_seh-1.dll", "windows/mingw64/libstdc++-6.dll", "windows/ffmpeg.exe", "windows/ffprobe.exe", "windows/ffmpeg-LICENSE.txt", "windows/streaming_extractor_music.exe"], "windows")
-    createOtherZip("mac", None, ["mac/x86-64/libmusly.dylib", "mac/streaming_extractor_music"], "mac")
+    createOtherZip("mac", None, ["mac/i386/libmusly.dylib", "mac/streaming_extractor_music"], "mac")
     os.chdir(APP_NAME)
 
 
