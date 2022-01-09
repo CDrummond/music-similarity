@@ -17,11 +17,12 @@ analysis - `linux/armv7l/libmusly.so`
 3. Raspbian 32-bit, linked against libav - `linux/armv7l/raspbian-buster/libav/libmusly.so`
 4. Windows built with MinGW32, requires 32-bit Python - `windows/mingw32/libmusly.dll`
 5. Windows built with MinGW64, requires 64-bit Python - `windows/mingw64/libmusly.dll`
-
+6. macOS i386/64-bit, compiled by AF-1 - `mac/i386/libmusly.dylib`
 
 **macOS**
 
-Instructions, and binaries, for Musly on macOS can be found [here](https://github.com/AF-1/sobras/tree/main/lms-music-similarity_on_macos)
+The Musly library has been built by AF-1 and a copy taken from their
+[github repo.](https://github.com/AF-1/sobras/tree/main/lms-music-similarity_on_macos)
 
 
 ## Essentia
