@@ -150,8 +150,8 @@ similarity server. This script will only store the paths relative to this
 location - eg. if `paths.local=/home/music/` then `/home/music/A/b.mp3` will
 be stored as `A/b.mp3`. Only required if analysing tracks.
 
-The `linux/x86-64`, `linux-armv7l`, and `windows` folders contain example config
-files for each system.
+The `linux/x86-64`, `linux/armv7l`, `mac`, and `windows` folders contain example
+config files for each system.
 
 Please refer to `docs/OtherConfig.md` for all configuration items.
 
