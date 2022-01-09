@@ -93,10 +93,8 @@ def createZip(version):
     cmd=["zip", "-r", "%s/%s-all-%s.zip" % (APP_NAME, APP_NAME, version)]
     for f in TOP_LEVEL_ITEMS:
         cmd.append("%s/%s" % (APP_NAME, f))
-    for f in ["essentia", "linux"]:
+    for f in ["essentia", "linux", "windows"]:
         cmd.append("%s/%s" % (APP_NAME, f))
-    for f in ["mingw32", "mingw64", "config.json"]:
-        cmd.append("%s/windows/%s" % (APP_NAME, f))
     subprocess.call(cmd, shell=False)
     createOtherZip("linux", "armv7l", ["linux/armv7l/libmusly.so", "linux/%s.service" % APP_NAME], "pi")
     createOtherZip("linux", "x86-64", ["linux/x86-64/libmusly.so", "linux/%s.service" % APP_NAME, "linux/x86-64/essentia_streaming_extractor_music", "essentia"], "linux-x86-64")
