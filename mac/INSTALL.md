@@ -23,3 +23,5 @@ Installation
   `pip install cherrypy`
 
 - Edit *config.json* to contain correct paths
+
+- Optional: [Running Music Similarity Server as a daemon (in the background)](https://github.com/AF-1/sobras/blob/main/lms-music-similarity_on_macos/README.md#running-music-similarity-server-as-a-daemonin-the-background)
