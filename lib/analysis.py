@@ -15,6 +15,10 @@ AUDIO_EXTENSIONS = ['m4a', 'mp3', 'ogg', 'flac', 'opus']
 TRACKS_PER_DB_COMMIT_MUSLY = 500
 TRACKS_PER_DB_COMMIT_ESSENTIA = 100 # Analysing with Essentia is slower, so commit DB more often if this is enabled
 
+STATUS_OK       = 0
+STATUS_ERROR    = 1
+STATUS_FILTERED = 2
+
 
 should_stop = False
 def sig_handler(signum, frame):
@@ -24,22 +28,24 @@ def sig_handler(signum, frame):
 
 
 def analyze_audiofile(pipe, libmusly, essentia_extractor, index, db_path, abs_path, extract_len, extract_start, essentia_cache, essentia_highlevel, tmp_path):
-    resp = {'index':index, 'ok':False}
+    resp = {'index':index, 'status':STATUS_OK}
 
     if extract_len>0:
         mus = musly.Musly(libmusly, True)
         mres = mus.analyze_file(db_path, abs_path, extract_len, extract_start)
-        resp['ok'] = mres['ok']
-        resp['musly'] = pickle.dumps(bytes(mres['mtrack']), protocol=4)
-        if not resp['ok']:
-            resp['reason'] = 'Musly analysis failed'
+        if mres['ok']:
+            resp['musly'] = pickle.dumps(bytes(mres['mtrack']), protocol=4)
+        else:
+            resp['status'] = STATUS_ERROR
+            resp['extra'] = 'Musly'
 
-    if len(essentia_extractor)>1 and (extract_len<=0 or resp['ok']):
+    if len(essentia_extractor)>1 and STATUS_OK==resp['status']:
         eres = essentia_analysis.analyse_track(index, essentia_extractor, db_path, abs_path, tmp_path, essentia_cache, essentia_highlevel)
-        resp['ok'] = eres is not None
-        resp['essentia'] = eres
-        if not resp['ok']:
-            resp['reason'] = 'Essentia analysis failed'
+        if eres is None:
+            resp['status'] = STATUS_ERROR
+            resp['extra'] = 'Essentia'
+        else:
+            resp['essentia'] = eres
 
     pipe.send(resp);
     pipe.close()
@@ -55,19 +61,19 @@ def analyze_file(index, total, db_path, abs_path, config, tmp_path, musly_analys
 
     # Check file has valid tags
     meta = tags.read_tags(abs_path, tracks_db.GENRE_SEPARATOR)
-    if meta is None:
-        return {'index':index, 'ok':False, 'reason':'Failed to read tags'}
+    if meta is None or 'title' not in meta or meta['title'] is None:
+        return {'index':index, 'status':STATUS_ERROR, 'extra':'Tags'}
 
     if 'duration' in meta and meta['duration']>0 and ((config['minduration']>0 and meta['duration']<config['minduration']) or (config['maxduration']>0 and meta['duration']>config['maxduration'])):
-        return {'index':index, 'ok':False, 'reason':'Duration not in range'}
+        return {'index':index, 'status':STATUS_FILTERED, 'extra':'Duration'}
 
     if 'genres' in meta and config['excludegenres'] is not None:
         for genre in meta['genres']:
             if genre in config['excludegenres']:
-                return {'index':index, 'ok':False, 'reason':'Excluding genre (%s)' % genre}
+                return {'index':index, 'status':STATUS_FILTERED, 'extra':'Genre (%s)' % genre}
 
     if (not essentia_analysis or (essentia_analysis and not config['essentia']['enabled'])) and not musly_analysis:
-        return {'index':index, 'ok':False, 'reason':'Invalid config'}
+        return {'index':index, 'status':STATUS_ERROR, 'extra':'Config'}
 
     pout, pin = Pipe(duplex=False)
 
@@ -85,6 +91,9 @@ def analyze_file(index, total, db_path, abs_path, config, tmp_path, musly_analys
 
 def process_files(config, trks_db, allfiles, tmp_path):
     numtracks = len(allfiles)
+    analysed = 0
+    failed = 0
+    filtered = 0
     _LOGGER.info("Have {} files to analyze".format(numtracks))
     _LOGGER.info("Extraction length: {}s extraction start: {}s".format(config['musly']['extractlen'], config['musly']['extractstart']))
     if config['essentia']['enabled']:
@@ -106,17 +115,24 @@ def process_files(config, trks_db, allfiles, tmp_path):
         for future in futures_list:
             try:
                 result = future.result()
-                if result['ok']:
+
+                if result['status'] == STATUS_OK:
                     eres = result['essentia'] if 'essentia' in result else None
                     mres = result['musly'] if 'musly' in result else None
                     meta = result['meta'] if 'meta' in result else meta
                     trks_db.add(allfiles[result['index']]['db'], mres, eres, meta)
                     inserts_since_commit += 1
+                    analysed += 1
                     if inserts_since_commit >= tracks_per_db_commit:
                         inserts_since_commit = 0
                         trks_db.commit()
-                else:
-                    _LOGGER.error('Failed to analyze %s (%s)' % (allfiles[result['index']]['db'], result['reason']))
+                elif result['status'] == STATUS_ERROR:
+                    failed += 1
+                    _LOGGER.error('Failed to analyze %s (%s)' % (allfiles[result['index']]['db'], resp['extra']))
+                elif result['status'] == STATUS_FILTERED:
+                    filtered += 1
+                    _LOGGER.debug('Skipped %s (%s)' % (allfiles[result['index']]['db'], resp['extra']))
+
             except Exception as e:
                 global should_stop
                 if not should_stop:
@@ -124,6 +140,7 @@ def process_files(config, trks_db, allfiles, tmp_path):
                     if not "'NoneType' object is not subscriptable" in msg:
                         _LOGGER.debug("Thread exception? - %s" % msg)
                 pass
+    return analysed, failed, filtered
 
 
 def get_files_to_analyse(trks_db, lms_db, lms_path, path, files, local_root_len, tmp_path, tmp_path_len, meta_only, force, essentia_enabled):
@@ -185,7 +202,8 @@ def analyse_files(config, path, remove_tracks, meta_only, force, jukebox):
                         trks_db.set_metadata(f)
                         index +=1
                 else:
-                    process_files(config, trks_db, files, tmp_path)
+                    analysed, failed, filtered = process_files(config, trks_db, files, tmp_path)
+                    _LOGGER.info('Analysed: %d, Failed: %d, Filtered: %d' % (analysed, failed, filtered))
 
             trks_db.commit()
 
