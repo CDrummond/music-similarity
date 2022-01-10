@@ -1,14 +1,14 @@
 Installation
 ============
 
-- Install Python3
+- Install **Python3**
 
-- Install XCode Command Line Tools: `xcode-select --install`
+- Install **XCode Command Line Tools**: `xcode-select --install`
 
-- Install homebrew:
+- Install **homebrew**:
   `/usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"`
 
-- Use Homebrew to install ffmpeg: `brew install ffmpeg`
+- Use Homebrew to install **ffmpeg**: `brew install ffmpeg`
 
 - Remove Apple's quarantine flag from the binary files:<br>
   `sudo xattr -r -d com.apple.quarantine mac/x86-64/libmusly.dylib`<br>
@@ -20,6 +20,6 @@ Installation
 
 - Install requited Python modules:<br>
   `pip install -r requirements.txt`<br>
-  `pip3 install cherrypy`
+  `pip install cherrypy`
 
-- Edit config.json to contain correct paths
+- Edit *config.json* to contain correct paths
