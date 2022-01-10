@@ -18,7 +18,7 @@ Installation
   `python3 -m venv ~/musicsimilarity-pyenv`<br>
   `source ~/musicsimilarity-pyenv/bin/activate`<br>
 
-- Install requited Python modules:<br>
+- Install required Python modules:<br>
   `pip install -r requirements.txt`<br>
   `pip install cherrypy`
 
