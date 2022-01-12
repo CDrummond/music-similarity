@@ -28,7 +28,7 @@ If you change this config item after the jukebox is written you will need to
 delete the jukebox file and restart the server. Only used if analyising tracks.
 * `musly.styletracksmethod` configures how tracks are chosen for styletracks. If
 set to `genres` (which is the default if not set) then the meta-data db is
-queried for how many track each genre has and tracks are chosen for each of
+queried for how many tracks each genre has and tracks are chosen for each of
 these genres based upon the percentage of tracks in a genre. If set to `albums`
 then at least one track from each album is used. If set to anything else then
 random tracks are chosen. Only used if analyising tracks.
@@ -83,10 +83,10 @@ features. This defaults to true for Linux only.
 is used to filter tracks. However, if you set `essentia.weight` to higher than
 0.0 (and less than or equal to 1.0) then Essentia can also be used to score
 similarity based upon the Essentia attributes. This value then configures the
-percentage give to each metric. e.g. an `essentia.weight` of 0.4 will cause the
-similarity score to be base 60% Musly 40% Essentia.
-* `paths.cache` if set, then the full output of Essentia anlysis for each track
-will be stored within a `.json` (or `.json.gz` if `gzip` is on system) file.
+percentage given to each metric. e.g. an `essentia.weight` of 0.4 will cause the
+similarity score to be 60% Musly and 40% Essentia based.
+* `paths.cache` if set, then the full output of Essentia analysis for each track
+will be stored within a `.json` file (or `.json.gz` if `gzip` is on system).
 
 
 CUE Tracks
@@ -94,23 +94,18 @@ CUE Tracks
 
 During analysis, this script will also analyse individual CUE tracks. To do this
 it needs access to the LMS database file to know the position of each track,
-etc. as well as the path to your music files
-as LMS sees them.
+etc. as well as the path to your music files as LMS sees them.
 
 ```
 {
  "paths":{
-  "lms":"/media/Music/",
-  "tmp":"/tmp/"
+  "lms":"/media/Music/"
  },
  "lmsdb":"/path/to/lms/Cache/library.db"
 }
 ```
 
 * `paths.lms` should be the path where LMS accesses your music files.
-* `paths.tmp` When analysing music, this script will create a temporary folder
-to hold separate CUE file tracks. The path passed here needs to be writable.
-This config item is only used for analysis.
 * `lmsdb` should hold the path to the LMS database file. This is only required
 for analysis, and only if you have CUE files. `ffmpeg` is required to split
 tracks.
@@ -161,7 +156,7 @@ listed here, will be considered acceptable. Therefore, if seed is `Pop` then
 a `Hard Rock` track would not be considered.
 
 *NOTE* Genre groups can now be configured directly in the [LMS Music Similarity Plugin](https://github.com/CDrummond/lms-musicsimilarity),
-therfore there is no need to add these to `config.json` Therefore, this section
+therefore there is no need to add these to `config.json`, and this section
 is no longer required.
 
 
@@ -177,7 +172,10 @@ Misc
  "maxduration":1800,
  "excludegenres":[
    "Podcast", "Audiobook"
- ]
+ ],
+ "paths":{
+   "tmp":"/tmp/"
+  }
 }
 ```
 
@@ -191,3 +189,8 @@ Musly and Essentia are asked to analyse. Defaults to CPU count, if not set.
 * `maxduration` Only analyse tracks with duration <= this.
 * `excludegenres` List of genres that should be excluded from analysis. Any
 tracks that have a genre from this list will not be analysed.
+* `paths.tmp` When analysing music, this script will create a temporary folder
+to hold the Essentia JSON output and any split CUE file tracks. The path set
+here needs to be writable. If left unset, the default, then it will be set to
+the system's default temporary folder path. This config item is only used for
+analysis.
