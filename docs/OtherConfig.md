@@ -99,7 +99,8 @@ etc. as well as the path to your music files as LMS sees them.
 ```
 {
  "paths":{
-  "lms":"/media/Music/"
+  "lms":"/media/Music/",
+  "tmp":"/tmp/"
  },
  "lmsdb":"/path/to/lms/Cache/library.db"
 }
@@ -109,6 +110,10 @@ etc. as well as the path to your music files as LMS sees them.
 * `lmsdb` should hold the path to the LMS database file. This is only required
 for analysis, and only if you have CUE files. `ffmpeg` is required to split
 tracks.
+* `paths.tmp` When analysing music, this script will create a temporary folder
+to hold any split CUE file tracks. The path set here needs to be writable. If
+left unset, the default, then it will be set to the system's default temporary
+folder path. This config item is only used for analysis.
 
 
 Normalizing Strings
@@ -172,10 +177,7 @@ Misc
  "maxduration":1800,
  "excludegenres":[
    "Podcast", "Audiobook"
- ],
- "paths":{
-   "tmp":"/tmp/"
-  }
+ ]
 }
 ```
 
@@ -189,8 +191,3 @@ Musly and Essentia are asked to analyse. Defaults to CPU count, if not set.
 * `maxduration` Only analyse tracks with duration <= this.
 * `excludegenres` List of genres that should be excluded from analysis. Any
 tracks that have a genre from this list will not be analysed.
-* `paths.tmp` When analysing music, this script will create a temporary folder
-to hold the Essentia JSON output and any split CUE file tracks. The path set
-here needs to be writable. If left unset, the default, then it will be set to
-the system's default temporary folder path. This config item is only used for
-analysis.

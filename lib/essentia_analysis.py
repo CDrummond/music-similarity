@@ -17,34 +17,43 @@ def js_cache_name(path):
     return path
 
 
+def process_essentia(data):
+    key_scale = 'M' if data['tonal']['key_scale']=='major' else 'm'
+    resp = {
+              'bpm': int(data['rhythm']['bpm']),
+              'loudness': float(data['lowlevel']['average_loudness']),
+              'key': data['tonal']['key_key']+key_scale
+           }
+    if 'highlevel' in data:
+        resp['danceable']=float(data['highlevel']['danceability']['all']['danceable'])
+        resp['aggressive']=float(data['highlevel']['mood_aggressive']['all']['aggressive'])
+        resp['electronic']=float(data['highlevel']['mood_electronic']['all']['electronic'])
+        resp['acoustic']=float(data['highlevel']['mood_acoustic']['all']['acoustic'])
+        resp['happy']=float(data['highlevel']['mood_happy']['all']['happy'])
+        resp['party']=float(data['highlevel']['mood_party']['all']['party'])
+        resp['relaxed']=float(data['highlevel']['mood_relaxed']['all']['relaxed'])
+        resp['sad']=float(data['highlevel']['mood_sad']['all']['sad'])
+        resp['dark']=float(data['highlevel']['timbre']['all']['dark'])
+        resp['tonal']=float(data['highlevel']['tonal_atonal']['all']['tonal'])
+        resp['voice']=float(data['highlevel']['voice_instrumental']['all']['voice'])
+    return resp
+
+
 def read_json_file(js):
     try:
-        data = json.load(js)
-
-        key_scale = 'M' if data['tonal']['key_scale']=='major' else 'm'
-        resp = {
-                  'bpm': int(data['rhythm']['bpm']),
-                  'loudness': float(data['lowlevel']['average_loudness']),
-                  'key': data['tonal']['key_key']+key_scale
-               }
-        if 'highlevel' in data:
-            resp['danceable']=float(data['highlevel']['danceability']['all']['danceable'])
-            resp['aggressive']=float(data['highlevel']['mood_aggressive']['all']['aggressive'])
-            resp['electronic']=float(data['highlevel']['mood_electronic']['all']['electronic'])
-            resp['acoustic']=float(data['highlevel']['mood_acoustic']['all']['acoustic'])
-            resp['happy']=float(data['highlevel']['mood_happy']['all']['happy'])
-            resp['party']=float(data['highlevel']['mood_party']['all']['party'])
-            resp['relaxed']=float(data['highlevel']['mood_relaxed']['all']['relaxed'])
-            resp['sad']=float(data['highlevel']['mood_sad']['all']['sad'])
-            resp['dark']=float(data['highlevel']['timbre']['all']['dark'])
-            resp['tonal']=float(data['highlevel']['tonal_atonal']['all']['tonal'])
-            resp['voice']=float(data['highlevel']['voice_instrumental']['all']['voice'])
-        return resp
+        return process_essentia(json.load(js))
     except ValueError:
         return None
 
 
-def analyse_track(idx, extractor, db_path, abs_path, tmp_path, cache_dir, highlevel):
+def read_json_string(js):
+    try:
+        return process_essentia(json.loads(js))
+    except ValueError:
+        return None
+
+
+def analyse_track(idx, extractor, db_path, abs_path, cache_dir, highlevel):
     # Try to load previous JSON
     if len(cache_dir)>1:
         jsfile = "%s.json" % os.path.join(cache_dir, js_cache_name(db_path))
@@ -57,7 +66,7 @@ def analyse_track(idx, extractor, db_path, abs_path, tmp_path, cache_dir, highle
                     return resp
         elif os.path.exists(jsfileGz):
             # GZIP compressed
-            with gzip.open(jsfileGz, 'r', encoding='utf8') as js:
+            with gzip.open(jsfileGz, 'rt') as js:
                 resp = read_json_file(js)
                 if resp is not None:
                     return resp
@@ -68,28 +77,25 @@ def analyse_track(idx, extractor, db_path, abs_path, tmp_path, cache_dir, highle
                 os.makedirs(path)
             except:
                 pass
-    else:
-        jsfile = os.path.join(tmp_path, "essentia-%d.json" % idx)
 
-    if not os.path.exists(jsfile):
-        cmd = [extractor, abs_path, jsfile]
-        if highlevel:
-            cmd = [extractor, abs_path, jsfile, os.path.join('essentia', 'profile')]
-        subprocess.call(cmd, shell=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, cwd=pathlib.Path(__file__).parent.parent.absolute())
-    if not os.path.exists(jsfile):
+    cmd = [extractor, abs_path, '-']
+    if highlevel:
+        cmd = [extractor, abs_path, '-', os.path.join('essentia', 'profile')]
+    proc = subprocess.Popen(cmd, shell=False, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, cwd=pathlib.Path(__file__).parent.parent.absolute())
+    out = proc.communicate()[0].decode('utf-8')
+    if out is None:
+        _LOGGER.error('Failed to parse Essentia output for %s' % db_path)
         return None
-    try:
-        resp = None
-        with open(jsfile, 'r', encoding='utf8') as js:
-            resp = read_json_file(js)
-        if len(cache_dir)>1:
-            try:
-                subprocess.call(['gzip', jsfile], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            except:
-                pass # Don't throw errors - as may not have gzip?
-        else:
-            os.remove(jsfile)
-        return resp
-    except ValueError:
-        _LOGGER.error('Failed to parse %s for %s' % (jsfile, db_path))
-    return None
+    resp = read_json_string(out)
+    if resp is None:
+        _LOGGER.error('Failed to parse Essentia output for %s (JSON failed)' % db_path)
+        return None
+
+    if len(cache_dir)>1:
+        try:
+            with gzip.open(jsfileGz, 'wt') as f:
+                f.write(out)
+        except:
+            pass
+
+    return resp
