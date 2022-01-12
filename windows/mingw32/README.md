@@ -1,4 +1,10 @@
-32-bit DLLs build with MinGW 32-bit
+Musly
+=====
+
+32-bit DLLs build with MinGW 32-bit.
+
+It is not necessary to rebuild this library, but for those interested these are
+the required steps:
 
 Build Eigen 3.4.0
 ```

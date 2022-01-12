@@ -25,10 +25,14 @@ Musly
 
 x86-64 Linux build of libmulsy, built on Fedora
 
+It is not necessary to rebuild this library, but for those interested these are
+the required steps:
+
 ```
-git clone https://github.com/CDrummond/musly.git
-sudo yum install cmake install ffmpeg-devel
-mkdir build
-cd build
-cmake .. -DLIBAV_INCLUDE_DIR=/usr/include/ffmpeg -DCMAKE_BUILD_TYPE=Release
+    sudo yum install cmake ffmpeg-devel eigen3-devel
+    git clone https://github.com/CDrummond/musly.git
+    cd musly
+    mkdir build
+    cd build
+    cmake .. -DLIBAV_INCLUDE_DIR=/usr/include/ffmpeg -DCMAKE_BUILD_TYPE=Release
 ```

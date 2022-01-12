@@ -15,10 +15,14 @@ Musly
 been linked against libav/ffmpeg libraries - and so will NOT allow analysis of
 music.
 
+It is not necessary to rebuild this library, but for those interested these are
+the required steps:
 
 ```
-git clone https://github.com/CDrummond/musly.git
-mkdir build
-cd build
-cmake .. -DCMAKE_BUILD_TYPE=Release -DUSE_LIBAV=OFF
+    sudo apt install cmake libeigen3-dev
+    git clone https://github.com/CDrummond/musly.git
+    cd musly
+    mkdir build
+    cd build
+    cmake .. -DCMAKE_BUILD_TYPE=Release -DUSE_LIBAV=OFF
 ```

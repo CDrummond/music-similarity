@@ -29,6 +29,11 @@ Installation
 
   `pip install -r requirements.txt && pip install cherrypy`
 
-- Edit config.json to contain correct paths
+- Edit `config.json` to contain correct paths
 
 - Optional: Run Music Similarity Server as a daemon (in the background): https://github.com/AF-1/sobras/blob/main/lms-music-similarity_on_macos/README.md#running-music-similarity-server-as-a-daemonin-the-background
+
+---
+
+*NOTE* These instructions, and the Musly dynamic library, have been provided by
+AF-1

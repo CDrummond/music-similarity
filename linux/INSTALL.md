@@ -30,4 +30,4 @@ Installation
   b) Install libavcodec, libavformat, and libavutil libraries - the names of
      of these may differ on your system.
 
-- Edit config.json to contain correct paths
+- Edit `config.json` to contain correct paths
