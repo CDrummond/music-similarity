@@ -84,7 +84,7 @@ def analyse_track(idx, extractor, db_path, abs_path, tmp_path, cache_dir, highle
             resp = read_json_file(js)
         if len(cache_dir)>1:
             try:
-                subprocess.call(['gzip', jsfile])
+                subprocess.call(['gzip', jsfile], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             except:
                 pass # Don't throw errors - as may not have gzip?
         else:
