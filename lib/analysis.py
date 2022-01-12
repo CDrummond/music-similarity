@@ -128,10 +128,10 @@ def process_files(config, trks_db, allfiles, tmp_path):
                         trks_db.commit()
                 elif result['status'] == STATUS_ERROR:
                     failed += 1
-                    _LOGGER.error('Failed to analyze %s (%s)' % (allfiles[result['index']]['db'], resp['extra']))
+                    _LOGGER.error('Failed to analyze %s (%s)' % (allfiles[result['index']]['db'], result['extra']))
                 elif result['status'] == STATUS_FILTERED:
                     filtered += 1
-                    _LOGGER.debug('Skipped %s (%s)' % (allfiles[result['index']]['db'], resp['extra']))
+                    _LOGGER.debug('Skipped %s (%s)' % (allfiles[result['index']]['db'], result['extra']))
 
             except Exception as e:
                 global should_stop
