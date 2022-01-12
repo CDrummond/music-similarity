@@ -86,7 +86,7 @@ similarity based upon the Essentia attributes. This value then configures the
 percentage given to each metric. e.g. an `essentia.weight` of 0.4 will cause the
 similarity score to be 60% Musly and 40% Essentia based.
 * `paths.cache` if set, then the full output of Essentia analysis for each track
-will be stored within a `.json` file (or `.json.gz` if `gzip` is on system).
+will be stored within a GZip compressed JSON file (`<music file>.json.gz`)
 
 
 CUE Tracks
