@@ -196,6 +196,7 @@ def analyse_files(config, path, remove_tracks, meta_only, force, jukebox):
     _LOGGER.debug('Num tracks to update: %d' % len(files))
     cue.split_cue_tracks(files, config['threads'])
     added_tracks = len(files)>0
+    analysed = 0
     if added_tracks or removed_tracks:
         if added_tracks:
             if meta_only:
@@ -217,11 +218,11 @@ def analyse_files(config, path, remove_tracks, meta_only, force, jukebox):
         if should_stop:
             trks_db.close()
         else:
-            if removed_tracks or (added_tracks and not meta_only):
+            if removed_tracks or (analysed>0 and not meta_only):
                 (paths, db_tracks) = mus.get_alltracks_db(trks_db.get_cursor())
                 mus.add_tracks(db_tracks, config['musly']['styletracks'], config['musly']['styletracksmethod'], trks_db)
             trks_db.close()
-            if removed_tracks or not meta_only:
+            if removed_tracks or (analysed>0 and not meta_only):
                 mus.write_jukebox(jukebox)
     if tmp_dir is not None:
         tmp_dir.cleanup()
