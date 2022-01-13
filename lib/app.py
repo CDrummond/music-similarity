@@ -322,7 +322,6 @@ def dump_api():
     add_file_protocol = params['track'][0].startswith('file://')
 
     track = decode(params['track'][0], root)
-    no_repeat_artist = int(get_value(params, 'norepart', 0, isPost))
     no_genre_match_adj = int(get_value(params, 'nogenrematchadj', DEFAULT_NO_GENRE_MATCH_ADJUSTMENT, isPost))/100.0
     genre_group_adj = int(get_value(params, 'genregroupadj', DEFAULT_GENRE_GROUP_MATCH_ADJUSTMENT, isPost))/100.0
     _LOGGER.debug('S TRACK %s -> %s' % (params['track'][0], track))
