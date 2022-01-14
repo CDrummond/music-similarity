@@ -7,8 +7,8 @@
 
 import logging, os, pickle, random, signal, sqlite3, tempfile
 from . import cue, essentia_analysis, tags, tracks_db, musly
-from concurrent.futures import ThreadPoolExecutor
-from multiprocessing import Process, Pipe
+from concurrent.futures import as_completed, CancelledError, ThreadPoolExecutor
+from multiprocessing import Pipe, Process
 
 _LOGGER = logging.getLogger(__name__)
 AUDIO_EXTENSIONS = ['m4a', 'mp3', 'ogg', 'flac', 'opus']
@@ -20,11 +20,17 @@ STATUS_ERROR    = 1
 STATUS_FILTERED = 2
 
 
+futures_list = []
 should_stop = False
 def sig_handler(signum, frame):
     global should_stop
+    global futures_list
     should_stop = True
     _LOGGER.info('Intercepted CTRL-C, stopping (might take a few seconds)...')
+
+    # Cancel any non-running tasks
+    for future in futures_list:
+        future.cancel()
 
 
 def analyze_audiofile(pipe, libmusly, essentia_extractor, index, db_path, abs_path, extract_len, extract_start, essentia_cache, essentia_highlevel):
@@ -52,7 +58,6 @@ def analyze_audiofile(pipe, libmusly, essentia_extractor, index, db_path, abs_pa
 
 
 def analyze_file(index, total, db_path, abs_path, config, musly_analysis, essentia_analysis):
-    global should_stop
     if should_stop:
         return None
     digits=len(str(total))
@@ -103,7 +108,8 @@ def process_files(config, trks_db, allfiles):
             _LOGGER.info("Analyzing with Musly and Essentia")
     else:
         _LOGGER.info("Analyzing with Musly")
-    
+
+    global futures_list
     futures_list = []
     inserts_since_commit = 0
 
@@ -112,7 +118,7 @@ def process_files(config, trks_db, allfiles):
         for i in range(numtracks):
             futures = executor.submit(analyze_file, i, numtracks, allfiles[i]['db'], allfiles[i]['abs'], config, allfiles[i]['musly'], allfiles[i]['essentia'])
             futures_list.append(futures)
-        for future in futures_list:
+        for future in as_completed(futures_list):
             try:
                 result = future.result()
 
@@ -133,12 +139,13 @@ def process_files(config, trks_db, allfiles):
                     filtered += 1
                     _LOGGER.debug('Skipped %s (%s)' % (allfiles[result['index']]['db'], result['extra']))
 
+            except CancelledError as e:
+                pass
             except Exception as e:
-                global should_stop
                 if not should_stop:
                     msg = str(e)
                     if not "'NoneType' object is not subscriptable" in msg:
-                        _LOGGER.debug("Thread exception? - %s" % msg)
+                        _LOGGER.debug('Thread exception? - %s' % msg)
                 pass
     return analysed, failed, filtered
 
@@ -170,7 +177,6 @@ def get_files_to_analyse(trks_db, lms_db, lms_path, path, files, local_root_len,
 
 
 def analyse_files(config, path, remove_tracks, meta_only, force, jukebox):
-    global should_stop
     signal.signal(signal.SIGINT, sig_handler)
     _LOGGER.debug('Analyse %s' % path)
     trks_db = tracks_db.TracksDb(config, True)
