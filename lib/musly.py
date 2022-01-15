@@ -127,9 +127,15 @@ class Musly(object):
     def read_jukebox(self, path):
         _LOGGER.debug("Read jukebox: {}".format(path))
         #localmj = self.mus.musly_jukebox_poweron(self.method, self.decoder)
-        localmj = self.mus.musly_jukebox_fromfile(ctypes.c_char_p(bytes(path, 'utf-8')))
+        localmj = None
+        try:
+            # Looks like jukebox created on Linux cannot be read under Windows?
+            localmj = self.mus.musly_jukebox_fromfile(ctypes.c_char_p(bytes(path, 'utf-8')))
+        except:
+            pass
+
         if localmj == None:
-            _LOGGER.error("Failed to read juebox: {}".format(path))
+            _LOGGER.error("Failed to read jukebox: {}".format(path))
             return None
         else:
             _LOGGER.info("Loaded {} tracks".format(self.mus.musly_jukebox_trackcount(localmj)))
