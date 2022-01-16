@@ -70,7 +70,9 @@ class SimilarityApp(Flask):
         if app_config['essentia']['enabled']:
             if app_config['essentia']['highlevel'] and app_config['essentia']['weight']>0.0:
                 essentia_sim.init(tdb)
-            _LOGGER.debug('Will use Essentia attributes to filter tracks (%s)' % ('highlevel' if app_config['essentia']['highlevel'] else 'lowlevel'))
+                _LOGGER.debug('Will use Essentia attributes to filter tracks (highlevel) and for %d%% of similarity score' % int(app_config['essentia']['weight']*100))
+            else:
+                _LOGGER.debug('Will use Essentia attributes to filter tracks (%s)' % ('highlevel' if app_config['essentia']['highlevel'] else 'lowlevel'))
         tdb.close()
 
     def get_config(self):
