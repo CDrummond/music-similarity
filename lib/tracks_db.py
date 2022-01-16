@@ -288,8 +288,14 @@ class TracksDb(object):
         return row is not None and row[0] is not None
 
 
-    def file_analysed_with_essentia_highlevel(self, path):
-        self.cursor.execute('SELECT %s FROM tracks WHERE file=?' % ESSENTIA_HIGHLEVEL_ATTRIBS[0], (path,))
+    def files_analysed_with_essentia(self):
+        self.cursor.execute('SELECT %s FROM tracks WHERE %s is not null LIMIT 1' % (ESSENTIA_LOWLEVEL_ATTRIBS[0], ESSENTIA_LOWLEVEL_ATTRIBS[0]))
+        row = self.cursor.fetchone()
+        return row is not None and row[0] is not None
+
+
+    def files_analysed_with_essentia_highlevel(self):
+        self.cursor.execute('SELECT %s FROM tracks WHERE %s is not null LIMIT 1' % (ESSENTIA_HIGHLEVEL_ATTRIBS[0], ESSENTIA_HIGHLEVEL_ATTRIBS[0]))
         row = self.cursor.fetchone()
         return row is not None and row[0] is not None
 

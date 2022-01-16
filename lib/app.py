@@ -56,8 +56,8 @@ class SimilarityApp(Flask):
         self.mta=musly.MuslyTracksAdded(paths, tracks, ids)
 
         if app_config['essentia']['enabled'] and len(paths)>0:
-            app_config['essentia']['enabled'] = tdb.file_analysed_with_essentia(paths[0])
-            highlevel = app_config['essentia']['enabled'] and tdb.file_analysed_with_essentia_highlevel
+            app_config['essentia']['enabled'] = tdb.files_analysed_with_essentia()
+            highlevel = app_config['essentia']['enabled'] and tdb.files_analysed_with_essentia_highlevel()
             if not app_config['essentia']['enabled']:
                 tdb.close()
                 tdb = tracks_db.TracksDb(app_config)
@@ -67,8 +67,8 @@ class SimilarityApp(Flask):
                 tdb.close()
                 tdb = tracks_db.TracksDb(app_config)
 
-        if app_config['essentia']['enabled'] and app_config['essentia']['highlevel']:
-            if app_config['essentia']['weight']>0.0:
+        if app_config['essentia']['enabled']:
+            if app_config['essentia']['highlevel'] and app_config['essentia']['weight']>0.0:
                 essentia_sim.init(tdb)
             _LOGGER.debug('Will use Essentia attributes to filter tracks (%s)' % ('highlevel' if app_config['essentia']['highlevel'] else 'lowlevel'))
         tdb.close()
