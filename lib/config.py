@@ -41,7 +41,7 @@ def update_paths(config, analyse, sys, musly, essentia_extractor):
 
     # Set libmusy path, if not already in config
     if musly is not None and not 'lib' in config['musly']:
-        _LOGGER.debug('musly.lib set to %s' % musly)
+        _LOGGER.debug('(Defaults) musly.lib set to %s' % musly)
         config['musly']['lib']=musly
 
     # Update PATH - mainly for windows so that libmusly can find ffmpeg, etc.
@@ -55,14 +55,14 @@ def update_paths(config, analyse, sys, musly, essentia_extractor):
         # Set exxentia extractor path, if not already in config
         if essentia_extractor is not None and not 'extractor' in config['essentia']:
             config['essentia']['extractor']=essentia_extractor
-            _LOGGER.debug('essentia.extractor set to %s' % essentia_extractor)
+            _LOGGER.debug('(Defaults) essentia.extractor set to %s' % essentia_extractor)
             # Only Linux, for now, support highlevel analysis
             if not 'highlevel' in config['essentia']:
                 config['essentia']['highlevel']= (sys == 'linux')
-                _LOGGER.debug('essentia.highlevel set to %s' % str(config['essentia']['highlevel']))
+                _LOGGER.debug('(Defaults) essentia.highlevel set to %s' % str(config['essentia']['highlevel']))
     elif not 'highlevel' in config['essentia']:
         config['essentia']['highlevel'] = (sys == 'linux')
-        _LOGGER.debug('essentia.highlevel set to %s' % str(config['essentia']['highlevel']))
+        _LOGGER.debug('(Defaults) essentia.highlevel set to %s' % str(config['essentia']['highlevel']))
 
 
 def setup_paths(config, analyse):
