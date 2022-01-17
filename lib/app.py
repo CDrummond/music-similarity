@@ -57,22 +57,19 @@ class SimilarityApp(Flask):
 
         if app_config['essentia']['enabled'] and len(paths)>0:
             app_config['essentia']['enabled'] = tdb.files_analysed_with_essentia()
-            highlevel = app_config['essentia']['enabled'] and tdb.files_analysed_with_essentia_highlevel()
-            if not app_config['essentia']['enabled']:
-                tdb.close()
-                tdb = tracks_db.TracksDb(app_config)
-                _LOGGER.debug('Tracks have not been analysed with Essentia, attribute filtering disabled')
-            elif app_config['essentia']['highlevel'] and not highlevel:
-                app_config['essentia']['highlevel'] = False
+            hl_prev = app_config['essentia']['highlevel']
+            app_config['essentia']['highlevel'] = app_config['essentia']['enabled'] and tdb.files_analysed_with_essentia_highlevel()
+
+            if not app_config['essentia']['enabled'] or hl_prev!=app_config['essentia']['highlevel']:
                 tdb.close()
                 tdb = tracks_db.TracksDb(app_config)
 
         if app_config['essentia']['enabled']:
             if app_config['essentia']['highlevel'] and app_config['essentia']['weight']>0.0:
                 essentia_sim.init(tdb)
-                _LOGGER.debug('Will use Essentia attributes to filter tracks (highlevel) and for %d%% of similarity score' % int(app_config['essentia']['weight']*100))
+                _LOGGER.debug('May use Essentia attributes to filter tracks (highlevel) and for %d%% of similarity score' % int(app_config['essentia']['weight']*100))
             else:
-                _LOGGER.debug('Will use Essentia attributes to filter tracks (%s)' % ('highlevel' if app_config['essentia']['highlevel'] else 'lowlevel'))
+                _LOGGER.debug('May use Essentia attributes to filter tracks (%s)' % ('highlevel' if app_config['essentia']['highlevel'] else 'lowlevel'))
         tdb.close()
 
     def get_config(self):
