@@ -86,6 +86,10 @@ def analyse_track(idx, extractor, db_path, abs_path, cache_dir, highlevel):
     if out is None:
         _LOGGER.error('Failed to parse Essentia output for %s' % db_path)
         return None
+    # Look for start of JSON - should not be required, but seems to be sometimes on Windows?
+    pos = out.find('{')
+    if pos>0:
+        out = out[pos:]
     resp = read_json_string(out)
     if resp is None:
         _LOGGER.error('Failed to parse Essentia output for %s (JSON failed)' % db_path)
