@@ -66,7 +66,7 @@ def analyse_track(idx, extractor, db_path, abs_path, cache_dir, highlevel):
                     return resp
         elif os.path.exists(jsfileGz):
             # GZIP compressed
-            with gzip.open(jsfileGz, 'rt') as js:
+            with gzip.open(jsfileGz, 'rt', encoding='utf-8') as js:
                 resp = read_json_file(js)
                 if resp is not None:
                     return resp
