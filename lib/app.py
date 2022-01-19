@@ -702,9 +702,17 @@ def similar_api():
         return json.dumps(track_list)
 
 
-@similarity_app.route('/api/config', methods=['GET', 'POST'])
+@similarity_app.route('/api/config', methods=['GET'])
 def config_api():
     return json.dumps(similarity_app.get_config())
+
+
+@similarity_app.route('/api/essentia', methods=['GET'])
+def essentia_api():
+    cfg = similarity_app.get_config()
+    if cfg['essentia']['enabled']:
+        return '2' if cfg['essentia']['highlevel'] else '1'
+    return '0'
 
 
 def start_app(args, config, jukebox_path):
