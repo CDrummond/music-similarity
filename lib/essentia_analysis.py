@@ -18,12 +18,30 @@ def js_cache_name(path):
 
 
 def process_essentia(data):
-    key_scale = 'M' if data['tonal']['key_scale']=='major' else 'm'
+    key_scale = None
+    ley = None
+    if 'key_scale' in data['tonal'] and 'key_key' in data['tonal']:
+        key_scale = 'M' if data['tonal']['key_scale']=='major' else 'm'
+        key = data['tonal']['key_key']
+    else:
+        # Newer Essentia? This has 3 key entries, choose one with highest strength?
+        strength = 0.0
+        for k in ['key_edma', 'key_krumhansl', 'key_temperley']:
+            if k in data['tonal']:
+                if data['tonal'][k]['strength']>strength:
+                    strength = data['tonal'][k]['strength']
+                    key_scale = data['tonal'][k]['scale']
+                    key = data['tonal'][k]['key']
+
+    if key_scale is None or key is None:
+        return None
+
     resp = {
               'bpm': int(data['rhythm']['bpm']),
               'loudness': float(data['lowlevel']['average_loudness']),
-              'key': data['tonal']['key_key']+key_scale
+              'key': key+key_scale
            }
+
     if 'highlevel' in data:
         resp['danceable']=float(data['highlevel']['danceability']['all']['danceable'])
         resp['aggressive']=float(data['highlevel']['mood_aggressive']['all']['aggressive'])
@@ -36,6 +54,7 @@ def process_essentia(data):
         resp['dark']=float(data['highlevel']['timbre']['all']['dark'])
         resp['tonal']=float(data['highlevel']['tonal_atonal']['all']['tonal'])
         resp['voice']=float(data['highlevel']['voice_instrumental']['all']['voice'])
+
     return resp
 
 
