@@ -392,5 +392,52 @@ class TracksDb(object):
         return tracks
 
 
+    def get_tracks(self, filters, withArtist, withAlbum, withGenre):
+        tracks = []
+        sql = 'SELECT file, title'
+        if withArtist:
+            sql += ', artist'
+        if withAlbum:
+            sql += ', album, albumartist'
+        if withGenre:
+            sql += ', genre'
+        sql += ' FROM tracks WHERE ignore IS NOT 1'
+        for f in filters:
+            sql += ' AND %s' % f
+        sql += ' ORDER BY random()'
+        _LOGGER.debug('Select tracks using SQL:%s' % sql)
+        self.cursor.execute(sql)
+        rows = self.cursor.fetchall()
+        for row in rows:
+            track={'file':row[0], 'title':normalize_title(row[1])}
+            idx = 1
+            if withArtist:
+                idx +=1
+                track['artist']=normalize_artist(row[idx])
+            if withAlbum:
+                idx +=1
+                track['album']=normalize_album(row[idx])
+                idx +=1
+                track['albumartist']=normalize_artist(row[idx])
+            if withGenre and row[5] is not None:
+                idx +=1
+                track['genres']=set(row[idx].split(GENRE_SEPARATOR))
+            tracks.append(track)
+        _LOGGER.debug('%d track(s) selected' % len(tracks))
+        return tracks
+
+
+    def get_genres(self):
+        genres=set()
+        self.cursor.execute('SELECT DISTINCT genre from tracks')
+        rows = self.cursor.fetchall()
+        for row in rows:
+            if row[0] is not None:
+                genres.update(set(row[0].split(GENRE_SEPARATOR)))
+        genre_list = list(genres)
+        genre_list.sort()
+        return genre_list
+
+
     def get_cursor(self):
         return self.cursor

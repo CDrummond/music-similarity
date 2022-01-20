@@ -1,6 +1,6 @@
 # Similarity API
 
-Only 1 API is currently supported:
+Obtain mix of tracks similar to seed tracks.
 
 ```
 http://HOST:11000/api/similar?track=/path/of/track&track=/path/of/another/track&count=10&filtergenre=1&min=30&max=600&norepart=15&norepalb=25&filterxmas=1
@@ -54,12 +54,61 @@ being added to mixes - but if they are already in the queue, then they can still
 be used as seed tracks.
 
 This API is intended to be used by [LMS Music Similarity Plugin](https://github.com/CDrummond/lms-musicsimilarity)
+when creating mixes via `Don't Stop The Music`
 
 
-### HTTP Post
+# Attribute Mix API
 
-Alternatively, the API may be accessed via a HTTP POST call. To do this, the
-params of the call are passed as a JSON object. eg.
+Obtain a mix of tracks that match selected attribute filter.
+
+```
+http://HOST:11000/api/attrmix?minduration=30&maxduration=600&minbpm=50&maxbpm=100&minloundness=40&maxloundness=100&norepart=15&norepalb=25&filterxmas=1&danceable=10&aggressive=10&electronic=10&acoustic=10&happy=10&party=10&relaxed=10&sad=10&dark=10&tonal=10&voice=10&genre=Rock&count=50
+```
+
+`minduration` and `maxduration` specify the min and max duraiton tracks can be.
+
+`minbpm` and `maxbpm` specify a BPM range.
+
+`minloundness` and `maxloundness` specify a loudness range.
+
+`norepart` specifies the number of tracks where an artist should not be
+repeated. This is not a hard-limit, as if there are too few candidates then
+repeats can happen.
+
+`norepalb` specifies the number of tracks where an album should not be
+repeated. This does not apply to 'Various Artist' albums. This is also not a
+hard-limit, as if there are too few candidates then repeats can happen.
+
+`filterxmas=1` causes tracks with 'Christmas' or 'Xmas' in their
+genres will be excluded - unless it is December.
+
+`danceable`, `aggressive`, `electronic`, `acoustic`, `happy`, `party`,
+`relaxed`, `sad`, `dark`, `tonal`, `voice` are the Essentia highlevel attributes
+that can be filtered on. If one of these is specified with a value less than 50,
+then only tracs where this attribute is also less than 50 will be accepted.
+Likewise if a value greater than 50 is specified only tracks where this is also
+greater than 50 will be used. This is because these Essentia atttributes are how
+confident Essentia is that a track is of this type. e.g. 'danceable=85' implies
+Essentia is 85% confident this is a danceable track - 'danceable=25' implies
+only 25 confidence, so in effect Essentia is confident this is *not* a danceable
+track.
+
+For most parameters, if not set or 0 is passed then no filtering will be applied
+using that attribute. For Essentia highlevel attributes, if 50 is passed it is
+also treated as a do not filter on case.
+
+Tracks are chosen from the DB in a random order, and the first `count` of these
+is returned. Less tracks than `count` may be returned if filtering exclused too
+many. In effect `count` is a maximum count setting.
+
+This API is intended to be used by [LMS Music Similarity Plugin](https://github.com/CDrummond/lms-musicsimilarity)
+when obtaining 'Smart' mixes.
+
+
+# HTTP Post
+
+Alternatively, the APIs may be accessed via a HTTP POST call. To do this, the
+params of the calls are passed as a JSON object. eg.
 
 ```
 {

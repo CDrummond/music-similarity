@@ -16,6 +16,7 @@ _LOGGER = logging.getLogger(__name__)
 DEFAULT_TRACKS_TO_RETURN              = 5    # Number of tracks to return, if none specified
 MIN_TRACKS_TO_RETURN                  = 1    # Min value for 'count' parameter
 MAX_TRACKS_TO_RETURN                  = 50   # Max value for 'count' parameter
+DEFAULT_ATTTRMIX_COUNT                = 200  # Default number of tracks to return for 'attrmix' API
 DEFAULT_NUM_PREV_TRACKS_FILTER_ARTIST = 15   # Try to ensure artist is not in previous N tracks
 DEFAULT_NUM_PREV_TRACKS_FILTER_ALBUM  = 25   # Try to ensure album is not in previous N tracks
 SHUFFLE_FACTOR                        = 2    # How many (shuffle_factor*count) tracks to shuffle?
@@ -24,6 +25,7 @@ DEFAULT_NO_GENRE_MATCH_ADJUSTMENT     = 15
 DEFAULT_GENRE_GROUP_MATCH_ADJUSTMENT  = 7
 WEIGHT_ALL_ESSENTIA                   = 0.99
 WEIGHT_ALL_MUSLY                      = 0.01
+
 
 class SimilarityApp(Flask):
     def init(self, args, app_config, jukebox_path):
@@ -402,6 +404,127 @@ def dump_api():
         abort(404)
 
 
+@similarity_app.route('/api/attrmix', methods=['GET', 'POST'])
+def attrmix_api():
+    isPost = False
+    if request.method=='GET':
+        params = request.args.to_dict(flat=False)
+    else:
+        isPost = True
+        params = request.get_json()
+        _LOGGER.debug('Request: %s' % json.dumps(params))
+
+    if not params:
+        abort(400)
+
+    cfg = similarity_app.get_config()
+    tdb = tracks_db.TracksDb(cfg)
+
+    if not cfg['essentia']['enabled'] or not cfg['essentia']['highlevel']:
+        _LOGGER.error('Essentia highlevel not supported/enabled')
+        abort(400)
+
+    count = int(get_value(params, 'count', DEFAULT_ATTTRMIX_COUNT, isPost))
+    if count<1:
+        _LOGGER.error('Count must be higher than 0')
+        abort(400)
+
+    filters=[]
+
+    for attr in ['duration', 'bpm']:
+        minv = int(get_value(params, 'min%s' % attr, 0, isPost))
+        maxv = int(get_value(params, 'max%s' % attr, 0, isPost))
+        if minv>maxv:
+            x = maxv
+            maxv=minv
+            minv=x
+
+        if minv>0:
+            filters.append('%s >= %d' % (attr, minv))
+        if maxv>0:
+            filters.append('%s <= %d' % (attr, maxv))
+
+    min_loudness = int(get_value(params, 'minloudness', 0, isPost))/100.0
+    max_loudness = int(get_value(params, 'maxloudness', 0, isPost))/100.0
+    if min_loudness>maxv:
+        x = max_loudness
+        max_loudness=min_loudness
+        min_loudness=x
+
+    if min_loudness>0:
+        filters.append('loudness >= %f' % min_loudness)
+
+    if max_loudness>0:
+        filters.append('loudness <= %f' % max_loudness)
+
+    for attr in tracks_db.ESSENTIA_HIGHLEVEL_ATTRIBS:
+        val = int(get_value(params, attr, 0, isPost))/100.0
+        if val>0.0 and val<0.5:
+            filters.append('%s > 0.0 AND %s <= %f' % (attr, attr, val))
+        elif val>0.5:
+            filters.append('%s >= %f' % (attr, val))
+
+    if len(filters)<1:
+        _LOGGER.error('No filters supplied')
+        abort(400)
+
+    root = get_music_path(params, cfg)
+    _LOGGER.debug('Music root: %s' % root)
+    add_file_protocol = int(get_value(params, 'addfp', 0, isPost))==1
+    no_repeat_artist = int(get_value(params, 'norepart', 5, isPost))
+    no_repeat_album = int(get_value(params, 'norepalb', 5, isPost))
+
+    try:
+        genres = set(params['genre']) if 'genre' in params else None
+        exclude_christmas = int(get_value(params, 'filterxmas', '0', isPost))==1 and datetime.now().month!=12
+        tracks = tdb.get_tracks(filters, no_repeat_artist>0, no_repeat_album>0, genres is not None or exclude_christmas)
+        selected_tracks = []
+        resp = []
+        artist_map = {} # Map of artist -> last index
+        album_map = {}  # Map of album -> last index
+        titles = set()
+        for track in tracks:
+            if genres is not None and not genre_matches(genres, track):
+                _LOGGER.debug('DISCARD(genre) %s' % json.dumps(track, cls=SetEncoder))
+                continue
+            if exclude_christmas and filters.is_christmas(track):
+                 _LOGGER.debug('DISCARD(christmas) %s' % json.dumps(track, cls=SetEncoder))
+                 continue
+            if track['title'] in titles:
+                _LOGGER.debug('DISCARD(title) %s' % json.dumps(track, cls=SetEncoder))
+                continue
+            if no_repeat_artist>0 and track['artist'] in artist_map and (len(selected_tracks)-artist_map[track['artist']])<no_repeat_artist:
+                titles.add(track['title'])
+                _LOGGER.debug('FILTER(artist) %s' % json.dumps(track, cls=SetEncoder))
+                continue
+            akey = get_album_key(track)
+            if no_repeat_album > 0 and akey is not None and akey in album_map and (len(selected_tracks)-album_map[akey])<no_repeat_album:
+                titles.add(track['title'])
+                _LOGGER.debug('FILTER(album) %s' % json.dumps(track, cls=SetEncoder))
+                continue
+
+            resp.append(encode(root, track['file'], add_file_protocol))
+            if len(resp)>=count:
+                break
+
+            selected_tracks.append(track)
+            if no_repeat_album>0 and akey is not None:
+                album_map[akey] = len(selected_tracks)
+            if no_repeat_artist>0:
+                artist_map[track['artist']] = len(selected_tracks)
+            titles.add(track['title'])
+
+
+        if get_value(params, 'format', '', isPost)=='text':
+            return '\n'.join(resp)
+        else:
+            return json.dumps(resp)
+
+    except Exception as e:
+        _LOGGER.error("EX:%s" % str(e))
+        abort(404)
+
+
 @similarity_app.route('/api/similar', methods=['GET', 'POST'])
 def similar_api():
     isPost = False
@@ -713,6 +836,19 @@ def essentia_api():
     if cfg['essentia']['enabled']:
         return '2' if cfg['essentia']['highlevel'] else '1'
     return '0'
+
+
+genre_list = None
+@similarity_app.route('/api/genres', methods=['GET'])
+def genres_api():
+    global genre_list
+    if genre_list is None:
+        cfg = similarity_app.get_config()
+        tdb = tracks_db.TracksDb(cfg)
+        genre_list = tdb.get_genres()
+    if genre_list is None:
+        abort(404)
+    return '\n'.join(genre_list)
 
 
 def start_app(args, config, jukebox_path):
