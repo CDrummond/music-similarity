@@ -69,7 +69,7 @@ http://HOST:11000/api/attrmix?minduration=30&maxduration=600&minbpm=50&maxbpm=10
 
 `minbpm` and `maxbpm` specify a BPM range.
 
-`minloundness` and `maxloundness` specify a loudness range.
+`minloudness` and `maxloudness` specify a loudness range.
 
 `norepart` specifies the number of tracks where an artist should not be
 repeated. This is not a hard-limit, as if there are too few candidates then
