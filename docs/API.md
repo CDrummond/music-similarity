@@ -62,7 +62,7 @@ when creating mixes via `Don't Stop The Music`
 Obtain a mix of tracks that match selected attribute filter.
 
 ```
-http://HOST:11000/api/attrmix?minduration=30&maxduration=600&minbpm=50&maxbpm=100&minloundness=40&maxloundness=100&norepart=15&norepalb=25&filterxmas=1&danceable=10&aggressive=10&electronic=10&acoustic=10&happy=10&party=10&relaxed=10&sad=10&dark=10&tonal=10&voice=10&genre=Rock&count=50
+http://HOST:11000/api/attrmix?minduration=30&maxduration=600&minbpm=50&maxbpm=100&minloudness=40&maxloudness=100&norepart=15&norepalb=25&filterxmas=1&danceable=10&aggressive=10&electronic=10&acoustic=10&happy=10&party=10&relaxed=10&sad=10&dark=10&tonal=10&voice=10&genre=Rock&count=50
 ```
 
 `minduration` and `maxduration` specify the min and max duraiton tracks can be.
