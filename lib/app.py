@@ -427,7 +427,7 @@ def attrmix_api():
         _LOGGER.error('Count must be higher than 0')
         abort(400)
 
-    filters=[]
+    req_filters=[]
 
     for attr in ['duration', 'bpm']:
         minv = int(get_value(params, 'min%s' % attr, 0, isPost))
@@ -438,9 +438,9 @@ def attrmix_api():
             minv=x
 
         if minv>0:
-            filters.append('%s >= %d' % (attr, minv))
+            req_filters.append('%s >= %d' % (attr, minv))
         if maxv>0:
-            filters.append('%s <= %d' % (attr, maxv))
+            req_filters.append('%s <= %d' % (attr, maxv))
 
     min_loudness = int(get_value(params, 'minloudness', 0, isPost))/100.0
     max_loudness = int(get_value(params, 'maxloudness', 0, isPost))/100.0
@@ -450,19 +450,19 @@ def attrmix_api():
         min_loudness=x
 
     if min_loudness>0:
-        filters.append('loudness >= %f' % min_loudness)
+        req_filters.append('loudness >= %f' % min_loudness)
 
     if max_loudness>0:
-        filters.append('loudness <= %f' % max_loudness)
+        req_filters.append('loudness <= %f' % max_loudness)
 
     for attr in tracks_db.ESSENTIA_HIGHLEVEL_ATTRIBS:
         val = int(get_value(params, attr, 0, isPost))/100.0
         if val>0.0 and val<0.5:
-            filters.append('%s > 0.0 AND %s <= %f' % (attr, attr, val))
+            req_filters.append('%s > 0.0 AND %s <= %f' % (attr, attr, val))
         elif val>0.5:
-            filters.append('%s >= %f' % (attr, val))
+            req_filters.append('%s >= %f' % (attr, val))
 
-    if len(filters)<1:
+    if len(req_filters)<1:
         _LOGGER.error('No filters supplied')
         abort(400)
 
@@ -475,14 +475,14 @@ def attrmix_api():
     try:
         genres = set(params['genre']) if 'genre' in params else None
         exclude_christmas = int(get_value(params, 'filterxmas', '0', isPost))==1 and datetime.now().month!=12
-        tracks = tdb.get_tracks(filters, no_repeat_artist>0, no_repeat_album>0, genres is not None or exclude_christmas)
+        tracks = tdb.get_tracks(req_filters, no_repeat_artist>0, no_repeat_album>0, genres is not None or exclude_christmas)
         selected_tracks = []
         resp = []
         artist_map = {} # Map of artist -> last index
         album_map = {}  # Map of album -> last index
         titles = set()
         for track in tracks:
-            if genres is not None and not genre_matches(genres, track):
+            if genres is not None and not filters.genre_matches({}, genres, track):
                 _LOGGER.debug('DISCARD(genre) %s' % json.dumps(track, cls=SetEncoder))
                 continue
             if exclude_christmas and filters.is_christmas(track):
