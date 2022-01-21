@@ -69,7 +69,7 @@ http://HOST:11000/api/attrmix?minduration=30&maxduration=600&minbpm=50&maxbpm=10
 
 `minbpm` and `maxbpm` specify a BPM range.
 
-`minloudness` and `maxloudness` specify a loudness range.
+`minloudness` and `maxloudness` specify a loudness range, 0..100
 
 `norepart` specifies the number of tracks where an artist should not be
 repeated. This is not a hard-limit, as if there are too few candidates then
@@ -91,7 +91,7 @@ greater than 50 will be used. This is because these Essentia atttributes are how
 confident Essentia is that a track is of this type. e.g. 'danceable=85' implies
 Essentia is 85% confident this is a danceable track - 'danceable=25' implies
 only 25 confidence, so in effect Essentia is confident this is *not* a danceable
-track.
+track. Range is 0..100
 
 For most parameters, if not set or 0 is passed then no filtering will be applied
 using that attribute. For Essentia highlevel attributes, if 50 is passed it is
