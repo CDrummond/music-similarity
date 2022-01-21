@@ -19,7 +19,7 @@ MAX_TRACKS_TO_RETURN                  = 50   # Max value for 'count' parameter
 DEFAULT_ATTTRMIX_COUNT                = 200  # Default number of tracks to return for 'attrmix' API
 DEFAULT_NUM_PREV_TRACKS_FILTER_ARTIST = 15   # Try to ensure artist is not in previous N tracks
 DEFAULT_NUM_PREV_TRACKS_FILTER_ALBUM  = 25   # Try to ensure album is not in previous N tracks
-SHUFFLE_FACTOR                        = 2    # How many (shuffle_factor*count) tracks to shuffle?
+SHUFFLE_FACTOR                        = 5    # How many (shuffle_factor*count) tracks to shuffle?
 MIN_MUSLY_NUM_SIM                     = 5000 # Min number of tracs to query musly for
 DEFAULT_NO_GENRE_MATCH_ADJUSTMENT     = 15
 DEFAULT_GENRE_GROUP_MATCH_ADJUSTMENT  = 7
@@ -684,6 +684,9 @@ def similar_api():
         _LOGGER.debug('Acceptable genres: %s' % acceptable_genres)
 
     similarity_count = int(count * SHUFFLE_FACTOR) if shuffle and (count<20 or len(track_ids)<10) else count
+    # If only 1 seed then get more tracks to increase randomness
+    if 1==len(track_ids):
+        similarity_count *= 2
     tracks_per_seed = int(similarity_count*2.5) if similarity_count<15 else similarity_count
 
     num_sim = count * len(track_ids) * 50
@@ -803,9 +806,8 @@ def similar_api():
     similar_tracks = sorted(similar_tracks, key=lambda k: k['similarity'])
     
     # Take top 'similarity_count' tracks
-    similar_tracks = similar_tracks[:similarity_count]
-
     if shuffle:
+        similar_tracks = similar_tracks[:similarity_count]
         random.shuffle(similar_tracks)
 
     similar_tracks = similar_tracks[:count]
