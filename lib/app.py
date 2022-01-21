@@ -272,13 +272,11 @@ def get_essentia_cfg(config, params):
 
 
 def get_music_path(params, cfg):
-    path = None
-    if 'mpath' in params:
+    path = ''
+    if 'mpath' in params and params['mpath'] is not None:
         path = params['mpath']
-    elif 'lms' in cfg['paths']:
+    elif 'lms' in cfg['paths'] and cfg['paths']['lms'] is not None:
         path = cfg['paths']['lms']
-    else:
-        return ''
 
     if re.match(r'^[A-Za-z]:\\', path):
         # LMS will supply (e.g.) c:\Users\user\Music and we want /C:/Users/user/Music/
