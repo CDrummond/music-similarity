@@ -512,7 +512,6 @@ def attrmix_api():
                 artist_map[track['artist']] = len(selected_tracks)
             titles.add(track['title'])
 
-
         if get_value(params, 'format', '', isPost)=='text':
             return '\n'.join(resp)
         else:
