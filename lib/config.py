@@ -246,8 +246,6 @@ def read_config(path, analyse):
     if config['essentia']['enabled']:
         if not 'bpm' in config['essentia']:
             config['essentia']['bpm']=20
-        if not 'loudness' in config['essentia']:
-            config['essentia']['loudness']=10
         if not 'filterkey' in config['essentia']:
             config['essentia']['filterkey']=True
         if not 'highlevel' in config['essentia']:

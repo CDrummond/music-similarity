@@ -14,7 +14,7 @@ _LOGGER = logging.getLogger(__name__)
 
 min_bpm = None
 bpm_range = None
-max_sim = math.sqrt(len(tracks_db.ESSENTIA_HIGHLEVEL_ATTRIBS) + 2) # +2 for bpm, loudness
+max_sim = math.sqrt(len(tracks_db.ESSENTIA_HIGHLEVEL_ATTRIBS) + 1) # +1 for bpm
 attrib_list = []
 tree = None
 num_tracks = 0
@@ -31,14 +31,14 @@ def init(db):
         bpm_range = row[1] - min_bpm
 
         attr_list = []
-        cols = 'bpm, loudness' # From lowlevel
+        cols = 'bpm' # From lowlevel
         for ess in tracks_db.ESSENTIA_HIGHLEVEL_ATTRIBS:
             cols+=', %s' % ess
 
         cursor.execute('SELECT %s FROM tracks' % cols)
         for row in cursor:
             attribs=[]
-            for attr in range(len(tracks_db.ESSENTIA_HIGHLEVEL_ATTRIBS) + 2): # +2 for bpm, loudness
+            for attr in range(len(tracks_db.ESSENTIA_HIGHLEVEL_ATTRIBS) + 1): # +1 for bpm
                 if 0==attr:
                     attribs.append((row[attr]-min_bpm)/bpm_range)
                 else:

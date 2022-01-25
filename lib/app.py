@@ -246,11 +246,6 @@ def get_essentia_cfg(config, params):
         else:
             ess_cfg['bpm'] = config['essentia']['bpm']
 
-        if 'maxloudnessdiff' in params and params['maxloudnessdiff'] is not None:
-            ess_cfg['loudness'] = int(params['maxloudnessdiff'])/10.0
-        else:
-            ess_cfg['loudness'] = config['essentia']['loudness']/10.0
-
         if 'filterkey' in params and params['filterkey'] is not None:
             ess_cfg['filterkey'] = int(params['filterkey'])==1
         else:
