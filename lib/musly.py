@@ -240,7 +240,7 @@ class Musly(object):
                     for i in others:
                         style_tracks.append(i)
             elif styletracks_method == 'genres':
-                genres = tracks_db.get_genres()
+                genres = tracks_db.get_genres_with_count()
                 genres = sorted(genres, key=lambda k: -1*k['count'])
                 for genre in genres:
                     if len(style_tracks)>=num_style_tracks_required:

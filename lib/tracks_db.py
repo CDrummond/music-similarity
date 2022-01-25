@@ -301,7 +301,7 @@ class TracksDb(object):
         return albums
 
 
-    def get_genres(self):
+    def get_genres_with_count(self):
         genres = []
         self.cursor.execute('SELECT distinct genre from tracks')
         rows = self.cursor.fetchall()
