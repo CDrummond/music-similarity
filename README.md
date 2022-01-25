@@ -34,10 +34,10 @@ contents of the `essentia` folder, and the Essentia extractor, are not required
 on the similarity machine.
 
 Essentia binaries may be downloaded from [acousticbrainz.org](https://similarity.acousticbrainz.org/download).
-However, please note that these *only* support low-level analysis (bpm, key,
-loudness). To support high-level analysis (danceability, aggresiveness, etc.)
-you will need to compile your own build of Essentia - or use the prebuilt binary
-if on Linux (`linux/x86-64/essentia_streaming_extractor_music`).
+However, please note that these *only* support low-level analysis (bpm, key). To
+support high-level analysis (danceability, aggresiveness, etc.) you will need to
+compile your own build of Essentia - or use the prebuilt binary if on Linux
+(`linux/x86-64/essentia_streaming_extractor_music`).
 
 - [Linux i386](http://ftp.acousticbrainz.org/pub/acousticbrainz/essentia-extractor-v2.1_beta2-linux-i686.tar.gz)
 - [Linux x86_64](http://ftp.acousticbrainz.org/pub/acousticbrainz/essentia-extractor-v2.1_beta2-linux-x86_64.tar.gz)

@@ -38,7 +38,6 @@ def process_essentia(data):
 
     resp = {
               'bpm': int(data['rhythm']['bpm']),
-              'loudness': float(data['lowlevel']['average_loudness']),
               'key': key+key_scale
            }
 

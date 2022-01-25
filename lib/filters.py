@@ -95,9 +95,6 @@ def check_attribs(seed, candidate, ess_cfg):
             if candidate_cam not in camelot[seed_cam]:
                 return 'key - %s (%s) / %s (%s)' % (seed['key'], seed_cam, candidate['key'], candidate_cam)
 
-    if ess_cfg['loudness']<0.999999 and abs(seed['loudness']-candidate['loudness'])>ess_cfg['loudness']:
-        return 'loudness - %s/%s' % (str(seed['loudness']), str(candidate['loudness']))
-
     if ess_cfg['highlevel'] and ess_cfg['filterattrib']:
         ess_attr_high = 1.0 - ESS_ATTR_LIM
         ess_attr_low = ESS_ATTR_LIM

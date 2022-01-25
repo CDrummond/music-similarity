@@ -12,7 +12,7 @@ DB_FILE = 'music-similarity.db'
 GENRE_SEPARATOR = ';'
 _LOGGER = logging.getLogger(__name__)
 ESSENTIA_HIGHLEVEL_ATTRIBS = ['danceable', 'aggressive', 'electronic', 'acoustic', 'happy', 'party', 'relaxed', 'sad', 'dark', 'tonal', 'voice']
-ESSENTIA_LOWLEVEL_ATTRIBS = ['bpm', 'loudness', 'key']
+ESSENTIA_LOWLEVEL_ATTRIBS = ['bpm', 'key']
 
 album_rem = ['anniversary edition', 'deluxe edition', 'expanded edition', 'extended edition', 'special edition', 'deluxe', 'deluxe version', 'extended deluxe', 'super deluxe', 're-issue', 'remastered', 'mixed', 'remixed and remastered']
 artist_rem = ['feat', 'ft', 'featuring']
@@ -106,7 +106,6 @@ class TracksDb(object):
                                     tonal integer,
                                     voice integer,
                                     bpm integer,
-                                    loudness integer,
                                     key varchar,
                                     vals blob NOT NULL)''' % table)
                     else:
@@ -120,19 +119,12 @@ class TracksDb(object):
                                     duration integer,
                                     ignore integer,
                                     bpm integer,
-                                    loudness integer,
                                     key varchar,
                                     vals blob NOT NULL)''' % table)
 
                     # Add 'key' column - will fail if already exists (which it should, but older instances might not have it)
                     try:
                         self.cursor.execute('ALTER TABLE %s ADD COLUMN key varchar default null' % table)
-                    except:
-                        pass
-
-                    # Add newcol column - will fail if already exists (which it should, but older instances might not have it)
-                    try:
-                        self.cursor.execute('ALTER TABLE %s ADD COLUMN loudness integer default null' % table)
                     except:
                         pass
 
@@ -166,9 +158,9 @@ class TracksDb(object):
 
         if essentia is not None:
             if self.file_entry_exists(path):
-                self.cursor.execute('UPDATE tracks SET bpm=?, loudness=?, key=? WHERE file=?', (essentia['bpm'], essentia['loudness'], essentia['key'], path))
+                self.cursor.execute('UPDATE tracks SET bpm=?, key=? WHERE file=?', (essentia['bpm'], essentia['key'], path))
             else:
-                self.cursor.execute('INSERT INTO tracks (file, bpm, loudness, key) VALUES (?, ?, ?, ?, ?)', (path, essentia['bpm'], essentia['loudness'], essentia['key']))
+                self.cursor.execute('INSERT INTO tracks (file, bpm, key) VALUES (?, ?, ?, ?, ?)', (path, essentia['bpm'], essentia['key']))
 
             if self.use_essentia_hl and 'danceable' in essentia:
                 try:

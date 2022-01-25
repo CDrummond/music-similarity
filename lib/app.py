@@ -25,6 +25,7 @@ DEFAULT_NO_GENRE_MATCH_ADJUSTMENT     = 15
 DEFAULT_GENRE_GROUP_MATCH_ADJUSTMENT  = 7
 WEIGHT_ALL_ESSENTIA                   = 0.99
 WEIGHT_ALL_MUSLY                      = 0.01
+ESSENTIA_ATTRIB_MIX_PROBABILITY       = 0.3
 
 
 class SimilarityApp(Flask):
@@ -245,11 +246,6 @@ def get_essentia_cfg(config, params):
         else:
             ess_cfg['bpm'] = config['essentia']['bpm']
 
-        if 'maxloudnessdiff' in params and params['maxloudnessdiff'] is not None:
-            ess_cfg['loudness'] = int(params['maxloudnessdiff'])/10.0
-        else:
-            ess_cfg['loudness'] = config['essentia']['loudness']/10.0
-
         if 'filterkey' in params and params['filterkey'] is not None:
             ess_cfg['filterkey'] = int(params['filterkey'])==1
         else:
@@ -442,25 +438,23 @@ def attrmix_api():
         if maxv>0:
             req_filters.append('%s <= %d' % (attr, maxv))
 
-    min_loudness = int(get_value(params, 'minloudness', 0, isPost))/100.0
-    max_loudness = int(get_value(params, 'maxloudness', 0, isPost))/100.0
-    if min_loudness>maxv:
-        x = max_loudness
-        max_loudness=min_loudness
-        min_loudness=x
-
-    if min_loudness>0:
-        req_filters.append('loudness >= %f' % min_loudness)
-
-    if max_loudness>0:
-        req_filters.append('loudness <= %f' % max_loudness)
 
     for attr in tracks_db.ESSENTIA_HIGHLEVEL_ATTRIBS:
-        val = int(get_value(params, attr, 0, isPost))/100.0
+        strval = get_value(params, attr, '', isPost)
+        val = 0.0
+        if strval is None or strval=='':
+            continue
+        elif strval == 'y':
+            val = 1.0-ESSENTIA_ATTRIB_MIX_PROBABILITY
+        elif strval == 'n':
+            val = ESSENTIA_ATTRIB_MIX_PROBABILITY
+        else:
+            val = int(strval)/100.0
+
         if val>0.0 and val<0.5:
-            req_filters.append('%s > 0.0 AND %s <= %f' % (attr, attr, val))
+            req_filters.append('%s <= %.1f' % (attr, val))
         elif val>0.5:
-            req_filters.append('%s >= %f' % (attr, val))
+            req_filters.append('%s >= %.1f' % (attr, val))
 
     if len(req_filters)<1:
         _LOGGER.error('No filters supplied')
