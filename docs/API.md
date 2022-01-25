@@ -62,14 +62,12 @@ when creating mixes via `Don't Stop The Music`
 Obtain a mix of tracks that match selected attribute filter.
 
 ```
-http://HOST:11000/api/attrmix?minduration=30&maxduration=600&minbpm=50&maxbpm=100&minloudness=40&maxloudness=100&norepart=15&norepalb=25&filterxmas=1&danceable=10&aggressive=10&electronic=10&acoustic=10&happy=10&party=10&relaxed=10&sad=10&dark=10&tonal=10&voice=10&genre=Rock&count=50
+http://HOST:11000/api/attrmix?minduration=30&maxduration=600&minbpm=50&maxbpm=100&norepart=15&norepalb=25&filterxmas=1&danceable=10&aggressive=10&electronic=10&acoustic=10&happy=10&party=10&relaxed=10&sad=10&dark=10&tonal=10&voice=10&genre=Rock&count=50
 ```
 
 `minduration` and `maxduration` specify the min and max duraiton tracks can be.
 
 `minbpm` and `maxbpm` specify a BPM range.
-
-`minloudness` and `maxloudness` specify a loudness range, 0..100
 
 `norepart` specifies the number of tracks where an artist should not be
 repeated. This is not a hard-limit, as if there are too few candidates then
@@ -91,7 +89,8 @@ greater than 50 will be used. This is because these Essentia atttributes are how
 confident Essentia is that a track is of this type. e.g. 'danceable=85' implies
 Essentia is 85% confident this is a danceable track - 'danceable=25' implies
 only 25 confidence, so in effect Essentia is confident this is *not* a danceable
-track. Range is 0..100
+track. Range is 0..100 Alternatively, `y` maybe passed which is converted to 70,
+or `n` which is converted to 30.
 
 For most parameters, if not set or 0 is passed then no filtering will be applied
 using that attribute. For Essentia highlevel attributes, if 50 is passed it is
