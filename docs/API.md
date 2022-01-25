@@ -89,8 +89,8 @@ greater than 50 will be used. This is because these Essentia atttributes are how
 confident Essentia is that a track is of this type. e.g. 'danceable=85' implies
 Essentia is 85% confident this is a danceable track - 'danceable=25' implies
 only 25 confidence, so in effect Essentia is confident this is *not* a danceable
-track. Range is 0..100 Alternatively, `y` maybe passed which is converted to 70,
-or `n` which is converted to 30.
+track. Range is 0..100 Alternatively, `y` maybe passed which is converted to 60,
+or `n` which is converted to 40.
 
 For most parameters, if not set or 0 is passed then no filtering will be applied
 using that attribute. For Essentia highlevel attributes, if 50 is passed it is
