@@ -25,7 +25,6 @@ DEFAULT_NO_GENRE_MATCH_ADJUSTMENT     = 15
 DEFAULT_GENRE_GROUP_MATCH_ADJUSTMENT  = 7
 WEIGHT_ALL_ESSENTIA                   = 0.99
 WEIGHT_ALL_MUSLY                      = 0.01
-ESSENTIA_ATTRIB_MIX_PROBABILITY       = 0.4
 
 
 class SimilarityApp(Flask):
@@ -239,7 +238,11 @@ def get_genre_cfg(config, params):
 
 def get_essentia_cfg(config, params):
     ''' Get essentia(attrib) settings from URL or config '''
-    ess_cfg={'enabled': config['essentia']['enabled'], 'highlevel': config['essentia']['highlevel']}
+    ess_cfg={'enabled': config['essentia']['enabled'], 'highlevel': config['essentia']['highlevel'],
+             'filterattrib_lim': config['essentia']['filterattrib_lim'],
+             'filterattrib_cand': config['essentia']['filterattrib_cand'],
+             'filterattrib_count': config['essentia']['filterattrib_count']}
+
     if config['essentia']['enabled']:
         if 'maxbpmdiff' in params and params['maxbpmdiff'] is not None:
             ess_cfg['bpm'] = int(params['maxbpmdiff'])
@@ -445,9 +448,9 @@ def attrmix_api():
         if strval is None or strval=='':
             continue
         elif strval == 'y':
-            val = 1.0-ESSENTIA_ATTRIB_MIX_PROBABILITY
+            val = cfg['essentia']['attrmix_yes']
         elif strval == 'n':
-            val = ESSENTIA_ATTRIB_MIX_PROBABILITY
+            val = cfg['essentia']['attrmix_no']
         else:
             val = int(strval)/100.0
 

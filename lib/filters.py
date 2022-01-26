@@ -10,8 +10,7 @@ from . import tracks_db
 
 VARIOUS_ARTISTS = ['various', 'various artists'] # Artist names are normalised, and coverted to lower case
 CHRISTMAS_GENRES = ['Christmas', 'Xmas']
-ESS_ATTR_LIM = 0.2
-ESS_ATTR_CANDIDATE = 0.1
+
 
 def genre_matches(config, seed_genres, track):
     if 'genres' not in track or len(track['genres'])<1:
@@ -96,8 +95,11 @@ def check_attribs(seed, candidate, ess_cfg):
                 return 'key - %s (%s) / %s (%s)' % (seed['key'], seed_cam, candidate['key'], candidate_cam)
 
     if ess_cfg['highlevel'] and ess_cfg['filterattrib']:
-        ess_attr_high = 1.0 - ESS_ATTR_LIM
-        ess_attr_low = ESS_ATTR_LIM
+        ess_attr_high = 1.0 - ess_cfg['essentia']['filterattrib_lim']
+        ess_attr_low = ess_cfg['essentia']['filterattrib_lim']
+        ess_cand_attr_high = 1.0 - config['essentia']['filterattrib_cand']
+        ess_cand_attr_low = config['essentia']['filterattrib_cand']
+
         # Determine the 4 most accurate Essentia attributes, and filter on those
         # These will be the ones closest to 1.0 or 0.0
         if not 'ess' in seed:
@@ -105,14 +107,14 @@ def check_attribs(seed, candidate, ess_cfg):
             for ess in tracks_db.ESSENTIA_HIGHLEVEL_ATTRIBS:
                 if ((seed[ess]>=ess_attr_high and seed[ess]<1.0) or (seed[ess]>0.000001 and seed[ess]<=ess_attr_low)):
                     attr.append({'key':ess, 'val':abs(0.5-seed[ess])})
-            attr=sorted(attr, key=lambda k: -1*k['val'])[:4]
+            attr=sorted(attr, key=lambda k: -1*k['val'])[:ess_cfg['filterattrib_count']]
             seed['ess']=[]
             for a in attr:
                 seed['ess'].append(a['key'])
 
         for ess in seed['ess']:
             # Filter out tracks where attribute is in opposite end of spectrum
-            if (seed[ess]>=ess_attr_high and candidate[ess]<(ess_attr_high-ESS_ATTR_CANDIDATE)) or (seed[ess]<=ess_attr_low and candidate[ess]>(ess_attr_low+ESS_ATTR_CANDIDATE)):
+            if (seed[ess]>=ess_attr_high and candidate[ess]<ess_cand_attr_high) or (seed[ess]<=ess_attr_low and candidate[ess]>ess_cand_attr_low):
                 return '%s - %f/%f' % (ess, seed[ess], candidate[ess])
 
     return None

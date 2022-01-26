@@ -60,6 +60,11 @@ are usually supplied via the LMS plugin when it asks for mixes.
   "loudness":10,
   "filterkey":true,
   "filterattrib":false,
+  "filterattrib_count":4,
+  "filterattrib_lim":0.2,
+  "filterattrib_cand":0.4,
+  "attrmix_yes":0.6,
+  "attrmix_no":0.4,
   "weight":0.0
  },
  "paths":{
@@ -78,7 +83,17 @@ features. This defaults to true for Linux only.
 * `essentia.bpm` Specify max BPM difference when filtering tracks.
 * `essentia.loudness` Specify max loudness difference when filtering tracks.
 * `essentia.filterkey` Specify whether to filter on matching keys.
-* `essentia.filterattrib` Specify whether to filter on attrributes or not.
+* `essentia.filterattrib` Specify whether to filter on attrributes or not. If
+set only the highest, or lowest, attributes are used.
+* `essentia.filterattrib_count` Configures nubmer of attributes to use.
+* `essentia.filterattrib_lim` If filtering on attributes, only attributes that
+are less than this, or higher than 1.0-this will be used.
+* `essentia.filterattrib_cand` When filtering on attributes, the selected
+attributes of the seed need to be less than this, or higher than 1.0-this.
+* `essentia.attrmix_yes` When using 'Smart Mixes', 'Yes' attributes need to be
+higher than or equal to this.
+* `essentia.attrmix_no` When using 'Smart Mixes', 'No' attributes need to be
+lower than or equal to this.
 * `essentia.weight` By default Musly is used for similarity score, and Essentia
 is used to filter tracks. However, if you set `essentia.weight` to higher than
 0.0 (and less than or equal to 1.0) then Essentia can also be used to score

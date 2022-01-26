@@ -254,6 +254,17 @@ def read_config(path, analyse):
             config['essentia']['filterattrib']=True
         if not 'weight' in config['essentia'] or float(config['essentia']['weight'])<0 or float(config['essentia']['weight'])>1:
             config['essentia']['weight']=0.0
+        if not 'filterattrib_count' in config['essentia']:
+            config['essentia']['filterattrib_count']=4
+        if not 'filterattrib_lim' in config['essentia']:
+            config['essentia']['filterattrib_lim']=0.2
+        if not 'filterattrib_cand' in config['essentia']:
+            config['essentia']['filterattrib_cand']=0.4
+        if not 'attrmix_yes' in config['essentia']:
+            config['essentia']['attrmix_yes']=0.6
+        if not 'attrmix_no' in config['essentia']:
+            config['essentia']['attrmix_no']=0.4
+
         if analyse:
             if not 'extractor' in config['essentia']:
                 exit_with_error("'essentia.extractor' not in config file")
