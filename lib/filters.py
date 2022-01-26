@@ -95,10 +95,10 @@ def check_attribs(seed, candidate, ess_cfg):
                 return 'key - %s (%s) / %s (%s)' % (seed['key'], seed_cam, candidate['key'], candidate_cam)
 
     if ess_cfg['highlevel'] and ess_cfg['filterattrib']:
-        ess_attr_high = 1.0 - ess_cfg['essentia']['filterattrib_lim']
-        ess_attr_low = ess_cfg['essentia']['filterattrib_lim']
-        ess_cand_attr_high = 1.0 - config['essentia']['filterattrib_cand']
-        ess_cand_attr_low = config['essentia']['filterattrib_cand']
+        ess_attr_high = 1.0 - ess_cfg['filterattrib_lim']
+        ess_attr_low = ess_cfg['filterattrib_lim']
+        ess_cand_attr_high = 1.0 - ess_cfg['filterattrib_cand']
+        ess_cand_attr_low = ess_cfg['filterattrib_cand']
 
         # Determine the 4 most accurate Essentia attributes, and filter on those
         # These will be the ones closest to 1.0 or 0.0
