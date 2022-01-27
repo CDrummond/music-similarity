@@ -478,6 +478,7 @@ def attrmix_api():
         artist_map = {} # Map of artist -> last index
         album_map = {}  # Map of album -> last index
         titles = set()
+        _LOGGER.debug('Num rows: %d' % len(rows))
         for row in rows:
             track = tdb.get_track(row[0], True)
             if genres is not None and not filters.genre_matches({}, genres, track):
