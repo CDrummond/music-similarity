@@ -16,7 +16,7 @@ _LOGGER = logging.getLogger(__name__)
 DEFAULT_TRACKS_TO_RETURN              = 5    # Number of tracks to return, if none specified
 MIN_TRACKS_TO_RETURN                  = 1    # Min value for 'count' parameter
 MAX_TRACKS_TO_RETURN                  = 50   # Max value for 'count' parameter
-DEFAULT_ATTTRMIX_COUNT                = 200  # Default number of tracks to return for 'attrmix' API
+DEFAULT_ATTTRMIX_COUNT                = 100  # Default number of tracks to return for 'attrmix' API
 DEFAULT_NUM_PREV_TRACKS_FILTER_ARTIST = 15   # Try to ensure artist is not in previous N tracks
 DEFAULT_NUM_PREV_TRACKS_FILTER_ALBUM  = 25   # Try to ensure album is not in previous N tracks
 SHUFFLE_FACTOR                        = 5    # How many (shuffle_factor*count) tracks to shuffle?
@@ -333,7 +333,7 @@ def dump_api():
         txt = fmt=='text'
         txt_url = fmt=='text-url'
         match_artist = int(get_value(params, 'filterartist', '0', isPost))==1
-        meta = tdb.get_metadata(track_id+1) # IDs (rowid) in SQLite are 1.. musly is 0..
+        meta = tdb.get_track(track_id+1) # IDs (rowid) in SQLite are 1.. musly is 0..
 
         all_genres = genre_cfg['all_genres'] if 'all_genres' in genre_cfg else None
         acceptable_genres=set()
@@ -362,7 +362,7 @@ def dump_api():
             if math.isnan(simtrack['sim']):
                 continue
 
-            track = tdb.get_metadata(simtrack['id']+1)
+            track = tdb.get_track(simtrack['id']+1)
             if match_artist and track['artist'] != meta['artist']:
                 continue
             if not match_artist and track['ignore']:
@@ -472,13 +472,14 @@ def attrmix_api():
     try:
         genres = set(params['genre']) if 'genre' in params else None
         exclude_christmas = int(get_value(params, 'filterxmas', '0', isPost))==1 and datetime.now().month!=12
-        tracks = tdb.get_tracks(req_filters, no_repeat_artist>0, no_repeat_album>0, genres is not None or exclude_christmas)
+        rows = tdb.get_track_ids(req_filters)
         selected_tracks = []
         resp = []
         artist_map = {} # Map of artist -> last index
         album_map = {}  # Map of album -> last index
         titles = set()
-        for track in tracks:
+        for row in rows:
+            track = tdb.get_track(row[0], True)
             if genres is not None and not filters.genre_matches({}, genres, track):
                 _LOGGER.debug('DISCARD(genre) %s' % json.dumps(track, cls=SetEncoder))
                 continue
@@ -609,7 +610,7 @@ def similar_api():
         if track_id is not None and track_id>=0 and track_id not in track_ids:
             track_ids.append(track_id)
             skip_track_ids.add(track_id)
-            meta = tdb.get_metadata(track_id+1) # IDs (rowid) in SQLite are 1.. musly is 0..
+            meta = tdb.get_track(track_id+1) # IDs (rowid) in SQLite are 1.. musly is 0..
             _LOGGER.debug('Seed %d metadata:%s' % (track_id, json.dumps(meta, cls=SetEncoder)))
             if meta is not None:
                 track_id_seed_metadata[track_id]=meta
@@ -651,7 +652,7 @@ def similar_api():
                 pass
             if track_id is not None and track_id>=0:
                 skip_track_ids.add(track_id)
-                meta = tdb.get_metadata(track_id+1) # IDs (rowid) in SQLite are 1.. musly is 0..
+                meta = tdb.get_track(track_id+1) # IDs (rowid) in SQLite are 1.. musly is 0..
                 if meta:
                     if 'title' in meta:
                         filter_out['titles'].add(meta['title'])
@@ -702,7 +703,7 @@ def similar_api():
 
             if (simtrack['sim']>0.0) and (simtrack['sim']<=max_similarity) and (not simtrack['id'] in skip_track_ids):
                 prev_idx = similar_track_positions[simtrack['id']] if simtrack['id'] in similar_track_positions else -1
-                meta = similar_tracks[prev_idx] if prev_idx>=0 else tdb.get_metadata(simtrack['id']+1) # IDs (rowid) in SQLite are 1.. musly is 0..
+                meta = similar_tracks[prev_idx] if prev_idx>=0 else tdb.get_track(simtrack['id']+1) # IDs (rowid) in SQLite are 1.. musly is 0..
                 if prev_idx>=0:
                     # Seen from previous seed, so set similarity to lowest value
                     sim = simtrack['sim'] + genre_adjust(track_id_seed_metadata[track_id], meta, seed_genres, all_genres, no_genre_match_adj, genre_group_adj)

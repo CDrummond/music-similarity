@@ -171,7 +171,7 @@ class TracksDb(object):
             self.update_metadata(path, meta)
 
 
-    def get_metadata(self, i):
+    def get_track(self, i, withFile=False):
         try:
             cols = 'title, artist, album, albumartist, genre, duration, ignore'
             if self.use_essentia:
@@ -180,6 +180,8 @@ class TracksDb(object):
                 if self.use_essentia_hl:
                     for ess in ESSENTIA_HIGHLEVEL_ATTRIBS:
                         cols+=', %s' % ess
+            if withFile:
+                cols+=', file'
             self.cursor.execute('SELECT %s FROM tracks WHERE rowid=?' % cols, (i,))
             row = self.cursor.fetchone()
             meta = {'title':normalize_title(row[0]), 'artist':normalize_artist(row[1]), 'album':normalize_album(row[2]), 'albumartist':normalize_artist(row[3]), 'duration':row[5]}
@@ -187,8 +189,8 @@ class TracksDb(object):
                 meta['genres']=set(row[4].split(GENRE_SEPARATOR))
             meta['ignore']=row[6] is not None and row[6]==1
 
+            col = 7
             if self.use_essentia:
-                col = 7
                 for ess in ESSENTIA_LOWLEVEL_ATTRIBS:
                     meta[ess]=row[col]
                     col+=1
@@ -196,6 +198,8 @@ class TracksDb(object):
                     for ess in ESSENTIA_HIGHLEVEL_ATTRIBS:
                         meta[ess]=row[col]
                         col+=1
+            if withFile:
+                meta['file']=row[col]
             return meta
         except Exception as e:
             _LOGGER.error('Failed to read metadata for %d - %s' % (i, str(e)))
@@ -384,39 +388,14 @@ class TracksDb(object):
         return tracks
 
 
-    def get_tracks(self, filters, withArtist, withAlbum, withGenre):
-        tracks = []
-        sql = 'SELECT file, title'
-        if withArtist:
-            sql += ', artist'
-        if withAlbum:
-            sql += ', album, albumartist'
-        if withGenre:
-            sql += ', genre'
-        sql += ' FROM tracks WHERE ignore IS NOT 1'
+    def get_track_ids(self, filters):
+        sql = 'SELECT rowid FROM tracks WHERE ignore IS NOT 1'
         for f in filters:
             sql += ' AND %s' % f
         sql += ' ORDER BY random()'
         _LOGGER.debug('Select tracks using SQL:%s' % sql)
         self.cursor.execute(sql)
-        rows = self.cursor.fetchall()
-        for row in rows:
-            track={'file':row[0], 'title':normalize_title(row[1])}
-            idx = 1
-            if withArtist:
-                idx +=1
-                track['artist']=normalize_artist(row[idx])
-            if withAlbum:
-                idx +=1
-                track['album']=normalize_album(row[idx])
-                idx +=1
-                track['albumartist']=normalize_artist(row[idx])
-            if withGenre and row[5] is not None:
-                idx +=1
-                track['genres']=set(row[idx].split(GENRE_SEPARATOR))
-            tracks.append(track)
-        _LOGGER.debug('%d track(s) selected' % len(tracks))
-        return tracks
+        return self.cursor.fetchall()
 
 
     def get_genres(self):
