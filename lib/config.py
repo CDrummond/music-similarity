@@ -9,7 +9,8 @@ import json, logging, os, pathlib, platform
 from . import tracks_db
 
 _LOGGER = logging.getLogger(__name__)
-
+# Only Linux and mac, for now, support highlevel analysis
+SUPPORT_ESSENTIA_HIGHLEVEL = ['linux', 'mac']
 
 def exit_with_error(s):
     _LOGGER.error(s)
@@ -56,12 +57,11 @@ def update_paths(config, analyse, sys, musly, essentia_extractor):
         if essentia_extractor is not None and not 'extractor' in config['essentia']:
             config['essentia']['extractor']=essentia_extractor
             _LOGGER.debug('(Defaults) essentia.extractor set to %s' % essentia_extractor)
-            # Only Linux, for now, support highlevel analysis
             if not 'highlevel' in config['essentia']:
-                config['essentia']['highlevel']= (sys == 'linux')
+                config['essentia']['highlevel'] = sys in SUPPORT_ESSENTIA_HIGHLEVEL
                 _LOGGER.debug('(Defaults) essentia.highlevel set to %s' % str(config['essentia']['highlevel']))
     elif not 'highlevel' in config['essentia']:
-        config['essentia']['highlevel'] = (sys == 'linux')
+        config['essentia']['highlevel'] = sys in SUPPORT_ESSENTIA_HIGHLEVEL
         _LOGGER.debug('(Defaults) essentia.highlevel set to %s' % str(config['essentia']['highlevel']))
 
 
