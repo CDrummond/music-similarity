@@ -33,3 +33,11 @@ single DB required for music-similarity.
 # Release
 
 `mkrel.py` is used to create release ZIP files.
+
+Following extra files, not checked into github, are required:
+- windows/ffmpeg.exe - from https://github.com/BtbN/FFmpeg-Builds/releases
+- windows/ffprobe.exe - from https://github.com/BtbN/FFmpeg-Builds/releases
+- windows/streaming_extractor_music.exe - from https://github.com/AF-1/sobras/tree/main/lms-music-similarity_on_macos/binaries
+- mac/streaming_extractor_music - from https://github.com/AF-1/sobras/tree/main/lms-music-similarity_on_macos/binaries
+- essentia/models-beta5/ - from https://github.com/AF-1/sobras/tree/main/lms-music-similarity_on_macos/binaries
+
