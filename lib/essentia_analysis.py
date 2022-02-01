@@ -30,7 +30,7 @@ def process_essentia(data):
             if k in data['tonal']:
                 if data['tonal'][k]['strength']>strength:
                     strength = data['tonal'][k]['strength']
-                    key_scale = data['tonal'][k]['scale']
+                    key_scale = 'M' if data['tonal'][k]['scale']=='major' else 'm'
                     key = data['tonal'][k]['key']
 
     if key_scale is None or key is None:
