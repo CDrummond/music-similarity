@@ -61,6 +61,12 @@ def resetVersion():
 
 TOP_LEVEL_ITEMS = ["ChangeLog", "config.json", "LICENSE", "%s.py" % APP_NAME, "README.md", "INSTALL.md", "requirements.txt", "lib", "scripts", "docs"]
 def createOtherZip(osfolder, cpufolder, others, name):
+    if 'linux' != osfolder:
+        os.rename("%s/essentia/models" % APP_NAME,"%s/models" % APP_NAME)
+    if 'mac' == osfolder:
+        os.rename("%s/essentia/models-beta5" % APP_NAME,"%s/essentia/models" % APP_NAME)
+    else:
+        os.rename("%s/essentia/models-beta5" % APP_NAME,"%s/models-beta5" % APP_NAME)
     if osfolder is not None:
         for f in ["INSTALL.md"]:
             os.rename("%s/%s" % (APP_NAME, f), "%s/%s.orig" % (APP_NAME, f))
@@ -83,6 +89,12 @@ def createOtherZip(osfolder, cpufolder, others, name):
             folder = "%s/%s" % (osfolder, cpufolder) if cpufolder is not None else osfolder
             os.rename("%s/%s" % (APP_NAME, f), "%s/%s/%s" % (APP_NAME, folder, f))
             os.rename("%s/%s.orig" % (APP_NAME, f), "%s/%s" % (APP_NAME, f))
+    if 'mac' == osfolder:
+        os.rename("%s/essentia/models" % APP_NAME,"%s/essentia/models-beta5" % APP_NAME)
+    else:
+        os.rename("%s/models-beta5" % APP_NAME,"%s/essentia/models-beta5" % APP_NAME)
+    if 'linux' != osfolder:
+        os.rename("%s/models" % APP_NAME,"%s/essentia/models" % APP_NAME)
 
 
 def createZip(version):
@@ -99,7 +111,7 @@ def createZip(version):
     createOtherZip("linux", "armv7l", ["linux/armv7l/libmusly.so", "linux/%s.service" % APP_NAME], "pi")
     createOtherZip("linux", "x86-64", ["linux/x86-64/libmusly.so", "linux/%s.service" % APP_NAME, "linux/x86-64/essentia_streaming_extractor_music", "essentia"], "linux-x86-64")
     createOtherZip("windows", None, ["windows/mingw32/libmusly.dll", "windows/mingw32/libgcc_s_dw2-1.dll", "windows/mingw32/libstdc++-6.dll", "windows/mingw64/libmusly.dll", "windows/mingw64/libgcc_s_seh-1.dll", "windows/mingw64/libstdc++-6.dll", "windows/ffmpeg.exe", "windows/ffprobe.exe", "windows/ffmpeg-LICENSE.txt", "windows/streaming_extractor_music.exe"], "windows")
-    createOtherZip("mac", None, ["mac/i386/libmusly.dylib", "mac/streaming_extractor_music"], "mac")
+    createOtherZip("mac", None, ["mac/i386/libmusly.dylib", "mac/streaming_extractor_music", "essentia"], "mac")
     os.chdir(APP_NAME)
 
 
