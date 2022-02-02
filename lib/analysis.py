@@ -26,7 +26,7 @@ def sig_handler(signum, frame):
     global should_stop
     global futures_list
     should_stop = True
-    _LOGGER.info('Intercepted CTRL-C, stopping (might take a few seconds)...')
+    _LOGGER.info('Intercepted CTRL-C, stopping (might take a few minutes)...')
 
     # Cancel any non-running tasks
     for future in futures_list:
