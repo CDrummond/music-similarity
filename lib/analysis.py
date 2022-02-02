@@ -201,7 +201,7 @@ def get_files_to_analyse(trks_db, lms_db, lms_path, path, files, local_root_len,
                 files.append({'abs':path, 'db':db_path, 'musly':musly, 'essentia':essentia, 'bliss':bliss})
 
 
-def analyse_files(config, path, remove_tracks, meta_only, force, jukebox):
+def analyse_files(config, path, remove_tracks, meta_only, force, jukebox, max_tracks):
     signal.signal(signal.SIGINT, sig_handler)
     _LOGGER.debug('Analyse %s' % path)
     trks_db = tracks_db.TracksDb(config, True)
@@ -247,6 +247,9 @@ def analyse_files(config, path, remove_tracks, meta_only, force, jukebox):
 
     get_files_to_analyse(trks_db, lms_db, lms_path, path, files, local_root_len, tmp_path, tmp_path_len, meta_only, force, musly_enabled, essentia_enabled, bliss_enabled)
     _LOGGER.debug('Num tracks to update: %d' % len(files))
+    if len(files)>max_tracks:
+        _LOGGER.debug('Only analysing %d tracks' % max_tracks)
+        files=files[:max_tracks]
     cue.split_cue_tracks(files, config['threads'])
     added_tracks = len(files)>0
     analysed = 0

@@ -18,6 +18,7 @@ if __name__=='__main__':
     parser.add_argument('-c', '--config', type=str, help='Config file (default: config.json)', default='config.json')
     parser.add_argument('-l', '--log-level', action='store', choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG'], default='INFO', help='Set log level (default: %(default)s)')
     parser.add_argument('-a', '--analyse', metavar='PATH', type=str, help="Analyse file/folder (use 'm' for configured music folder)", default='')
+    parser.add_argument('-M', '--max-tracks', action='store', type=int, default=-1, help='Set maximum number of tracks to analyse')
     parser.add_argument('-m', '--meta-only', action='store_true', default=False, help='Update metadata database only (used in conjuction with --analyse)')
     parser.add_argument('-k', '--keep-old', action='store_true', default=False, help='Do not remove non-existant tracks from DB (used in conjuction with --analyse)')
     parser.add_argument('-f', '--force', type=str, default='', help="Force rescan of specified data (use 'm' for musly, 'e' for essentia, 'b' for bliss, 'meb' for all; used in conjuction with --analyse)")
@@ -30,7 +31,7 @@ if __name__=='__main__':
     jukebox_file = os.path.join(cfg['paths']['db'], JUKEBOX_FILE)
     if args.analyse:
         path = cfg['paths']['local'] if args.analyse =='m' else args.analyse
-        analysis.analyse_files(cfg, path, not args.keep_old, args.meta_only, args.force, jukebox_file)
+        analysis.analyse_files(cfg, path, not args.keep_old, args.meta_only, args.force, jukebox_file, args.max_tracks)
     elif args.test:
         test.test_jukebox(cfg, jukebox_file, args.repeat)
     else:
