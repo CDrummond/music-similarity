@@ -289,7 +289,8 @@ class TracksDb(object):
 
     def file_analysed_with_musly(self, path):
         self.cursor.execute('SELECT vals FROM tracks WHERE file=?', (path,))
-        return self.cursor.fetchone() is not None
+        row = self.cursor.fetchone()
+        return row is not None and row[0] is not None
 
 
     def file_analysed_with_essentia(self, path):
@@ -300,7 +301,8 @@ class TracksDb(object):
 
     def file_analysed_with_bliss(self, path):
         self.cursor.execute('SELECT bliss FROM tracks WHERE file=?', (path,))
-        return self.cursor.fetchone() is not None
+        row = self.cursor.fetchone()
+        return row is not None and row[0] is not None
 
 
     def files_analysed_with_musly(self):
