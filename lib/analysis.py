@@ -127,6 +127,7 @@ def process_files(config, trks_db, allfiles):
     analysed = 0
     failed = 0
     filtered = 0
+    musly_analysed = 0
     _LOGGER.info("Have {} files to analyze".format(numtracks))
     if config['musly']['enabled']:
         _LOGGER.info("Extraction length: {}s extraction start: {}s".format(config['musly']['extractlen'], config['musly']['extractstart']))
@@ -152,6 +153,8 @@ def process_files(config, trks_db, allfiles):
                     trks_db.add(allfiles[result['index']]['db'], mres, eres, bres, meta)
                     inserts_since_commit += 1
                     analysed += 1
+                    if mres is not None:
+                        musly_analysed += 1
                     if inserts_since_commit >= tracks_per_db_commit:
                         inserts_since_commit = 0
                         trks_db.commit()
@@ -170,7 +173,7 @@ def process_files(config, trks_db, allfiles):
                     if not "'NoneType' object is not subscriptable" in msg:
                         _LOGGER.debug('Thread exception? - %s' % msg)
                 pass
-    return analysed, failed, filtered
+    return analysed, failed, filtered, musly_analysed
 
 
 def get_files_to_analyse(trks_db, lms_db, lms_path, path, files, local_root_len, tmp_path, tmp_path_len, meta_only, force, musly_enabled, essentia_enabled, bliss_enabled):
@@ -253,6 +256,7 @@ def analyse_files(config, path, remove_tracks, meta_only, force, jukebox, max_tr
     cue.split_cue_tracks(files, config['threads'])
     added_tracks = len(files)>0
     analysed = 0
+    musly_analysed = 0
     if added_tracks or removed_tracks:
         if added_tracks:
             if meta_only:
@@ -266,7 +270,7 @@ def analyse_files(config, path, remove_tracks, meta_only, force, jukebox, max_tr
                     trks_db.set_metadata(f)
                     index +=1
             else:
-                analysed, failed, filtered = process_files(config, trks_db, files)
+                analysed, failed, filtered, musly_analysed = process_files(config, trks_db, files)
                 _LOGGER.info('Analysed: %d, Failed: %d, Filtered: %d' % (analysed, failed, filtered))
 
         trks_db.commit()
@@ -274,11 +278,11 @@ def analyse_files(config, path, remove_tracks, meta_only, force, jukebox, max_tr
         if should_stop:
             trks_db.close()
         else:
-            if musly_enabled and (removed_tracks or (analysed>0 and not meta_only)):
+            if musly_enabled and (removed_tracks or (musly_analysed>0 and not meta_only)):
                 (paths, db_tracks) = mus.get_alltracks_db(trks_db.get_cursor())
                 mus.add_tracks(db_tracks, config['musly']['styletracks'], config['musly']['styletracksmethod'], trks_db)
             trks_db.close()
-            if musly_enabled and (removed_tracks or (analysed>0 and not meta_only)):
+            if musly_enabled and (removed_tracks or (musly_analysed>0 and not meta_only)):
                 mus.write_jukebox(jukebox)
     if tmp_dir is not None:
         tmp_dir.cleanup()
