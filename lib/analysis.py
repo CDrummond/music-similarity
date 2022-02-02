@@ -5,7 +5,7 @@
 # GPLv3 license.
 #
 
-import bliss_audio, logging, os, pickle, random, signal, sqlite3, tempfile
+import logging, os, pickle, random, signal, sqlite3, tempfile
 from . import cue, essentia_analysis, tags, tracks_db, musly
 from concurrent.futures import as_completed, CancelledError, ThreadPoolExecutor
 from multiprocessing import Pipe, Process
@@ -62,6 +62,7 @@ def analyze_audiofile(pipe, libmusly, essentia_extractor, index, db_path, abs_pa
             resp['essentia'] = eres
 
     if bliss:
+        import bliss_audio
         blissres = None
         try:
             song = bliss_audio.Song(abs_path)
