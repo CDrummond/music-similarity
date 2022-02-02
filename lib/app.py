@@ -356,11 +356,11 @@ def dump_api():
                 continue
             if simtrack['id']!=track_id and 'title' in track and 'title' in meta and track['title'] == meta['title']:
                 continue
-            #if ess_cfg['enabled']:
-            #    filtered_due_to = filters.check_attribs(meta, track, ess_cfg)
-            #    if filtered_due_to is not None:
-            #        _LOGGER.debug('DISCARD(%s): %s' % (filtered_due_to, str(track)))
-            #        continue
+            if ess_cfg['enabled']:
+                filtered_due_to = filters.check_attribs(meta, track, ess_cfg)
+                if filtered_due_to is not None:
+                    _LOGGER.debug('DISCARD(%s): %s' % (filtered_due_to, str(track)))
+                    continue
 
             sim = simtrack['sim'] + genre_adjust(meta, track, acceptable_genres, all_genres, no_genre_match_adj, genre_group_adj)
             tracks.append({'path':paths[simtrack['id']], 'sim':sim})
