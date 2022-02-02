@@ -238,12 +238,13 @@ def get_genre_cfg(config, params):
 
 def get_essentia_cfg(config, params):
     ''' Get essentia(attrib) settings from URL or config '''
-    ess_cfg={'enabled': config['essentia']['enabled'], 'highlevel': config['essentia']['highlevel'],
-             'filterattrib_lim': config['essentia']['filterattrib_lim'],
-             'filterattrib_cand': config['essentia']['filterattrib_cand'],
-             'filterattrib_count': config['essentia']['filterattrib_count']}
+    ess_cfg={'enabled': config['essentia']['enabled']}
 
     if config['essentia']['enabled']:
+        ess_cfg={'enabled': config['essentia']['enabled'], 'highlevel': config['essentia']['highlevel'],
+                 'filterattrib_lim': config['essentia']['filterattrib_lim'],
+                 'filterattrib_cand': config['essentia']['filterattrib_cand'],
+                 'filterattrib_count': config['essentia']['filterattrib_count']}
         if 'maxbpmdiff' in params and params['maxbpmdiff'] is not None:
             ess_cfg['bpm'] = int(params['maxbpmdiff'])
         else:
