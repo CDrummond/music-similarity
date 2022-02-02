@@ -259,7 +259,7 @@ def analyse_files(config, path, remove_tracks, meta_only, force, jukebox):
         if should_stop:
             trks_db.close()
         else:
-            if removed_tracks or (analysed>0 and not meta_only):
+            if musly_enabled and (removed_tracks or (analysed>0 and not meta_only)):
                 (paths, db_tracks) = mus.get_alltracks_db(trks_db.get_cursor())
                 mus.add_tracks(db_tracks, config['musly']['styletracks'], config['musly']['styletracksmethod'], trks_db)
             trks_db.close()
