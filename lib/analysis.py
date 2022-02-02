@@ -13,7 +13,7 @@ from multiprocessing import Pipe, Process
 _LOGGER = logging.getLogger(__name__)
 AUDIO_EXTENSIONS = ['m4a', 'mp3', 'ogg', 'flac', 'opus']
 TRACKS_PER_DB_COMMIT_MUSLY = 500
-TRACKS_PER_DB_COMMIT_ESSENTIA = 100 # Analysing with Essentia is slower, so commit DB more often if this is enabled
+TRACKS_PER_DB_COMMIT_ESSENTIA_BLISS = 100 # Analysing with Essentia/Bliss is slower, so commit DB more often if this is enabled
 
 STATUS_OK       = 0
 STATUS_ERROR    = 1
@@ -135,7 +135,7 @@ def process_files(config, trks_db, allfiles):
     futures_list = []
     inserts_since_commit = 0
 
-    tracks_per_db_commit = TRACKS_PER_DB_COMMIT_ESSENTIA if config['essentia']['enabled'] else TRACKS_PER_DB_COMMIT_MUSLY
+    tracks_per_db_commit = TRACKS_PER_DB_COMMIT_ESSENTIA_BLISS if config['essentia']['enabled'] or config['bliss']['enabled'] else TRACKS_PER_DB_COMMIT_MUSLY
     with ThreadPoolExecutor(max_workers=config['threads']) as executor:
         for i in range(numtracks):
             futures = executor.submit(analyze_file, i, numtracks, allfiles[i]['db'], allfiles[i]['abs'], config, allfiles[i]['musly'], allfiles[i]['essentia'], allfiles[i]['bliss'])
