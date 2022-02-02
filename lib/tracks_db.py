@@ -196,7 +196,7 @@ class TracksDb(object):
                         cols+=', %s' % ess
             if withFile:
                 cols+=', file'
-            self.cursor.execute('SELECT %s FROM tracks WHERE rowid=?' % cols, (i,))
+            self.cursor.execute('SELECT %s FROM tracks WHERE rowid=%d' % (cols, i))
             row = self.cursor.fetchone()
             meta = {'title':normalize_title(row[0]), 'artist':normalize_artist(row[1]), 'album':normalize_album(row[2]), 'albumartist':normalize_artist(row[3]), 'duration':row[5]}
             if row[4] and len(row[4])>0:

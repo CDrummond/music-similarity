@@ -233,20 +233,22 @@ def read_config(path, analyse):
     setup_paths(config, analyse)
 
     # Check/default musly settings
-    if not 'lib' in config['musly']:
-        exit_with_error("'musly.lib' not in config file" % key)
-    else:
-        config['musly']['lib'] = fix_path(config['musly']['lib'])
-    if not 'extractlen' in config['musly']:
-        config['musly']['extractlen']=120
-    if not 'extractstart' in config['musly']:
-        config['musly']['extractstart']=-210
-    if not 'styletracks' in config['musly']:
-        config['musly']['styletracks']=1000
-    if not 'styletracksmethod' in config['musly']:
-        config['musly']['styletracksmethod']='genres'
     if not 'enabled' in config['musly']:
         config['musly']['enabled']=True
+
+    if config['musly']['enabled']:
+        if not 'lib' in config['musly']:
+            exit_with_error("'musly.lib' not in config file" % key)
+        else:
+            config['musly']['lib'] = fix_path(config['musly']['lib'])
+        if not 'extractlen' in config['musly']:
+            config['musly']['extractlen']=120
+        if not 'extractstart' in config['musly']:
+            config['musly']['extractstart']=-210
+        if not 'styletracks' in config['musly']:
+            config['musly']['styletracks']=1000
+        if not 'styletracksmethod' in config['musly']:
+            config['musly']['styletracksmethod']='genres'
 
     # Check/default essentia settings
     if not 'enabled' in config['essentia']:

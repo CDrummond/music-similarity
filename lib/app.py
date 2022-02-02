@@ -37,12 +37,6 @@ class SimilarityApp(Flask):
         tdb = tracks_db.TracksDb(app_config)
         random.seed()
 
-        XXXXXX
-        if paths is None or tracks is None:
-            _LOGGER.error('DB not initialised, have you analysed any tracks?')
-            tdb.close()
-            exit(-1)
-
         if app_config['essentia']['enabled']:
             app_config['essentia']['enabled'] = tdb.files_analysed_with_essentia()
             hl_prev = app_config['essentia']['highlevel']
@@ -65,7 +59,8 @@ class SimilarityApp(Flask):
             app_config['sim'] = 'bliss' if app_config['bliss']['enabled'] else 'musly'
 
         self.mus = None
-        self.mta = {'tracks':None, 'trackids':None}
+        self.mta = {'tracks':None, 'ids':None}
+
         if app_config['sim']=='essentia':
             self.paths = essentia_sim.init(tdb)
 
@@ -73,20 +68,23 @@ class SimilarityApp(Flask):
             self.paths = bliss_sim.init(tdb)
 
         elif app_config['sim']=='musly':
-            (self.paths, self.mta.tracks) = self.mus.get_alltracks_db(tdb.get_cursor())
-            ids = None
-
             self.mus = musly.Musly(app_config['musly']['lib'])
+            (self.paths, self.mta['tracks']) = self.mus.get_alltracks_db(tdb.get_cursor())
+
             # If we can, load musly from jukebox...
             if os.path.exists(jukebox_path):
-                self.mta.trackids = self.mus.get_jukebox_from_file(jukebox_path)
+                self.mta['ids'] = self.mus.get_jukebox_from_file(jukebox_path)
 
-            if ids==None or len(ids)!=len(tracks):
+            if self.mta['ids']==None or len(self.mta['ids'])!=len(self.paths):
                 _LOGGER.debug('Adding tracks from DB to musly')
-                self.mta.trackids = self.mus.add_tracks(tracks, app_config['musly']['styletracks'], app_config['musly']['styletracksmethod'], tdb)
+                self.mta['ids'] = self.mus.add_tracks(tracks, app_config['musly']['styletracks'], app_config['musly']['styletracksmethod'], tdb)
                 self.mus.write_jukebox(jukebox_path)
 
-        
+        if self.paths is None or len(self.paths)==0 or (app_config['sim']=='musly' and self.mta['ids'] is None):
+            _LOGGER.error('DB not initialised, have you analysed any tracks?')
+            tdb.close()
+            exit(-1)
+
         _LOGGER.info('Similarity via: {}'.format(app_config['sim']))
 
 
@@ -171,7 +169,7 @@ def get_similars(track_id, mus, num_sim, mta, tdb, cfg):
         return sorted(tracks, key=lambda k: k['sim'])
 
     _LOGGER.debug('Get %d similar tracks to %d from Musly' % (num_sim, track_id))
-    return mus.get_similars(mta.mtracks, mta.mtrackids, track_id, num_sim)
+    return mus.get_similars(mta['tracks'], mta['ids'], track_id, num_sim)
 
 
 def append_list(orig, to_add, min_count):
@@ -233,12 +231,13 @@ def get_genre_cfg(config, params):
 
 def get_essentia_cfg(config, params):
     ''' Get essentia(attrib) settings from URL or config '''
-    ess_cfg={'enabled': config['essentia']['enabled'], 'highlevel': config['essentia']['highlevel'],
-             'filterattrib_lim': config['essentia']['filterattrib_lim'],
-             'filterattrib_cand': config['essentia']['filterattrib_cand'],
-             'filterattrib_count': config['essentia']['filterattrib_count']}
+    ess_cfg={'enabled': config['essentia']['enabled']}
 
     if config['essentia']['enabled']:
+        ess_cfg={'enabled': config['essentia']['enabled'], 'highlevel': config['essentia']['highlevel'],
+                 'filterattrib_lim': config['essentia']['filterattrib_lim'],
+                 'filterattrib_cand': config['essentia']['filterattrib_cand'],
+                 'filterattrib_count': config['essentia']['filterattrib_count']}
         if 'maxbpmdiff' in params and params['maxbpmdiff'] is not None:
             ess_cfg['bpm'] = int(params['maxbpmdiff'])
         else:
@@ -357,11 +356,11 @@ def dump_api():
                 continue
             if simtrack['id']!=track_id and 'title' in track and 'title' in meta and track['title'] == meta['title']:
                 continue
-            if ess_cfg['enabled']:
-                filtered_due_to = filters.check_attribs(meta, track, ess_cfg)
-                if filtered_due_to is not None:
-                    _LOGGER.debug('DISCARD(%s): %s' % (filtered_due_to, str(track)))
-                    continue
+            #if ess_cfg['enabled']:
+            #    filtered_due_to = filters.check_attribs(meta, track, ess_cfg)
+            #    if filtered_due_to is not None:
+            #        _LOGGER.debug('DISCARD(%s): %s' % (filtered_due_to, str(track)))
+            #        continue
 
             sim = simtrack['sim'] + genre_adjust(meta, track, acceptable_genres, all_genres, no_genre_match_adj, genre_group_adj)
             tracks.append({'path':paths[simtrack['id']], 'sim':sim})
