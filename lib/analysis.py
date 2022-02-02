@@ -37,16 +37,24 @@ def analyze_audiofile(pipe, libmusly, essentia_extractor, index, db_path, abs_pa
     resp = {'index':index, 'status':STATUS_OK}
 
     if extract_len>0:
-        mus = musly.Musly(libmusly, True)
-        mres = mus.analyze_file(db_path, abs_path, extract_len, extract_start)
-        if mres['ok']:
+        mres = None
+        try:
+            mus = musly.Musly(libmusly, True)
+            mres = mus.analyze_file(db_path, abs_path, extract_len, extract_start)
+        except:
+            pass
+        if mres is not None and mres['ok']:
             resp['musly'] = pickle.dumps(bytes(mres['mtrack']), protocol=4)
         else:
             resp['status'] = STATUS_ERROR
             resp['extra'] = 'Musly'
 
     if len(essentia_extractor)>1 and STATUS_OK==resp['status']:
-        eres = essentia_analysis.analyse_track(index, essentia_extractor, db_path, abs_path, essentia_cache, essentia_highlevel)
+        eres = None
+        try:
+            eres = essentia_analysis.analyse_track(index, essentia_extractor, db_path, abs_path, essentia_cache, essentia_highlevel)
+        except:
+            pass
         if eres is None:
             resp['status'] = STATUS_ERROR
             resp['extra'] = 'Essentia'
