@@ -1,5 +1,5 @@
 #
-# Analyse files with Essentia and Musly, and provide an API to retrieve similar tracks
+# Analyse files with Musly, Essentia, and Bliss, and provide an API to retrieve similar tracks
 #
 # Copyright (c) 2021-2022 Craig Drummond <craig.p.drummond@gmail.com>
 # GPLv3 license.

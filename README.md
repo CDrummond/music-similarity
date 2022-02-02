@@ -7,7 +7,7 @@ of mix of similar music for LMS.
 
 ## Musly
 
-This script uses the [Musly audio music similarity library](https://github.com/CDrummond/musly)
+This script can use the [Musly audio music similarity library](https://github.com/CDrummond/musly)
 to analyse tracks, and to locate similar tracks based upon timbre. This project
 contains the following pre-built versions of this library:
 
@@ -46,6 +46,12 @@ compile your own build of Essentia - or use the prebuilt binary if on Linux
 
 If you download a new version of the extractor, place this within `linux`,
 `windows`, or `mac` sub-folder.
+
+
+## Bliss
+
+This script can use the [Bliss music analyser](https://github.com/Polochon-street/bliss-rs)
+to analyse tracks, and to locate similar tracks.
 
 
 ## Analysing Tracks

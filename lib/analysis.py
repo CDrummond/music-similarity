@@ -1,11 +1,11 @@
 #
-# Analyse files with Essentia and Musly, and provide an API to retrieve similar tracks
+# Analyse files with Musly, Essentia, and Bliss, and provide an API to retrieve similar tracks
 #
 # Copyright (c) 2021-2022 Craig Drummond <craig.p.drummond@gmail.com>
 # GPLv3 license.
 #
 
-import logging, os, pickle, random, signal, sqlite3, tempfile
+import bliss_audio, logging, os, pickle, random, signal, sqlite3, tempfile
 from . import cue, essentia_analysis, tags, tracks_db, musly
 from concurrent.futures import as_completed, CancelledError, ThreadPoolExecutor
 from multiprocessing import Pipe, Process
@@ -33,12 +33,12 @@ def sig_handler(signum, frame):
         future.cancel()
 
 
-def analyze_audiofile(pipe, libmusly, essentia_extractor, index, db_path, abs_path, extract_len, extract_start, essentia_cache, essentia_highlevel):
+def analyze_audiofile(pipe, libmusly, essentia_extractor, index, db_path, abs_path, extract_len, extract_start, essentia_cache, essentia_highlevel, bliss):
     resp = {'index':index, 'status':STATUS_OK}
 
     if extract_len>0:
         mus = musly.Musly(libmusly, True)
-        mres = mus.analyze_file(db_path, abs_path, extract_len, extract_start)
+        mres = mus.analyze_file(db_path, extract_len, extract_start)
         if mres['ok']:
             resp['musly'] = pickle.dumps(bytes(mres['mtrack']), protocol=4)
         else:
@@ -53,11 +53,24 @@ def analyze_audiofile(pipe, libmusly, essentia_extractor, index, db_path, abs_pa
         else:
             resp['essentia'] = eres
 
+    if bliss:
+        song = bliss_audio.Song(abs_path)
+        blissres = None
+        if song is not None:
+            sa = song.analysis
+            if sa is not None and len(sa)>0:
+                blissres = sa
+        if blissres is None:
+            resp['status'] = STATUS_ERROR
+            resp['extra'] = 'Bliss'
+        else:
+            resp['bliss'] = pickle.dumps(blissres, protocol=4)
+
     pipe.send(resp);
     pipe.close()
 
 
-def analyze_file(index, total, db_path, abs_path, config, musly_analysis, essentia_analysis):
+def analyze_file(index, total, db_path, abs_path, config, musly_analysis, essentia_analysis, bliss_analysis):
     if should_stop:
         return None
     digits=len(str(total))
@@ -83,9 +96,10 @@ def analyze_file(index, total, db_path, abs_path, config, musly_analysis, essent
     pout, pin = Pipe(duplex=False)
 
     essentia_cache = config['paths']['cache'] if 'cache' in config['paths'] else "-"
-    extractor = config['essentia']['extractor'] if essentia_analysis and config['essentia']['enabled'] else "-"
+    extractor = config['essentia']['extractor'] if essentia_analysis else "-"
     musly_extractlen = config['musly']['extractlen'] if musly_analysis else 0
-    p = Process(target=analyze_audiofile, args=(pin, config['musly']['lib'], extractor, index, db_path, abs_path, musly_extractlen, config['musly']['extractstart'], essentia_cache, config['essentia']['highlevel']))
+    bliss = 1 if bliss_analysis else 0
+    p = Process(target=analyze_audiofile, args=(pin, config['musly']['lib'], extractor, index, db_path, abs_path, musly_extractlen, config['musly']['extractstart'], essentia_cache, config['essentia']['highlevel'], bliss))
     p.start()
     r = pout.recv()
     p.terminate()
@@ -101,13 +115,25 @@ def process_files(config, trks_db, allfiles):
     filtered = 0
     _LOGGER.info("Have {} files to analyze".format(numtracks))
     _LOGGER.info("Extraction length: {}s extraction start: {}s".format(config['musly']['extractlen'], config['musly']['extractstart']))
+    analysers = []
+
+    if config['musly']['enabled']:
+        analysers.append('Musly')
+
     if config['essentia']['enabled']:
         if config['essentia']['highlevel']:
-            _LOGGER.info("Analyzing with Musly and Essentia (high level)")
+            analysers.append('Essentia (high-level')
         else:
-            _LOGGER.info("Analyzing with Musly and Essentia")
-    else:
-        _LOGGER.info("Analyzing with Musly")
+            analysers.append('Essentia (low-level')
+
+    if config['bliss']['enabled']:
+        analysers.append('Musly')
+
+    if len(analysers)==0:
+        _LOGGER.error('Please enable an analyser')
+        return
+
+    _LOGGER.info("Analysers: {}".format(analysers))
 
     global futures_list
     futures_list = []
@@ -116,7 +142,7 @@ def process_files(config, trks_db, allfiles):
     tracks_per_db_commit = TRACKS_PER_DB_COMMIT_ESSENTIA if config['essentia']['enabled'] else TRACKS_PER_DB_COMMIT_MUSLY
     with ThreadPoolExecutor(max_workers=config['threads']) as executor:
         for i in range(numtracks):
-            futures = executor.submit(analyze_file, i, numtracks, allfiles[i]['db'], allfiles[i]['abs'], config, allfiles[i]['musly'], allfiles[i]['essentia'])
+            futures = executor.submit(analyze_file, i, numtracks, allfiles[i]['db'], allfiles[i]['abs'], config, allfiles[i]['musly'], allfiles[i]['essentia'], allfiles[i]['bliss'])
             futures_list.append(futures)
         for future in as_completed(futures_list):
             try:
@@ -125,8 +151,9 @@ def process_files(config, trks_db, allfiles):
                 if result['status'] == STATUS_OK:
                     eres = result['essentia'] if 'essentia' in result else None
                     mres = result['musly'] if 'musly' in result else None
+                    bres = result['bliss'] if 'bliss' in result else None
                     meta = result['meta'] if 'meta' in result else meta
-                    trks_db.add(allfiles[result['index']]['db'], mres, eres, meta)
+                    trks_db.add(allfiles[result['index']]['db'], mres, eres, bres, meta)
                     inserts_since_commit += 1
                     analysed += 1
                     if inserts_since_commit >= tracks_per_db_commit:
@@ -150,13 +177,13 @@ def process_files(config, trks_db, allfiles):
     return analysed, failed, filtered
 
 
-def get_files_to_analyse(trks_db, lms_db, lms_path, path, files, local_root_len, tmp_path, tmp_path_len, meta_only, force, essentia_enabled):
+def get_files_to_analyse(trks_db, lms_db, lms_path, path, files, local_root_len, tmp_path, tmp_path_len, meta_only, force, musly_enabled, essentia_enabled, bliss_enabled):
     if not os.path.exists(path):
         _LOGGER.error("'%s' does not exist" % path)
         return
     if os.path.isdir(path):
         for e in sorted(os.listdir(path)):
-            get_files_to_analyse(trks_db, lms_db, lms_path, os.path.join(path, e), files, local_root_len, tmp_path, tmp_path_len, meta_only, force, essentia_enabled)
+            get_files_to_analyse(trks_db, lms_db, lms_path, os.path.join(path, e), files, local_root_len, tmp_path, tmp_path_len, meta_only, force, musly_enabled, essentia_enabled, bliss_enabled)
 
     parts = path.rsplit('.', 1)
     if len(parts)>1 and parts[1].lower() in AUDIO_EXTENSIONS:
@@ -164,16 +191,18 @@ def get_files_to_analyse(trks_db, lms_db, lms_path, path, files, local_root_len,
             if tmp_path is not None:
                 for track in cue.get_cue_tracks(lms_db, lms_path, path, local_root_len, tmp_path):
                     db_path = track['file'][tmp_path_len:].replace('\\', '/')
-                    musly = not meta_only and ('m' in force or not trks_db.file_analysed_with_musly(db_path))
-                    essentia = not meta_only and ('e' in force or essentia_enabled and not trks_db.file_analysed_with_essentia(db_path))
+                    musly = not meta_only and ('m' in force or (musly_enabled and not trks_db.file_analysed_with_musly(db_path)))
+                    essentia = not meta_only and ('e' in force or (essentia_enabled and not trks_db.file_analysed_with_essentia(db_path)))
+                    bliss = not meta_only and ('b' in force or (bliss_enabled and not trks_db.file_analysed_with_bliss(db_path)))
                     if meta_only or musly or essentia:
-                        files.append({'abs':track['file'], 'db':db_path, 'track':track, 'src':path, 'musly':musly, 'essentia':essentia})
+                        files.append({'abs':track['file'], 'db':db_path, 'track':track, 'src':path, 'musly':musly, 'essentia':essentia, 'bliss':bliss})
         else:
             db_path = path[local_root_len:].replace('\\', '/')
-            musly = not meta_only and ('m' in force or not trks_db.file_analysed_with_musly(db_path))
-            essentia = not meta_only and ('e' in force or essentia_enabled and not trks_db.file_analysed_with_essentia(db_path))
+            musly = not meta_only and ('m' in force or (musly_enabled and not trks_db.file_analysed_with_musly(db_path)))
+            essentia = not meta_only and ('e' in force or (essentia_enabled and not trks_db.file_analysed_with_essentia(db_path)))
+            bliss = not meta_only and ('b' in force or (bliss_enabled and not trks_db.file_analysed_with_bliss(db_path)))
             if meta_only or musly or essentia:
-                files.append({'abs':path, 'db':db_path, 'musly':musly, 'essentia':essentia})
+                files.append({'abs':path, 'db':db_path, 'musly':musly, 'essentia':essentia, 'bliss':bliss})
 
 
 def analyse_files(config, path, remove_tracks, meta_only, force, jukebox):
@@ -188,7 +217,9 @@ def analyse_files(config, path, remove_tracks, meta_only, force, jukebox):
     temp_dir = config['paths']['tmp'] if 'tmp' in config['paths'] else None
     removed_tracks = trks_db.remove_old_tracks(config['paths']['local']) if remove_tracks and not meta_only else False
     mus = musly.Musly(config['musly']['lib'])
+    musly_enabled = config['musly']['enabled']
     essentia_enabled = config['essentia']['enabled']
+    bliss_enabled = config['bliss']['enabled']
 
     tmp_dir = None if lms_db is None else tempfile.TemporaryDirectory(dir=temp_dir)
     tmp_path = None
@@ -198,7 +229,7 @@ def analyse_files(config, path, remove_tracks, meta_only, force, jukebox):
         tmp_path_len = len(tmp_path)
         _LOGGER.debug('Temp folder: %s' % tmp_path)
 
-    get_files_to_analyse(trks_db, lms_db, lms_path, path, files, local_root_len, tmp_path, tmp_path_len, meta_only, force, essentia_enabled)
+    get_files_to_analyse(trks_db, lms_db, lms_path, path, files, local_root_len, tmp_path, tmp_path_len, meta_only, force, musly_enabled, essentia_enabled, bliss_enabled)
     _LOGGER.debug('Num tracks to update: %d' % len(files))
     cue.split_cue_tracks(files, config['threads'])
     added_tracks = len(files)>0
@@ -228,7 +259,7 @@ def analyse_files(config, path, remove_tracks, meta_only, force, jukebox):
                 (paths, db_tracks) = mus.get_alltracks_db(trks_db.get_cursor())
                 mus.add_tracks(db_tracks, config['musly']['styletracks'], config['musly']['styletracksmethod'], trks_db)
             trks_db.close()
-            if removed_tracks or (analysed>0 and not meta_only):
+            if musly_enabled and (removed_tracks or (analysed>0 and not meta_only)):
                 mus.write_jukebox(jukebox)
     if tmp_dir is not None:
         tmp_dir.cleanup()

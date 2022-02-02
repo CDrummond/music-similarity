@@ -1,5 +1,5 @@
 #
-# Analyse files with Essentia and Musly, and provide an API to retrieve similar tracks
+# Analyse files with Musly, Essentia, and Bliss, and provide an API to retrieve similar tracks
 #
 # Copyright (c) 2021-2022 Craig Drummond <craig.p.drummond@gmail.com>
 # GPLv3 license.
@@ -215,13 +215,20 @@ def read_config(path, analyse):
     if not 'threads' in config:
         config['threads']=os.cpu_count()
 
+    if not 'sim' in config:
+        config['sim']='musly'
+
     # Ensure 'musly' is in config
     if not 'musly' in config:
-        config['musly']={}
+        config['musly']={'enabled':True}
 
     # Ensure 'essentia' is in config
     if not 'essentia' in config:
         config['essentia']={'enabled':True}
+
+    # Ensure 'bliss' is in config
+    if not 'bliss' in config:
+        config['bliss']={'enabled':True}
 
     setup_paths(config, analyse)
 
@@ -238,6 +245,8 @@ def read_config(path, analyse):
         config['musly']['styletracks']=1000
     if not 'styletracksmethod' in config['musly']:
         config['musly']['styletracksmethod']='genres'
+    if not 'enabled' in config['musly']:
+        config['musly']['enabled']=True
 
     # Check/default essentia settings
     if not 'enabled' in config['essentia']:
@@ -252,8 +261,6 @@ def read_config(path, analyse):
             config['essentia']['highlevel']=False
         if not 'filterattrib' in config['essentia']:
             config['essentia']['filterattrib']=True
-        if not 'weight' in config['essentia'] or float(config['essentia']['weight'])<0 or float(config['essentia']['weight'])>1:
-            config['essentia']['weight']=0.0
         if not 'filterattrib_count' in config['essentia']:
             config['essentia']['filterattrib_count']=4
         if not 'filterattrib_lim' in config['essentia']:
@@ -272,6 +279,10 @@ def read_config(path, analyse):
                 config['essentia']['extractor'] = fix_path(config['essentia']['extractor'])
     else:
         config['essentia']['highlevel']=False
+
+    # Check/default bliss settings
+    if not 'enabled' in config['bliss']:
+        config['bliss']['enabled']=True
 
     # Check genres, etc.
     if 'genres' in config:

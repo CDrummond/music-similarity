@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 #
-# Analyse files with Essentia and Musly, and provide an API to retrieve similar tracks
+# Analyse files with Musly, Essentia, and Bliss, and provide an API to retrieve similar tracks
 #
 # Copyright (c) 2021-2022 Craig Drummond <craig.p.drummond@gmail.com>
 # GPLv3 license.
@@ -20,7 +20,7 @@ if __name__=='__main__':
     parser.add_argument('-a', '--analyse', metavar='PATH', type=str, help="Analyse file/folder (use 'm' for configured music folder)", default='')
     parser.add_argument('-m', '--meta-only', action='store_true', default=False, help='Update metadata database only (used in conjuction with --analyse)')
     parser.add_argument('-k', '--keep-old', action='store_true', default=False, help='Do not remove non-existant tracks from DB (used in conjuction with --analyse)')
-    parser.add_argument('-f', '--force', type=str, default='', help="Force rescan of specified data (use 'm' for musly, 'e' for essentia, 'me' for both; used in conjuction with --analyse)")
+    parser.add_argument('-f', '--force', type=str, default='', help="Force rescan of specified data (use 'm' for musly, 'e' for essentia, 'b' for bliss, 'meb' for all; used in conjuction with --analyse)")
     parser.add_argument('-t', '--test', action='store_true', default=False, help='Test musly')
     parser.add_argument('-r', '--repeat', action='store_true', default=False, help='Repeat test until OK (used in conjuction with --test)')
     args = parser.parse_args()

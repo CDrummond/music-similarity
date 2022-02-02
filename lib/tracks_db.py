@@ -1,5 +1,5 @@
 #
-# Analyse files with Essentia and Musly, and provide an API to retrieve similar tracks
+# Analyse files with Musly, Essentia, and Bliss, and provide an API to retrieve similar tracks
 #
 # Copyright (c) 2021-2022 Craig Drummond <craig.p.drummond@gmail.com>
 # GPLv3 license.
@@ -107,7 +107,8 @@ class TracksDb(object):
                                     voice integer,
                                     bpm integer,
                                     key varchar,
-                                    vals blob NOT NULL)''' % table)
+                                    vals blob,
+                                    bliss blob)''' % table)
                     else:
                         self.cursor.execute('''CREATE TABLE IF NOT EXISTS %s (
                                     file varchar UNIQUE NOT NULL,
@@ -120,11 +121,17 @@ class TracksDb(object):
                                     ignore integer,
                                     bpm integer,
                                     key varchar,
-                                    vals blob NOT NULL)''' % table)
+                                    vals blob,
+                                    bliss blob)''' % table)
 
                     # Add 'key' column - will fail if already exists (which it should, but older instances might not have it)
                     try:
                         self.cursor.execute('ALTER TABLE %s ADD COLUMN key varchar default null' % table)
+                    except:
+                        pass
+
+                    try:
+                        self.cursor.execute('ALTER TABLE %s ADD COLUMN bliss blob default null' % table)
                     except:
                         pass
 
@@ -149,7 +156,7 @@ class TracksDb(object):
             self.conn.close()
 
 
-    def add(self, path, musly, essentia, meta):
+    def add(self, path, musly, essentia, bliss, meta):
         if musly is not None:
             if self.file_entry_exists(path):
                 self.cursor.execute('UPDATE tracks SET vals=? WHERE file=?', (musly, path))
@@ -167,6 +174,13 @@ class TracksDb(object):
                     self.cursor.execute('UPDATE tracks SET danceable=?, aggressive=?, electronic=?, acoustic=?, happy=?, party=?, relaxed=?, sad=?, dark=?, tonal=?, voice=? WHERE file=?', (essentia['danceable'], essentia['aggressive'], essentia['electronic'], essentia['acoustic'], essentia['happy'], essentia['party'], essentia['relaxed'], essentia['sad'], essentia['dark'], essentia['tonal'], essentia['voice'], path))
                 except:
                     pass
+
+        if bliss is not None:
+            if self.file_entry_exists(path):
+                self.cursor.execute('UPDATE tracks SET bliss=? WHERE file=?', (bliss, path))
+            else:
+                self.cursor.execute('INSERT INTO tracks (file, bliss) VALUES (?, ?)', (path, bliss))
+
         if meta is not None:
             self.update_metadata(path, meta)
 
@@ -284,6 +298,17 @@ class TracksDb(object):
         return row is not None and row[0] is not None
 
 
+    def file_analysed_with_bliss(self, path):
+        self.cursor.execute('SELECT bliss FROM tracks WHERE file=?', (path,))
+        return self.cursor.fetchone() is not None
+
+
+    def files_analysed_with_musly(self):
+        self.cursor.execute('SELECT vals FROM tracks WHERE vals is not null LIMIT 1')
+        row = self.cursor.fetchone()
+        return row is not None and row[0] is not None
+
+
     def files_analysed_with_essentia(self):
         self.cursor.execute('SELECT %s FROM tracks WHERE %s is not null LIMIT 1' % (ESSENTIA_LOWLEVEL_ATTRIBS[0], ESSENTIA_LOWLEVEL_ATTRIBS[0]))
         row = self.cursor.fetchone()
@@ -292,6 +317,12 @@ class TracksDb(object):
 
     def files_analysed_with_essentia_highlevel(self):
         self.cursor.execute('SELECT %s FROM tracks WHERE %s is not null LIMIT 1' % (ESSENTIA_HIGHLEVEL_ATTRIBS[0], ESSENTIA_HIGHLEVEL_ATTRIBS[0]))
+        row = self.cursor.fetchone()
+        return row is not None and row[0] is not None
+
+
+    def files_analysed_with_bliss(self):
+        self.cursor.execute('SELECT bliss FROM tracks WHERE bliss is not null LIMIT 1')
         row = self.cursor.fetchone()
         return row is not None and row[0] is not None
 
