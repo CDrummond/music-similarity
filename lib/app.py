@@ -159,13 +159,13 @@ def get_similars(track_id, mus, num_sim, mta, tdb, cfg):
     tracks = []
 
     if cfg['simalgo']=='essentia':
-        _LOGGER.debug('Get similar tracks to %d from Essentia' % track_id)
-        tracks = essentia_sim.get_similars(tdb, track_id)
+        _LOGGER.debug('Get %d similar tracks to %d from Essentia' % (num_sim, track_id))
+        tracks = essentia_sim.get_similars(tdb, track_id, num_sim)
         return sorted(tracks, key=lambda k: k['simalgo'])
 
     if cfg['simalgo']=='bliss':
-        _LOGGER.debug('Get similar tracks to %d from Bliss' % track_id)
-        tracks = bliss_sim.get_similars(tdb, track_id)
+        _LOGGER.debug('Get %d similar tracks to %d from Bliss' % (num_sim, track_id))
+        tracks = bliss_sim.get_similars(tdb, track_id, num_sim)
         return sorted(tracks, key=lambda k: k['simalgo'])
 
     _LOGGER.debug('Get %d similar tracks to %d from Musly' % (num_sim, track_id))
@@ -336,6 +336,9 @@ def dump_api():
         num_sim = count * 50
         if num_sim<MIN_MUSLY_NUM_SIM:
             num_sim = MIN_MUSLY_NUM_SIM
+        if num_sim>len(paths):
+            num_sim = len(paths)
+
         simtracks = get_similars(track_id, mus, num_sim, mta, tdb, cfg)
 
         resp=[]
@@ -677,6 +680,8 @@ def similar_api():
     num_sim = count * len(track_ids) * 50
     if num_sim<MIN_MUSLY_NUM_SIM:
         num_sim = MIN_MUSLY_NUM_SIM
+    if num_sim>len(paths):
+        num_sim = len(paths)
 
     matched_artists={}
     for track_id in track_ids:

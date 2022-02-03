@@ -15,12 +15,11 @@ _LOGGER = logging.getLogger(__name__)
 
 attrib_list = []
 max_sim = None
-num_tracks = 0
 tree = None
 
 
 def init(db):
-    global attrib_list, max_sim, num_tracks, tree
+    global attrib_list, max_sim, tree
     if tree is None:
         _LOGGER.debug('Loading bliss from DB')
         cursor = db.get_cursor()
@@ -40,13 +39,12 @@ def init(db):
             max_sim = math.sqrt(len(attr_list))
         attrib_list = numpy.array(attr_list)
         tree = cKDTree(attrib_list)
-        num_tracks = len(paths)
         return paths
     return None
             
 
-def get_similars(db, track_id):
-    global attrib_list, max_sim, num_tracks, tree
+def get_similars(db, track_id, num_tracks):
+    global attrib_list, max_sim, tree
     distances, indexes = tree.query(numpy.array([attrib_list[track_id]]), k=num_tracks)
 
     entries = []

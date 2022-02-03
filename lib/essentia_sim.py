@@ -15,13 +15,12 @@ _LOGGER = logging.getLogger(__name__)
 min_bpm = None
 bpm_range = None
 max_sim = math.sqrt(len(tracks_db.ESSENTIA_HIGHLEVEL_ATTRIBS) + 1) # +1 for bpm
-num_tracks = 0
 attrib_list = []
 tree = None
 
 
 def init(db):
-    global min_bpm, bpm_range, max_sim, num_tracks, attrib_list, tree
+    global min_bpm, bpm_range, max_sim, attrib_list, tree
     if min_bpm is None:
         _LOGGER.debug('Loading essentia attribs from DB')
         cursor = db.get_cursor()
@@ -55,13 +54,12 @@ def init(db):
 
         attrib_list = numpy.array(attr_list)
         tree = cKDTree(attrib_list)
-        num_tracks = len(paths)
         return paths
     return None
             
 
-def get_similars(db, track_id):
-    global attrib_list, max_sim, num_tracks, tree
+def get_similars(db, track_id, num_tracks):
+    global attrib_list, max_sim, tree
     distances, indexes = tree.query(numpy.array([attrib_list[track_id]]), k=num_tracks)
 
     entries = []
