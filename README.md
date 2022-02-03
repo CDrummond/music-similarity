@@ -1,13 +1,27 @@
 # Music Similarity
 
-This is a python3 script to analyse your music collection with Musly and
-(optionally) Essentia, and to provide a simple HTTP API allowing the creation
-of mix of similar music for LMS.
+This is a python3 script to analyse your music collection with Bliss, Essentia,
+and Musly, and to provide a simple HTTP API allowing the creation of mix of
+similar music for LMS.
+
+You may configure which anlysers are used to anlyse your music collection, and
+which of these is used for the similarity score.
+
+
+## Bliss
+
+This script can be configured to use the [Bliss music analyser](hhttps://github.com/CDrummond/bliss-analyse)
+(which is a wrapper around the [Bliss library](https://github.com/Polochon-street/bliss-rs))
+to analyse tracks, and use this analysis to locate similar tracks.
+
+This project contains the following pre-built versions of this app:
+
+1. Linux 64-bit - `linux/x86-64/bliss-analyse`
 
 
 ## Musly
 
-This script can use the [Musly audio music similarity library](https://github.com/CDrummond/musly)
+This script can be configured to use the [Musly audio music similarity library](https://github.com/CDrummond/musly)
 to analyse tracks, and to locate similar tracks based upon timbre. This project
 contains the following pre-built versions of this library:
 
@@ -47,27 +61,25 @@ compile your own build of Essentia - or use the prebuilt binary if on Linux
 If you download a new version of the extractor, place this within `linux`,
 `windows`, or `mac` sub-folder.
 
-
-## Bliss
-
-This script can use the [Bliss music analyser](https://github.com/Polochon-street/bliss-rs)
-to analyse tracks, and to locate similar tracks.
+To be able to use Essentia for similarity scoring you must have a build of
+Essentia that supports the high-level models.
 
 
 ## Analysing Tracks
 
-Before starting the server your music needs to be analysed with Musly and
-Essentia. This is accomplished via:
+Before starting the server your music needs to be analysed with you enabled
+analysers. This is accomplished via:
 
 ```
 ./music-similarity.py --analyse /path/to/music/folder
 ```
 
-This can take about 20hrs to process 25k tracks. The process analyses tracks
-with with Musly, with Essentia, initialises Musly's 'jukebox' style with 1000
-random tracks, and extracts certain tags. If re-run new tracks will be added,
-and old (non-existent) will be removed. Pass `--keep-old` to keep these old
-tracks.
+The time taken for this depends upon which analysers you are using. Bliss takes
+roughly 3hours for 25k tracks, Essentia about 20hours, and Musly 1 hour. The
+process analyses tracks with the enabled anlysers, extracts certain tags, and
+(if Musly is enabled) initialises Musly's 'jukebox' style with 1000 random
+tracks. If re-run new tracks will be added, and old (non-existent) will be
+removed. Pass `--keep-old` to keep these old tracks.
 
 To analyse the Music path stored in the config file, the following shortcut can
 be used:
@@ -85,7 +97,7 @@ music file into temporary 128kbps MP3 files for analysis. The files are removed
 once analysis is complete.
 
 
-## Testing Analysis
+## Testing Musly Analysis
 
 Musly has a [bug](https://github.com/dominikschnitzer/musly/issues/43) where
 sometimes it gives the same similarity to all tracks, which will obviously break
