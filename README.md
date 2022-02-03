@@ -10,7 +10,7 @@ which of these is used for the similarity score.
 
 ## Bliss
 
-This script can be configured to use the [Bliss music analyser](hhttps://github.com/CDrummond/bliss-analyse)
+This script can be configured to use the [Bliss music analyser](https://github.com/CDrummond/bliss-analyse)
 (which is a wrapper around the [Bliss library](https://github.com/Polochon-street/bliss-rs))
 to analyse tracks, and use this analysis to locate similar tracks.
 
