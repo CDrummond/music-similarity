@@ -189,6 +189,9 @@ class Musly(object):
             paths = [None] * numtracks
             for row in scursor:
                 paths[i] = row[0]
+                if row[1] is None:
+                    _LOGGER.error('%s has not been analysed with Musly' % row[0])
+                    return None, None
                 smt_c = ctypes.c_char_p(pickle.loads(row[1]))
                 smt_f = ctypes.cast(smt_c, ctypes.POINTER(ctypes.c_float))
                 ctypes.memmove(mtrack, smt_f, self.mtracksize)

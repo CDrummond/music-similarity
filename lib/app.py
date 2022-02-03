@@ -75,13 +75,13 @@ class SimilarityApp(Flask):
             if os.path.exists(jukebox_path):
                 self.mta['ids'] = self.mus.get_jukebox_from_file(jukebox_path)
 
-            if self.mta['ids']==None or len(self.mta['ids'])!=len(self.paths):
+            if self.mta['tracks'] is not None and self.paths is not None and (self.mta['ids']==None or len(self.mta['ids'])!=len(self.paths)):
                 _LOGGER.debug('Adding tracks from DB to musly')
-                self.mta['ids'] = self.mus.add_tracks(tracks, app_config['musly']['styletracks'], app_config['musly']['styletracksmethod'], tdb)
+                self.mta['ids'] = self.mus.add_tracks(self.mta['tracks'], app_config['musly']['styletracks'], app_config['musly']['styletracksmethod'], tdb)
                 self.mus.write_jukebox(jukebox_path)
 
         if self.paths is None or len(self.paths)==0 or (app_config['simalgo']=='musly' and self.mta['ids'] is None):
-            _LOGGER.error('DB not initialised, have you analysed any tracks?')
+            _LOGGER.error('DB not initialised, have you analysed all tracks?')
             tdb.close()
             exit(-1)
 

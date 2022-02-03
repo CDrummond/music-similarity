@@ -43,9 +43,13 @@ def init(db):
         for row in cursor:
             attribs=[]
             paths.append(row[0])
+            loggedError = False
             for attr in range(len(tracks_db.ESSENTIA_HIGHLEVEL_ATTRIBS) + 1): # +1 for bpm
                 if row[attr+1] is None:
                     attribs.append(0.0)
+                    if not loggedError:
+                        _LOGGER.error('%s has not been analysed with Essentia' % row[0])
+                        loggedError = True
                 elif 0==attr:
                     attribs.append((row[attr+1]-min_bpm)/bpm_range)
                 else:

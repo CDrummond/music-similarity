@@ -31,6 +31,7 @@ def init(db):
         for row in cursor:
             paths.append(row[0])
             if row[1] is None:
+                _LOGGER.error('%s has not been analysed with Bliss' % row[0])
                 attr_list.append(empty)
             else:
                 attr_list.append(pickle.loads(row[1]))
