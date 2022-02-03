@@ -7,7 +7,7 @@
 
 import logging, pickle, math, numpy
 from scipy.spatial import cKDTree
-from . import tracks_db
+from . import bliss_analysis, tracks_db
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -27,10 +27,14 @@ def init(db):
 
         attr_list = []
         paths = []
+        empty = [0.0] * bliss_analysis.NUM_BLISS_VALS
         cursor.execute('SELECT file, bliss FROM tracks ORDER BY rowid ASC')
         for row in cursor:
             paths.append(row[0])
-            attr_list.append(pickle.loads(row[1]))
+            if row[1] is None:
+                attr_list.append(empty)
+            else:
+                attr_list.append(pickle.loads(row[1]))
 
         if max_sim is None:
             max_sim = math.sqrt(len(attr_list))

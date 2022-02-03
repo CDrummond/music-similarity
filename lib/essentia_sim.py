@@ -27,8 +27,12 @@ def init(db):
         cursor = db.get_cursor()
         cursor.execute('SELECT min(bpm), max(bpm) from tracks')
         row = cursor.fetchone()
-        min_bpm = row[0]
-        bpm_range = row[1] - min_bpm
+        if row[0] is None or row[1] is None:
+            min_bpm = 0
+            bpm_range = 100
+        else:
+            min_bpm = row[0]
+            bpm_range = row[1] - min_bpm
 
         attr_list = []
         paths = []
@@ -41,7 +45,9 @@ def init(db):
             attribs=[]
             paths.append(row[0])
             for attr in range(len(tracks_db.ESSENTIA_HIGHLEVEL_ATTRIBS) + 1): # +1 for bpm
-                if 0==attr:
+                if row[attr+1] is None:
+                    attribs.append(0.0)
+                elif 0==attr:
                     attribs.append((row[attr+1]-min_bpm)/bpm_range)
                 else:
                     attribs.append(row[attr+1])
