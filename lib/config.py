@@ -224,6 +224,8 @@ def read_config(path, analyse):
     if 'tmp' in config['paths'] and not os.path.exists(config['paths']['tmp']):
         exit_with_error("'%s' does not exist" % config['paths']['tmp'])
 
+    sname = system_name()
+
     # Check general settings
     if not 'port' in config:
         config['port']=11000
@@ -235,7 +237,7 @@ def read_config(path, analyse):
         config['threads']=os.cpu_count()
 
     if not 'simalgo' in config:
-        config['simalgo']='musly'
+        config['simalgo']='bliss' if sname in SUPPORT_BLISS else 'musly'
 
     # Ensure 'musly' is in config
     if not 'musly' in config:
@@ -247,7 +249,7 @@ def read_config(path, analyse):
 
     # Ensure 'bliss' is in config
     if not 'bliss' in config:
-        config['bliss']={'enabled':system_name() in SUPPORT_BLISS}
+        config['bliss']={'enabled':sname in SUPPORT_BLISS}
 
     setup_paths(config, analyse)
 
