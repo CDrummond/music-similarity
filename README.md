@@ -75,7 +75,7 @@ analysers. This is accomplished via:
 ```
 
 The time taken for this depends upon which analysers you are using. Bliss takes
-roughly 3hours for 25k tracks, Essentia about 20hours, and Musly 1 hour. The
+roughly 2 hours for 25k tracks, Essentia about 20 hours, and Musly 1 hour. The
 process analyses tracks with the enabled anlysers, extracts certain tags, and
 (if Musly is enabled) initialises Musly's 'jukebox' style with 1000 random
 tracks. If re-run new tracks will be added, and old (non-existent) will be
