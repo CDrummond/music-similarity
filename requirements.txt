@@ -3,4 +3,4 @@ numpy>=1.20.1
 requests>=2.25.1
 scipy>=1.6.2
 mutagen>=1.45.1
-bliss-audio>=0.1.4
+

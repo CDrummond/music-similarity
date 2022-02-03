@@ -6,7 +6,7 @@
 #
 
 import logging, os, pickle, random, signal, sqlite3, tempfile
-from . import cue, essentia_analysis, tags, tracks_db, musly
+from . import bliss_analysis, cue, essentia_analysis, tags, tracks_db, musly
 from concurrent.futures import as_completed, CancelledError, ThreadPoolExecutor
 from multiprocessing import Pipe, Process
 
@@ -33,7 +33,7 @@ def sig_handler(signum, frame):
         future.cancel()
 
 
-def analyze_audiofile(pipe, libmusly, essentia_extractor, index, db_path, abs_path, extract_len, extract_start, essentia_cache, essentia_highlevel, bliss):
+def analyze_audiofile(pipe, libmusly, essentia_extractor, index, db_path, abs_path, extract_len, extract_start, essentia_cache, essentia_highlevel, bliss_analyser):
     resp = {'index':index, 'status':STATUS_OK}
 
     if extract_len>0:
@@ -61,22 +61,17 @@ def analyze_audiofile(pipe, libmusly, essentia_extractor, index, db_path, abs_pa
         else:
             resp['essentia'] = eres
 
-    if bliss:
-        import bliss_audio
-        blissres = None
+    if len(bliss_analyser)>1 and STATUS_OK==resp['status']:
+        bres = None
         try:
-            song = bliss_audio.Song(abs_path)
-            if song is not None:
-                sa = song.analysis
-                if sa is not None and len(sa)>0:
-                    blissres = sa
+            bres = bliss_analysis.analyse_track(index, bliss_analyser, abs_path)
         except:
             pass
-        if blissres is None:
+        if bres is None:
             resp['status'] = STATUS_ERROR
             resp['extra'] = 'Bliss'
         else:
-            resp['bliss'] = pickle.dumps(blissres, protocol=4)
+            resp['bliss'] = pickle.dumps(bres, protocol=4)
 
     pipe.send(resp);
     pipe.close()
@@ -112,8 +107,8 @@ def analyze_file(index, total, db_path, abs_path, config, musly_analysis, essent
     extractor = config['essentia']['extractor'] if essentia_analysis else "-"
     musly_extractlen = config['musly']['extractlen'] if musly_analysis else 0
     musly_extractstart = config['musly']['extractstart'] if musly_analysis else 0
-    bliss = 1 if bliss_analysis else 0
-    p = Process(target=analyze_audiofile, args=(pin, config['musly']['lib'], extractor, index, db_path, abs_path, musly_extractlen, musly_extractstart, essentia_cache, essentia_highlevel, bliss))
+    bliss_analyser = config['bliss']['analyser'] if bliss_analysis else "-"
+    p = Process(target=analyze_audiofile, args=(pin, config['musly']['lib'], extractor, index, db_path, abs_path, musly_extractlen, musly_extractstart, essentia_cache, essentia_highlevel, bliss_analyser))
     p.start()
     r = pout.recv()
     p.terminate()
@@ -222,8 +217,8 @@ def analyse_files(config, path, remove_tracks, meta_only, force, jukebox, max_tr
 
     analysers = []
 
-    if musly_enabled:
-        analysers.append('Musly')
+    if bliss_enabled:
+        analysers.append('Bliss')
 
     if essentia_enabled:
         if config['essentia']['highlevel']:
@@ -231,8 +226,8 @@ def analyse_files(config, path, remove_tracks, meta_only, force, jukebox, max_tr
         else:
             analysers.append('Essentia (low-level)')
 
-    if bliss_enabled:
-        analysers.append('Bliss')
+    if musly_enabled:
+        analysers.append('Musly')
 
     if len(analysers)==0:
         _LOGGER.error('Please enable an analyser')

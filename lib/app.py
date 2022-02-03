@@ -52,22 +52,22 @@ class SimilarityApp(Flask):
         if app_config['bliss']['enabled']:
             app_config['bliss']['enabled'] = tdb.files_analysed_with_bliss()
 
-        if app_config['sim']=='musly' and not app_config['musly']['enabled']:
-            app_config['sim'] = 'bliss' if app_config['bliss']['enabled'] else 'essentia'
+        if app_config['simalgo']=='musly' and not app_config['musly']['enabled']:
+            app_config['simalgo'] = 'bliss' if app_config['bliss']['enabled'] else 'essentia'
 
-        if app_config['sim']=='essentia' and (not app_config['essentia']['enabled'] or not app_config['essentia']['highlevel']):
-            app_config['sim'] = 'bliss' if app_config['bliss']['enabled'] else 'musly'
+        if app_config['simalgo']=='essentia' and (not app_config['essentia']['enabled'] or not app_config['essentia']['highlevel']):
+            app_config['simalgo'] = 'bliss' if app_config['bliss']['enabled'] else 'musly'
 
         self.mus = None
         self.mta = {'tracks':None, 'ids':None}
 
-        if app_config['sim']=='essentia':
+        if app_config['simalgo']=='essentia':
             self.paths = essentia_sim.init(tdb)
 
-        elif app_config['sim']=='bliss':
+        elif app_config['simalgo']=='bliss':
             self.paths = bliss_sim.init(tdb)
 
-        elif app_config['sim']=='musly':
+        elif app_config['simalgo']=='musly':
             self.mus = musly.Musly(app_config['musly']['lib'])
             (self.paths, self.mta['tracks']) = self.mus.get_alltracks_db(tdb.get_cursor())
 
@@ -80,12 +80,12 @@ class SimilarityApp(Flask):
                 self.mta['ids'] = self.mus.add_tracks(tracks, app_config['musly']['styletracks'], app_config['musly']['styletracksmethod'], tdb)
                 self.mus.write_jukebox(jukebox_path)
 
-        if self.paths is None or len(self.paths)==0 or (app_config['sim']=='musly' and self.mta['ids'] is None):
+        if self.paths is None or len(self.paths)==0 or (app_config['simalgo']=='musly' and self.mta['ids'] is None):
             _LOGGER.error('DB not initialised, have you analysed any tracks?')
             tdb.close()
             exit(-1)
 
-        _LOGGER.info('Similarity via: {}'.format(app_config['sim']))
+        _LOGGER.info('Similarity via: {}'.format(app_config['simalgo']))
 
 
     def get_config(self):
@@ -158,15 +158,15 @@ def genre_adjust(seed, entry, acceptable_genres, all_genres, no_genre_match_adj,
 def get_similars(track_id, mus, num_sim, mta, tdb, cfg):
     tracks = []
 
-    if cfg['sim']=='essentia':
+    if cfg['simalgo']=='essentia':
         _LOGGER.debug('Get similar tracks to %d from Essentia' % track_id)
         tracks = essentia_sim.get_similars(tdb, track_id)
-        return sorted(tracks, key=lambda k: k['sim'])
+        return sorted(tracks, key=lambda k: k['simalgo'])
 
-    if cfg['sim']=='bliss':
+    if cfg['simalgo']=='bliss':
         _LOGGER.debug('Get similar tracks to %d from Bliss' % track_id)
         tracks = bliss_sim.get_similars(tdb, track_id)
-        return sorted(tracks, key=lambda k: k['sim'])
+        return sorted(tracks, key=lambda k: k['simalgo'])
 
     _LOGGER.debug('Get %d similar tracks to %d from Musly' % (num_sim, track_id))
     return mus.get_similars(mta['tracks'], mta['ids'], track_id, num_sim)
@@ -198,7 +198,7 @@ def set_filtered(simtrack, paths, filtered_tracks, key):
                 filtered_tracks['ids']['attribs'].remove(simtrack['id'])
                 break
 
-    filtered_tracks[key].append({'path':paths[simtrack['id']], 'id':simtrack['id'], 'similarity':simtrack['sim']})
+    filtered_tracks[key].append({'path':paths[simtrack['id']], 'id':simtrack['id'], 'similarity':simtrack['simalgo']})
     filtered_tracks['ids'][key].add(simtrack['id'])
 
 
@@ -346,7 +346,7 @@ def dump_api():
             if simtrack['id']==prev_id:
                 break
             prev_id=simtrack['id']
-            if math.isnan(simtrack['sim']):
+            if math.isnan(simtrack['simalgo']):
                 continue
 
             track = tdb.get_track(simtrack['id']+1)
@@ -362,20 +362,20 @@ def dump_api():
                     _LOGGER.debug('DISCARD(%s): %s' % (filtered_due_to, str(track)))
                     continue
 
-            sim = simtrack['sim'] + genre_adjust(meta, track, acceptable_genres, all_genres, no_genre_match_adj, genre_group_adj)
-            tracks.append({'path':paths[simtrack['id']], 'sim':sim})
+            sim = simtrack['simalgo'] + genre_adjust(meta, track, acceptable_genres, all_genres, no_genre_match_adj, genre_group_adj)
+            tracks.append({'path':paths[simtrack['id']], 'simalgo':sim})
             if len(tracks)==MIN_MUSLY_NUM_SIM:
                 break
 
-        tracks = sorted(tracks, key=lambda k: k['sim'])
+        tracks = sorted(tracks, key=lambda k: k['simalgo'])
         for track in tracks:
-            _LOGGER.debug("%s %s" % (track['path'], track['sim']))
+            _LOGGER.debug("%s %s" % (track['path'], track['simalgo']))
             if txt:
-                resp.append("%s\t%f" % (track['path'], track['sim']))
+                resp.append("%s\t%f" % (track['path'], track['simalgo']))
             elif txt_url:
                 resp.append(encode(root, track['path'], add_file_protocol))
             else:
-                resp.append({'file':track['path'], 'sim':track['sim']})
+                resp.append({'file':track['path'], 'simalgo':track['simalgo']})
             if len(resp)>=count:
                 break
 
@@ -684,74 +684,74 @@ def similar_api():
         simtracks = get_similars(track_id, mus, num_sim, mta, tdb, cfg)
         accepted_tracks = 0
         for simtrack in simtracks:
-            if math.isnan(simtrack['sim']):
+            if math.isnan(simtrack['simalgo']):
                 continue
-            if simtrack['sim']>max_similarity:
+            if simtrack['simalgo']>max_similarity:
                 break
 
-            if (simtrack['sim']>0.0) and (simtrack['sim']<=max_similarity) and (not simtrack['id'] in skip_track_ids):
+            if (simtrack['simalgo']>0.0) and (simtrack['simalgo']<=max_similarity) and (not simtrack['id'] in skip_track_ids):
                 prev_idx = similar_track_positions[simtrack['id']] if simtrack['id'] in similar_track_positions else -1
                 meta = similar_tracks[prev_idx] if prev_idx>=0 else tdb.get_track(simtrack['id']+1) # IDs (rowid) in SQLite are 1.. musly is 0..
                 if prev_idx>=0:
                     # Seen from previous seed, so set similarity to lowest value
-                    sim = simtrack['sim'] + genre_adjust(track_id_seed_metadata[track_id], meta, seed_genres, all_genres, no_genre_match_adj, genre_group_adj)
+                    sim = simtrack['simalgo'] + genre_adjust(track_id_seed_metadata[track_id], meta, seed_genres, all_genres, no_genre_match_adj, genre_group_adj)
                     if similar_tracks[prev_idx]['similarity']>sim:
                         _LOGGER.debug('SEEN %d before, prev:%f, current:%f' % (simtrack['id'], similar_tracks[prev_idx]['similarity'], sim))
                         similar_tracks[prev_idx]['similarity']=sim
                 elif not meta:
-                    _LOGGER.debug('DISCARD(not found) ID:%d Path:%s Similarity:%f' % (simtrack['id'], paths[simtrack['id']], simtrack['sim']))
+                    _LOGGER.debug('DISCARD(not found) ID:%d Path:%s Similarity:%f' % (simtrack['id'], paths[simtrack['id']], simtrack['simalgo']))
                     skip_track_ids.add(simtrack['id'])
                 elif meta['ignore']:
-                    _LOGGER.debug('DISCARD(ignore) ID:%d Path:%s Similarity:%f Meta:%s' % (simtrack['id'], paths[simtrack['id']], simtrack['sim'], json.dumps(meta, cls=SetEncoder)))
+                    _LOGGER.debug('DISCARD(ignore) ID:%d Path:%s Similarity:%f Meta:%s' % (simtrack['id'], paths[simtrack['id']], simtrack['simalgo'], json.dumps(meta, cls=SetEncoder)))
                     skip_track_ids.add(simtrack['id'])
                 elif (min_duration>0 or max_duration>0) and not filters.check_duration(min_duration, max_duration, meta):
-                    _LOGGER.debug('DISCARD(duration) ID:%d Path:%s Similarity:%f Meta:%s' % (simtrack['id'], paths[simtrack['id']], simtrack['sim'], json.dumps(meta, cls=SetEncoder)))
+                    _LOGGER.debug('DISCARD(duration) ID:%d Path:%s Similarity:%f Meta:%s' % (simtrack['id'], paths[simtrack['id']], simtrack['simalgo'], json.dumps(meta, cls=SetEncoder)))
                     skip_track_ids.add(simtrack['id'])
                 elif match_genre and not filters.genre_matches(genre_cfg, acceptable_genres, meta):
-                    _LOGGER.debug('DISCARD(genre) ID:%d Path:%s Similarity:%f Meta:%s' % (simtrack['id'], paths[simtrack['id']], simtrack['sim'], json.dumps(meta, cls=SetEncoder)))
+                    _LOGGER.debug('DISCARD(genre) ID:%d Path:%s Similarity:%f Meta:%s' % (simtrack['id'], paths[simtrack['id']], simtrack['simalgo'], json.dumps(meta, cls=SetEncoder)))
                     skip_track_ids.add(simtrack['id'])
                 elif exclude_christmas and filters.is_christmas(meta):
-                    _LOGGER.debug('DISCARD(xmas) ID:%d Path:%s Similarity:%f Meta:%s' % (simtrack['id'], paths[simtrack['id']], simtrack['sim'], json.dumps(meta, cls=SetEncoder)))
+                    _LOGGER.debug('DISCARD(xmas) ID:%d Path:%s Similarity:%f Meta:%s' % (simtrack['id'], paths[simtrack['id']], simtrack['simalgo'], json.dumps(meta, cls=SetEncoder)))
                     skip_track_ids.add(simtrack['id'])
                 else:
                     if ess_cfg['enabled']:
                         filtered_due_to = filtered_due_to = filters.check_attribs(track_id_seed_metadata[track_id], meta, ess_cfg)
                         if filtered_due_to is not None:
-                            _LOGGER.debug('FILTERED(attribs(%s)) ID:%d Path:%s Similarity:%f Meta:%s' % (filtered_due_to, simtrack['id'], paths[simtrack['id']], simtrack['sim'], json.dumps(meta, cls=SetEncoder)))
+                            _LOGGER.debug('FILTERED(attribs(%s)) ID:%d Path:%s Similarity:%f Meta:%s' % (filtered_due_to, simtrack['id'], paths[simtrack['id']], simtrack['simalgo'], json.dumps(meta, cls=SetEncoder)))
                             set_filtered(simtrack, paths, filtered_tracks, 'attribs')
                             continue
 
                     if no_repeat_artist>0:
                         if meta['artist'] in filter_out['artists']:
-                            _LOGGER.debug('FILTERED(artist) ID:%d Path:%s Similarity:%f Meta:%s' % (simtrack['id'], paths[simtrack['id']], simtrack['sim'], json.dumps(meta, cls=SetEncoder)))
+                            _LOGGER.debug('FILTERED(artist) ID:%d Path:%s Similarity:%f Meta:%s' % (simtrack['id'], paths[simtrack['id']], simtrack['simalgo'], json.dumps(meta, cls=SetEncoder)))
                             set_filtered(simtrack, paths, filtered_tracks, 'meta')
 
-                            if meta['artist'] in matched_artists and len(matched_artists[meta['artist']]['tracks'])<5 and simtrack['sim'] - matched_artists[meta['artist']]['similarity'] <= 0.1:
+                            if meta['artist'] in matched_artists and len(matched_artists[meta['artist']]['tracks'])<5 and simtrack['simalgo'] - matched_artists[meta['artist']]['similarity'] <= 0.1:
                                 # Only add this track as a possibility if album not in previous
                                 akey = get_album_key(meta)
                                 if akey is None or akey not in filter_out['albums']:
-                                    matched_artists[meta['artist']]['tracks'].append({'path':paths[simtrack['id']], 'similarity':simtrack['sim']})
+                                    matched_artists[meta['artist']]['tracks'].append({'path':paths[simtrack['id']], 'similarity':simtrack['simalgo']})
                             continue
 
                     if no_repeat_album>0:
                         akey = get_album_key(meta)
                         if akey is not None and akey in filter_out['albums']:
-                            _LOGGER.debug('FILTERED(album) ID:%d Path:%s Similarity:%f Meta:%s' % (simtrack['id'], paths[simtrack['id']], simtrack['sim'], json.dumps(meta, cls=SetEncoder)))
+                            _LOGGER.debug('FILTERED(album) ID:%d Path:%s Similarity:%f Meta:%s' % (simtrack['id'], paths[simtrack['id']], simtrack['simalgo'], json.dumps(meta, cls=SetEncoder)))
                             set_filtered(simtrack, paths, filtered_tracks, 'meta')
                             continue
 
                     if 'title' in meta and meta['title'] in filter_out['titles']:
-                        _LOGGER.debug('FILTERED(title) ID:%d Path:%s Similarity:%f Meta:%s' % (simtrack['id'], paths[simtrack['id']], simtrack['sim'], json.dumps(meta, cls=SetEncoder)))
+                        _LOGGER.debug('FILTERED(title) ID:%d Path:%s Similarity:%f Meta:%s' % (simtrack['id'], paths[simtrack['id']], simtrack['simalgo'], json.dumps(meta, cls=SetEncoder)))
                         set_filtered(simtrack, paths, filtered_tracks, 'meta')
                         continue
 
                     key = '%s::%s::%s' % (meta['artist'], meta['album'], meta['albumartist'] if 'albumartist' in meta and meta['albumartist'] is not None else '')
-                    sim = simtrack['sim'] + genre_adjust(track_id_seed_metadata[track_id], meta, seed_genres, all_genres, no_genre_match_adj, genre_group_adj)
+                    sim = simtrack['simalgo'] + genre_adjust(track_id_seed_metadata[track_id], meta, seed_genres, all_genres, no_genre_match_adj, genre_group_adj)
 
-                    _LOGGER.debug('USABLE ID:%d Path:%s Similarity:%f AdjSim:%s Meta:%s' % (simtrack['id'], paths[simtrack['id']], simtrack['sim'], sim, json.dumps(meta, cls=SetEncoder)))
+                    _LOGGER.debug('USABLE ID:%d Path:%s Similarity:%f AdjSim:%s Meta:%s' % (simtrack['id'], paths[simtrack['id']], simtrack['simalgo'], sim, json.dumps(meta, cls=SetEncoder)))
                     similar_tracks.append({'path':paths[simtrack['id']], 'similarity':sim})
                     # Keep list of all tracks of an artist, so that we can randomly select one => we don't always use the same one
-                    matched_artists[meta['artist']]={'similarity':simtrack['sim'], 'tracks':[{'path':paths[simtrack['id']], 'similarity':sim}], 'pos':len(similar_tracks)-1}
+                    matched_artists[meta['artist']]={'similarity':simtrack['simalgo'], 'tracks':[{'path':paths[simtrack['id']], 'similarity':sim}], 'pos':len(similar_tracks)-1}
                     if 'title' in meta:
                         filter_out['titles'].add(meta['title'])
 

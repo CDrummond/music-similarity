@@ -54,7 +54,7 @@ are usually supplied via the LMS plugin when it asks for mixes.
 {
  "essentia":{
   "enabled":true,
-  "extractor":"essentia/bin/x86-64/essentia_streaming_extractor_music",
+  "extractor":"linux/x86-64/essentia_streaming_extractor_music",
   "highlevel":false,
   "bpm":20,
   "loudness":10,
@@ -95,6 +95,25 @@ higher than or equal to this.
 lower than or equal to this.
 * `paths.cache` if set, then the full output of Essentia analysis for each track
 will be stored within a GZip compressed JSON file (`<music file>.json.gz`)
+
+
+Bliss
+-----
+
+```
+{
+ "essentia":{
+  "enabled":true,
+  "analyser":"linux/x86-64/bliss-analyse"
+ }
+}
+```
+
+* `bliss.enabled` should be set to true if tracks should be analysed with bliss.
+This defaults to true.
+* `bliss.analyser` should contain the path to the Bliss analyser extractor -path
+is relative to `music-similarity.py` Only required if analyising tracks. By
+default music-similarity will attempt to set this automatically.
 
 
 CUE Tracks
@@ -186,7 +205,7 @@ Misc
  "excludegenres":[
    "Podcast", "Audiobook"
  ],
- "sim":"musly"
+ "simalgo":"musly"
 }
 ```
 
@@ -200,4 +219,4 @@ Musly and Essentia are asked to analyse. Defaults to CPU count, if not set.
 * `maxduration` Only analyse tracks with duration <= this.
 * `excludegenres` List of genres that should be excluded from analysis. Any
 tracks that have a genre from this list will not be analysed.
-* `sim` Which method to use for similarity score; musly, essentia, or bliss
+* `simalgo` Which method to use for similarity score; musly, essentia, or bliss
