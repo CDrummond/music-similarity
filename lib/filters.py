@@ -78,10 +78,10 @@ def check_attribs(seed, candidate, ess_cfg):
         # No essentia attributes, so accept track
         return None
 
-    if ess_cfg['bpm']<150 and abs(seed['bpm']-candidate['bpm'])>ess_cfg['bpm']:
+    if 'bpm' in ess_cfg and ess_cfg['bpm']<150 and abs(seed['bpm']-candidate['bpm'])>ess_cfg['bpm']:
         return 'bpm - %s/%s' % (str(seed['bpm']), str(candidate['bpm']))
 
-    if ess_cfg['filterkey']:
+    if 'filterkey' in ess_cfg and ess_cfg['filterkey']:
         # Use camelot codes to test if can mix keys
         seed_cam = CAMELOT[seed['key']] if seed['key'] in CAMELOT else None
         if seed_cam is not None:
@@ -94,7 +94,7 @@ def check_attribs(seed, candidate, ess_cfg):
             if candidate_cam not in camelot[seed_cam]:
                 return 'key - %s (%s) / %s (%s)' % (seed['key'], seed_cam, candidate['key'], candidate_cam)
 
-    if ess_cfg['highlevel'] and ess_cfg['filterattrib']:
+    if 'highlevel' in ess_cfg and 'filterattrib' in ess_cfg and ess_cfg['highlevel'] and ess_cfg['filterattrib']:
         ess_attr_high = 1.0 - ess_cfg['filterattrib_lim']
         ess_attr_low = ess_cfg['filterattrib_lim']
         ess_cand_attr_high = 1.0 - ess_cfg['filterattrib_cand']

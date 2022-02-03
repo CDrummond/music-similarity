@@ -36,6 +36,7 @@ def sig_handler(signum, frame):
 def analyze_audiofile(pipe, libmusly, essentia_extractor, index, db_path, abs_path, extract_len, extract_start, essentia_cache, essentia_highlevel, bliss_analyser):
     resp = {'index':index, 'status':STATUS_OK}
 
+    use_essentia = len(essentia_extractor)>1
     if extract_len>0:
         mres = None
         try:
@@ -49,7 +50,7 @@ def analyze_audiofile(pipe, libmusly, essentia_extractor, index, db_path, abs_pa
             resp['status'] = STATUS_ERROR
             resp['extra'] = 'Musly'
 
-    if len(essentia_extractor)>1 and STATUS_OK==resp['status']:
+    if use_essentia and STATUS_OK==resp['status']:
         eres = None
         try:
             eres = essentia_analysis.analyse_track(index, essentia_extractor, db_path, abs_path, essentia_cache, essentia_highlevel)
@@ -64,7 +65,7 @@ def analyze_audiofile(pipe, libmusly, essentia_extractor, index, db_path, abs_pa
     if len(bliss_analyser)>1 and STATUS_OK==resp['status']:
         bres = None
         try:
-            bres = bliss_analysis.analyse_track(index, bliss_analyser, abs_path)
+            bres, bpm = bliss_analysis.analyse_track(index, bliss_analyser, abs_path)
         except:
             pass
         if bres is None:
@@ -72,6 +73,8 @@ def analyze_audiofile(pipe, libmusly, essentia_extractor, index, db_path, abs_pa
             resp['extra'] = 'Bliss'
         else:
             resp['bliss'] = pickle.dumps(bres, protocol=4)
+            if not use_essentia:
+                resp['bpm'] = bpm
 
     pipe.send(resp);
     pipe.close()
@@ -145,7 +148,8 @@ def process_files(config, trks_db, allfiles):
                     mres = result['musly'] if 'musly' in result else None
                     bres = result['bliss'] if 'bliss' in result else None
                     meta = result['meta'] if 'meta' in result else meta
-                    trks_db.add(allfiles[result['index']]['db'], mres, eres, bres, meta)
+                    bpm = result['bpm'] if 'bpm' in result else None
+                    trks_db.add(allfiles[result['index']]['db'], mres, eres, bres, meta, bpm)
                     inserts_since_commit += 1
                     analysed += 1
                     if mres is not None:

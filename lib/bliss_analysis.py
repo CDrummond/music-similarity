@@ -26,4 +26,5 @@ def analyse_track(idx, analyser, abs_path):
     for part in parts:
         resp.append(float(part))
 
-    return resp
+    # Tempo is first 
+    return resp, int(resp[0]*412)

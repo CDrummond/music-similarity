@@ -156,7 +156,7 @@ class TracksDb(object):
             self.conn.close()
 
 
-    def add(self, path, musly, essentia, bliss, meta):
+    def add(self, path, musly, essentia, bliss, meta, bpm):
         if musly is not None:
             if self.file_entry_exists(path):
                 self.cursor.execute('UPDATE tracks SET vals=? WHERE file=?', (musly, path))
@@ -180,6 +180,9 @@ class TracksDb(object):
                 self.cursor.execute('UPDATE tracks SET bliss=? WHERE file=?', (bliss, path))
             else:
                 self.cursor.execute('INSERT INTO tracks (file, bliss) VALUES (?, ?)', (path, bliss))
+
+        if bpm is not None and self.file_entry_exists(path):
+            self.cursor.execute('UPDATE tracks SET bpm=? WHERE file=? AND BPM IS NULL', (bpm, path))
 
         if meta is not None:
             self.update_metadata(path, meta)
