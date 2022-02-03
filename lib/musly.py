@@ -19,8 +19,6 @@ MUSLY_DECODER = b"libav"
 MUSLY_DECODER_WINDOWS = b"ffmpeg"
 MUSLY_METHOD = b"timbre"
 
-MuslyTracksAdded = namedtuple("MuslyTracksAdded", "paths mtracks mtrackids")
-
 
 class MuslyJukebox(ctypes.Structure):
     _fields_ = [("method", ctypes.c_void_p),
@@ -186,11 +184,14 @@ class Musly(object):
             mtracks_type = (ctypes.POINTER(self.mtrack_type)) * numtracks
             mtracks = mtracks_type()
 
-            scursor.execute('SELECT file, vals FROM tracks')
+            scursor.execute('SELECT file, vals FROM tracks ORDER BY rowid ASC')
             i = 0
             paths = [None] * numtracks
             for row in scursor:
                 paths[i] = row[0]
+                if row[1] is None:
+                    _LOGGER.error('%s has not been analysed with Musly' % row[0])
+                    return None, None
                 smt_c = ctypes.c_char_p(pickle.loads(row[1]))
                 smt_f = ctypes.cast(smt_c, ctypes.POINTER(ctypes.c_float))
                 ctypes.memmove(mtrack, smt_f, self.mtracksize)
@@ -203,7 +204,7 @@ class Musly(object):
             return None, None
 
 
-    def analyze_file(self, db_path, abs_path, extract_len, extract_start):
+    def analyze_file(self, abs_path, extract_len, extract_start):
         mtrack = self.mtrack_type()
         if self.mus.musly_track_analyze_audiofile(self.mj, abs_path.encode(), extract_len, extract_start, mtrack) == -1:
             _LOGGER.error("musly_track_analyze_audiofile failed for {}".format(abs_path))

@@ -38,14 +38,14 @@ the default value.
 `shuffle` if set to `1` will cause extra tracks to be located, this list
 shuffled, and then the desired `count` tracks taken from this shuffled list.
 
-The API will use Musly and/or Essentia to get the similarity between all tracks
-and each seed track, and sort this by similarity (most similar first). The
-Essentia attributes may then used to filter out some tracks (e.g. by checking
-BPM, etc.). Initially the API will ignore tracks from the same artist or album
-of the seed tracks (and any previous in the list, any albums from the (e.g.) 25
-`previous` tracks, or albums from the last (e.g.) 15 `previous` tracks). If,
-because of this filtering, there are less than the requested amount then the
-highest similarity tracks from the filtered-out lists are chosen.
+The API will use Musly, Essentia, or Bliss to get the similarity between all
+tracks and each seed track, and sort this by similarity (most similar first).
+The Essentia attributes may then used to filter out some tracks (e.g. by
+checking BPM, etc.). Initially the API will ignore tracks from the same artist
+or album of the seed tracks (and any previous in the list, any albums from the
+(e.g.) 25 `previous` tracks, or albums from the last (e.g.) 15 `previous`
+tracks). If, because of this filtering, there are less than the requested amount
+then the highest similarity tracks from the filtered-out lists are chosen.
 
 Metadata for tracks is stored in an SQLite database, this has an `ignore` column
 which if set to `1` will cause the API to not use this track if it is returned

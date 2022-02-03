@@ -36,3 +36,13 @@ the required steps:
     cd build
     cmake .. -DLIBAV_INCLUDE_DIR=/usr/include/ffmpeg -DCMAKE_BUILD_TYPE=Release
 ```
+
+
+Bliss
+=====
+
+x86-64 Linux build of bliss-analyse, built on Ubuntu
+
+It is not necessary to rebuild this app, but for those interested this is
+documented on its github page https://github.com/CDrummond/bliss-analyse.git
+

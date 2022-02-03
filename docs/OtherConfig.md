@@ -54,7 +54,7 @@ are usually supplied via the LMS plugin when it asks for mixes.
 {
  "essentia":{
   "enabled":true,
-  "extractor":"essentia/bin/x86-64/essentia_streaming_extractor_music",
+  "extractor":"linux/x86-64/essentia_streaming_extractor_music",
   "highlevel":false,
   "bpm":20,
   "loudness":10,
@@ -64,8 +64,7 @@ are usually supplied via the LMS plugin when it asks for mixes.
   "filterattrib_lim":0.2,
   "filterattrib_cand":0.4,
   "attrmix_yes":0.6,
-  "attrmix_no":0.4,
-  "weight":0.0
+  "attrmix_no":0.4
  },
  "paths":{
   "cache":"/path/to/store/cache"
@@ -94,14 +93,27 @@ attributes of the seed need to be less than this, or higher than 1.0-this.
 higher than or equal to this.
 * `essentia.attrmix_no` When using 'Smart Mixes', 'No' attributes need to be
 lower than or equal to this.
-* `essentia.weight` By default Musly is used for similarity score, and Essentia
-is used to filter tracks. However, if you set `essentia.weight` to higher than
-0.0 (and less than or equal to 1.0) then Essentia can also be used to score
-similarity based upon the Essentia attributes. This value then configures the
-percentage given to each metric. e.g. an `essentia.weight` of 0.4 will cause the
-similarity score to be 60% Musly and 40% Essentia based.
 * `paths.cache` if set, then the full output of Essentia analysis for each track
 will be stored within a GZip compressed JSON file (`<music file>.json.gz`)
+
+
+Bliss
+-----
+
+```
+{
+ "essentia":{
+  "enabled":true,
+  "analyser":"linux/x86-64/bliss-analyse"
+ }
+}
+```
+
+* `bliss.enabled` should be set to true if tracks should be analysed with bliss.
+This defaults to true.
+* `bliss.analyser` should contain the path to the Bliss analyser extractor -path
+is relative to `music-similarity.py` Only required if analyising tracks. By
+default music-similarity will attempt to set this automatically.
 
 
 CUE Tracks
@@ -192,7 +204,8 @@ Misc
  "maxduration":1800,
  "excludegenres":[
    "Podcast", "Audiobook"
- ]
+ ],
+ "simalgo":"musly"
 }
 ```
 
@@ -206,3 +219,4 @@ Musly and Essentia are asked to analyse. Defaults to CPU count, if not set.
 * `maxduration` Only analyse tracks with duration <= this.
 * `excludegenres` List of genres that should be excluded from analysis. Any
 tracks that have a genre from this list will not be analysed.
+* `simalgo` Which method to use for similarity score; musly, essentia, or bliss

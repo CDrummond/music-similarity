@@ -1,5 +1,5 @@
 #
-# Analyse files with Essentia and Musly, and provide an API to retrieve similar tracks
+# Analyse files with Musly, Essentia, and Bliss, and provide an API to retrieve similar tracks
 #
 # Copyright (c) 2021-2022 Craig Drummond <craig.p.drummond@gmail.com>
 # GPLv3 license.
@@ -8,7 +8,7 @@
 import argparse, json, logging, math, os, random, re, sqlite3, urllib
 from datetime import datetime
 from flask import Flask, abort, request
-from . import cue, essentia_sim, filters, tracks_db, musly
+from . import bliss_sim, cue, essentia_sim, filters, tracks_db, musly
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -23,41 +23,21 @@ SHUFFLE_FACTOR                        = 5    # How many (shuffle_factor*count) t
 MIN_MUSLY_NUM_SIM                     = 5000 # Min number of tracs to query musly for
 DEFAULT_NO_GENRE_MATCH_ADJUSTMENT     = 15
 DEFAULT_GENRE_GROUP_MATCH_ADJUSTMENT  = 7
-WEIGHT_ALL_ESSENTIA                   = 0.99
-WEIGHT_ALL_MUSLY                      = 0.01
 
 
 class SimilarityApp(Flask):
     def init(self, args, app_config, jukebox_path):
         _LOGGER.debug('Start server')
         self.app_config = app_config
-        self.mus = musly.Musly(app_config['musly']['lib'])
+        self.mus = None
         
         flask_logging = logging.getLogger('werkzeug')
         flask_logging.setLevel(args.log_level)
         flask_logging.disabled = 'DEBUG'!=args.log_level
         tdb = tracks_db.TracksDb(app_config)
-        (paths, tracks) = self.mus.get_alltracks_db(tdb.get_cursor())
         random.seed()
-        ids = None
 
-        if paths is None or tracks is None:
-            _LOGGER.error('DB not initialised, have you analysed any tracks?')
-            tdb.close()
-            exit(-1)
-
-        # If we can, load musly from jukebox...
-        if os.path.exists(jukebox_path):
-            ids = self.mus.get_jukebox_from_file(jukebox_path)
-
-        if ids==None or len(ids)!=len(tracks):
-            _LOGGER.debug('Adding tracks from DB to musly')
-            ids = self.mus.add_tracks(tracks, app_config['musly']['styletracks'], app_config['musly']['styletracksmethod'], tdb)
-            self.mus.write_jukebox(jukebox_path)
-
-        self.mta=musly.MuslyTracksAdded(paths, tracks, ids)
-
-        if app_config['essentia']['enabled'] and len(paths)>0:
+        if app_config['essentia']['enabled']:
             app_config['essentia']['enabled'] = tdb.files_analysed_with_essentia()
             hl_prev = app_config['essentia']['highlevel']
             app_config['essentia']['highlevel'] = app_config['essentia']['enabled'] and tdb.files_analysed_with_essentia_highlevel()
@@ -66,23 +46,60 @@ class SimilarityApp(Flask):
                 tdb.close()
                 tdb = tracks_db.TracksDb(app_config)
 
-        if app_config['essentia']['enabled']:
-            if app_config['essentia']['highlevel'] and app_config['essentia']['weight']>0.0:
-                essentia_sim.init(tdb)
-                _LOGGER.debug('May use Essentia attributes to filter tracks (highlevel) and for %d%% of similarity score' % int(app_config['essentia']['weight']*100))
-            else:
-                _LOGGER.debug('May use Essentia attributes to filter tracks (%s)' % ('highlevel' if app_config['essentia']['highlevel'] else 'lowlevel'))
-        tdb.close()
+        if app_config['musly']['enabled']:
+            app_config['musly']['enabled'] = tdb.files_analysed_with_musly()
+
+        if app_config['bliss']['enabled']:
+            app_config['bliss']['enabled'] = tdb.files_analysed_with_bliss()
+
+        if app_config['simalgo']=='musly' and not app_config['musly']['enabled']:
+            app_config['simalgo'] = 'bliss' if app_config['bliss']['enabled'] else 'essentia'
+
+        if app_config['simalgo']=='essentia' and (not app_config['essentia']['enabled'] or not app_config['essentia']['highlevel']):
+            app_config['simalgo'] = 'bliss' if app_config['bliss']['enabled'] else 'musly'
+
+        self.mus = None
+        self.mta = {'tracks':None, 'ids':None}
+
+        if app_config['simalgo']=='essentia':
+            self.paths = essentia_sim.init(tdb)
+
+        elif app_config['simalgo']=='bliss':
+            self.paths = bliss_sim.init(tdb)
+
+        elif app_config['simalgo']=='musly':
+            self.mus = musly.Musly(app_config['musly']['lib'])
+            (self.paths, self.mta['tracks']) = self.mus.get_alltracks_db(tdb.get_cursor())
+
+            # If we can, load musly from jukebox...
+            if os.path.exists(jukebox_path):
+                self.mta['ids'] = self.mus.get_jukebox_from_file(jukebox_path)
+
+            if self.mta['tracks'] is not None and self.paths is not None and (self.mta['ids']==None or len(self.mta['ids'])!=len(self.paths)):
+                _LOGGER.debug('Adding tracks from DB to musly')
+                self.mta['ids'] = self.mus.add_tracks(self.mta['tracks'], app_config['musly']['styletracks'], app_config['musly']['styletracksmethod'], tdb)
+                self.mus.write_jukebox(jukebox_path)
+
+        if self.paths is None or len(self.paths)==0 or (app_config['simalgo']=='musly' and self.mta['ids'] is None):
+            _LOGGER.error('DB not initialised, have you analysed all tracks?')
+            tdb.close()
+            exit(-1)
+
+        _LOGGER.info('Similarity via: {}'.format(app_config['simalgo']))
+
 
     def get_config(self):
         return self.app_config
 
-    def get_musly(self):
-        return self.mus
 
-    def get_mta(self):
-        return self.mta
-    
+    def get_musly(self):
+        return self.mus, self.mta
+
+
+    def get_paths(self):
+        return self.paths
+
+
 similarity_app = SimilarityApp(__name__)
 
 
@@ -138,45 +155,21 @@ def genre_adjust(seed, entry, acceptable_genres, all_genres, no_genre_match_adj,
     return genre_group_adj
 
 
-def get_similars(track_id, mus, num_sim, mta, tdb, ess_cfg):
+def get_similars(track_id, mus, num_sim, mta, tdb, cfg):
     tracks = []
 
-    if ess_cfg['enabled'] and ess_cfg['highlevel'] and ess_cfg['weight']>=WEIGHT_ALL_MUSLY:
-        # Init essentia KDTree. If essentia weight was configured in JSON config file
-        # then this will already have occured, so following call will do nothing. However,
-        # if its not set in the config but is set in URL params then we do need to
-        # initialise now.
-        essentia_sim.init(tdb)
-
-    if ess_cfg['enabled'] and ess_cfg['highlevel'] and ess_cfg['weight']>=WEIGHT_ALL_ESSENTIA:
-        _LOGGER.debug('Get similar tracks to %d from Essentia' % track_id)
-        et = essentia_sim.get_similars(tdb, track_id)
-        idx = 0
-        for track in et:
-            tracks.append({'id':idx, 'sim':track})
-            idx+=1
+    if cfg['simalgo']=='essentia':
+        _LOGGER.debug('Get %d similar tracks to %d from Essentia' % (num_sim, track_id))
+        tracks = essentia_sim.get_similars(tdb, track_id, num_sim)
         return sorted(tracks, key=lambda k: k['sim'])
 
-    if not ess_cfg['enabled'] or not ess_cfg['highlevel'] or ess_cfg['weight']<WEIGHT_ALL_MUSLY:
-        _LOGGER.debug('Get %d similar tracks to %d from Musly' % (num_sim, track_id))
-        return mus.get_similars(mta.mtracks, mta.mtrackids, track_id, num_sim)
+    if cfg['simalgo']=='bliss':
+        _LOGGER.debug('Get %d similar tracks to %d from Bliss' % (num_sim, track_id))
+        tracks = bliss_sim.get_similars(tdb, track_id, num_sim)
+        return sorted(tracks, key=lambda k: k['sim'])
 
-    _LOGGER.debug('Get similar tracks to %d from Musly' % track_id)
-    mt = mus.get_all_similars(mta.mtracks, mta.mtrackids, track_id)
-
-    _LOGGER.debug('Get similar tracks to %d from Essentia' % track_id)
-    et = essentia_sim.get_similars(tdb, track_id)
-    num_et = len(et)
-    tracks = []
-    _LOGGER.debug('Merge similarity scores')
-    for track in mt:
-        if math.isnan(track['sim']):
-            continue
-        i = track['id']
-        esval = et[i] if i<num_et else track['sim']
-        tracks.append({'id':i, 'sim':(track['sim']*(1.0-ess_cfg['weight'])) + (esval*ess_cfg['weight'])})
-
-    return sorted(tracks, key=lambda k: k['sim'])
+    _LOGGER.debug('Get %d similar tracks to %d from Musly' % (num_sim, track_id))
+    return mus.get_similars(mta['tracks'], mta['ids'], track_id, num_sim)
 
 
 def append_list(orig, to_add, min_count):
@@ -193,7 +186,7 @@ def append_list(orig, to_add, min_count):
     return orig
 
 
-def set_filtered(simtrack, mta, filtered_tracks, key):
+def set_filtered(simtrack, paths, filtered_tracks, key):
     if simtrack['id'] in filtered_tracks['ids'][key] or (key=='attribs' and simtrack['id'] in filtered_tracks['ids']['meta']):
         return
 
@@ -205,7 +198,7 @@ def set_filtered(simtrack, mta, filtered_tracks, key):
                 filtered_tracks['ids']['attribs'].remove(simtrack['id'])
                 break
 
-    filtered_tracks[key].append({'path':mta.paths[simtrack['id']], 'id':simtrack['id'], 'similarity':simtrack['sim']})
+    filtered_tracks[key].append({'path':paths[simtrack['id']], 'id':simtrack['id'], 'similarity':simtrack['sim']})
     filtered_tracks['ids'][key].add(simtrack['id'])
 
 
@@ -245,10 +238,6 @@ def get_essentia_cfg(config, params):
                  'filterattrib_lim': config['essentia']['filterattrib_lim'],
                  'filterattrib_cand': config['essentia']['filterattrib_cand'],
                  'filterattrib_count': config['essentia']['filterattrib_count']}
-        if 'maxbpmdiff' in params and params['maxbpmdiff'] is not None:
-            ess_cfg['bpm'] = int(params['maxbpmdiff'])
-        else:
-            ess_cfg['bpm'] = config['essentia']['bpm']
 
         if 'filterkey' in params and params['filterkey'] is not None:
             ess_cfg['filterkey'] = int(params['filterkey'])==1
@@ -260,12 +249,11 @@ def get_essentia_cfg(config, params):
         else:
             ess_cfg['filterattrib'] = config['essentia']['filterattrib']
 
-        if not config['essentia']['highlevel']:
-            ess_cfg['weight'] = 0.0
-        elif 'attribweight' in params and params['attribweight'] is not None:
-            ess_cfg['weight'] = int(params['attribweight'])/100.0
-        else:
-            ess_cfg['weight'] = config['essentia']['weight']
+    # Might be able to use bliss for bpm
+    if 'maxbpmdiff' in params and params['maxbpmdiff'] is not None:
+        ess_cfg['bpm'] = int(params['maxbpmdiff'])
+    elif 'bpm' in config['essentia']:
+        ess_cfg['bpm'] = config['essentia']['bpm']
 
     _LOGGER.debug('Essentia(attrib) cfg: %s' % json.dumps(ess_cfg, cls=SetEncoder))
     return ess_cfg
@@ -306,8 +294,8 @@ def dump_api():
     if len(params['track'])!=1:
         abort(400)
 
-    mta = similarity_app.get_mta()
-    mus = similarity_app.get_musly()
+    mus, mta = similarity_app.get_musly()
+    paths = similarity_app.get_paths()
     cfg = similarity_app.get_config()
     tdb = tracks_db.TracksDb(cfg)
     genre_cfg = get_genre_cfg(cfg, params)
@@ -327,7 +315,7 @@ def dump_api():
     # Check that musly knows about this track
     track_id = -1
     try:
-        track_id = mta.paths.index( track )
+        track_id = paths.index( track )
         if track_id<0:
             abort(404)
         fmt = get_value(params, 'format', '', isPost)
@@ -350,7 +338,10 @@ def dump_api():
         num_sim = count * 50
         if num_sim<MIN_MUSLY_NUM_SIM:
             num_sim = MIN_MUSLY_NUM_SIM
-        simtracks = get_similars(track_id, mus, num_sim, mta, tdb, ess_cfg)
+        if num_sim>len(paths):
+            num_sim = len(paths)
+
+        simtracks = get_similars(track_id, mus, num_sim, mta, tdb, cfg)
 
         resp=[]
         prev_id=-1
@@ -370,14 +361,14 @@ def dump_api():
                 continue
             if simtrack['id']!=track_id and 'title' in track and 'title' in meta and track['title'] == meta['title']:
                 continue
-            if ess_cfg['enabled']:
+            if ess_cfg['enabled'] or cfg['bliss']['enabled']:
                 filtered_due_to = filters.check_attribs(meta, track, ess_cfg)
                 if filtered_due_to is not None:
                     _LOGGER.debug('DISCARD(%s): %s' % (filtered_due_to, str(track)))
                     continue
 
             sim = simtrack['sim'] + genre_adjust(meta, track, acceptable_genres, all_genres, no_genre_match_adj, genre_group_adj)
-            tracks.append({'path':mta.paths[simtrack['id']], 'sim':sim})
+            tracks.append({'path':paths[simtrack['id']], 'sim':sim})
             if len(tracks)==MIN_MUSLY_NUM_SIM:
                 break
 
@@ -560,8 +551,8 @@ def similar_api():
     if no_repeat_album<0 or no_repeat_album>200:
         no_repeat_album = DEFAULT_NUM_PREV_TRACKS_FILTER_ALBUM
 
-    mta = similarity_app.get_mta()
-    mus = similarity_app.get_musly()
+    mus, mta = similarity_app.get_musly()
+    paths = similarity_app.get_paths()
     cfg = similarity_app.get_config()
     tdb = tracks_db.TracksDb(cfg)
     genre_cfg = get_genre_cfg(cfg, params)
@@ -605,7 +596,7 @@ def similar_api():
         # Check that musly knows about this track
         track_id = -1
         try:
-            track_id = mta.paths.index( track )
+            track_id = paths.index( track )
             _LOGGER.debug('Get %d similar track(s) to %s, index: %d' % (count, track, track_id))
         except:
             pass
@@ -649,7 +640,7 @@ def similar_api():
             # Check that musly knows about this track
             track_id = -1
             try:
-                track_id = mta.paths.index(track)
+                track_id = paths.index(track)
             except:
                 pass
             if track_id is not None and track_id>=0:
@@ -691,11 +682,13 @@ def similar_api():
     num_sim = count * len(track_ids) * 50
     if num_sim<MIN_MUSLY_NUM_SIM:
         num_sim = MIN_MUSLY_NUM_SIM
+    if num_sim>len(paths):
+        num_sim = len(paths)
 
     matched_artists={}
     for track_id in track_ids:
         # Query musly and/or essentia for similar tracks
-        simtracks = get_similars(track_id, mus, num_sim, mta, tdb, ess_cfg)
+        simtracks = get_similars(track_id, mus, num_sim, mta, tdb, cfg)
         accepted_tracks = 0
         for simtrack in simtracks:
             if math.isnan(simtrack['sim']):
@@ -713,59 +706,59 @@ def similar_api():
                         _LOGGER.debug('SEEN %d before, prev:%f, current:%f' % (simtrack['id'], similar_tracks[prev_idx]['similarity'], sim))
                         similar_tracks[prev_idx]['similarity']=sim
                 elif not meta:
-                    _LOGGER.debug('DISCARD(not found) ID:%d Path:%s Similarity:%f' % (simtrack['id'], mta.paths[simtrack['id']], simtrack['sim']))
+                    _LOGGER.debug('DISCARD(not found) ID:%d Path:%s Similarity:%f' % (simtrack['id'], paths[simtrack['id']], simtrack['sim']))
                     skip_track_ids.add(simtrack['id'])
                 elif meta['ignore']:
-                    _LOGGER.debug('DISCARD(ignore) ID:%d Path:%s Similarity:%f Meta:%s' % (simtrack['id'], mta.paths[simtrack['id']], simtrack['sim'], json.dumps(meta, cls=SetEncoder)))
+                    _LOGGER.debug('DISCARD(ignore) ID:%d Path:%s Similarity:%f Meta:%s' % (simtrack['id'], paths[simtrack['id']], simtrack['sim'], json.dumps(meta, cls=SetEncoder)))
                     skip_track_ids.add(simtrack['id'])
                 elif (min_duration>0 or max_duration>0) and not filters.check_duration(min_duration, max_duration, meta):
-                    _LOGGER.debug('DISCARD(duration) ID:%d Path:%s Similarity:%f Meta:%s' % (simtrack['id'], mta.paths[simtrack['id']], simtrack['sim'], json.dumps(meta, cls=SetEncoder)))
+                    _LOGGER.debug('DISCARD(duration) ID:%d Path:%s Similarity:%f Meta:%s' % (simtrack['id'], paths[simtrack['id']], simtrack['sim'], json.dumps(meta, cls=SetEncoder)))
                     skip_track_ids.add(simtrack['id'])
                 elif match_genre and not filters.genre_matches(genre_cfg, acceptable_genres, meta):
-                    _LOGGER.debug('DISCARD(genre) ID:%d Path:%s Similarity:%f Meta:%s' % (simtrack['id'], mta.paths[simtrack['id']], simtrack['sim'], json.dumps(meta, cls=SetEncoder)))
+                    _LOGGER.debug('DISCARD(genre) ID:%d Path:%s Similarity:%f Meta:%s' % (simtrack['id'], paths[simtrack['id']], simtrack['sim'], json.dumps(meta, cls=SetEncoder)))
                     skip_track_ids.add(simtrack['id'])
                 elif exclude_christmas and filters.is_christmas(meta):
-                    _LOGGER.debug('DISCARD(xmas) ID:%d Path:%s Similarity:%f Meta:%s' % (simtrack['id'], mta.paths[simtrack['id']], simtrack['sim'], json.dumps(meta, cls=SetEncoder)))
+                    _LOGGER.debug('DISCARD(xmas) ID:%d Path:%s Similarity:%f Meta:%s' % (simtrack['id'], paths[simtrack['id']], simtrack['sim'], json.dumps(meta, cls=SetEncoder)))
                     skip_track_ids.add(simtrack['id'])
                 else:
-                    if ess_cfg['enabled']:
+                    if ess_cfg['enabled'] or cfg['bliss']['enabled']:
                         filtered_due_to = filtered_due_to = filters.check_attribs(track_id_seed_metadata[track_id], meta, ess_cfg)
                         if filtered_due_to is not None:
-                            _LOGGER.debug('FILTERED(attribs(%s)) ID:%d Path:%s Similarity:%f Meta:%s' % (filtered_due_to, simtrack['id'], mta.paths[simtrack['id']], simtrack['sim'], json.dumps(meta, cls=SetEncoder)))
-                            set_filtered(simtrack, mta, filtered_tracks, 'attribs')
+                            _LOGGER.debug('FILTERED(attribs(%s)) ID:%d Path:%s Similarity:%f Meta:%s' % (filtered_due_to, simtrack['id'], paths[simtrack['id']], simtrack['sim'], json.dumps(meta, cls=SetEncoder)))
+                            set_filtered(simtrack, paths, filtered_tracks, 'attribs')
                             continue
 
                     if no_repeat_artist>0:
                         if meta['artist'] in filter_out['artists']:
-                            _LOGGER.debug('FILTERED(artist) ID:%d Path:%s Similarity:%f Meta:%s' % (simtrack['id'], mta.paths[simtrack['id']], simtrack['sim'], json.dumps(meta, cls=SetEncoder)))
-                            set_filtered(simtrack, mta, filtered_tracks, 'meta')
+                            _LOGGER.debug('FILTERED(artist) ID:%d Path:%s Similarity:%f Meta:%s' % (simtrack['id'], paths[simtrack['id']], simtrack['sim'], json.dumps(meta, cls=SetEncoder)))
+                            set_filtered(simtrack, paths, filtered_tracks, 'meta')
 
                             if meta['artist'] in matched_artists and len(matched_artists[meta['artist']]['tracks'])<5 and simtrack['sim'] - matched_artists[meta['artist']]['similarity'] <= 0.1:
                                 # Only add this track as a possibility if album not in previous
                                 akey = get_album_key(meta)
                                 if akey is None or akey not in filter_out['albums']:
-                                    matched_artists[meta['artist']]['tracks'].append({'path':mta.paths[simtrack['id']], 'similarity':simtrack['sim']})
+                                    matched_artists[meta['artist']]['tracks'].append({'path':paths[simtrack['id']], 'similarity':simtrack['sim']})
                             continue
 
                     if no_repeat_album>0:
                         akey = get_album_key(meta)
                         if akey is not None and akey in filter_out['albums']:
-                            _LOGGER.debug('FILTERED(album) ID:%d Path:%s Similarity:%f Meta:%s' % (simtrack['id'], mta.paths[simtrack['id']], simtrack['sim'], json.dumps(meta, cls=SetEncoder)))
-                            set_filtered(simtrack, mta, filtered_tracks, 'meta')
+                            _LOGGER.debug('FILTERED(album) ID:%d Path:%s Similarity:%f Meta:%s' % (simtrack['id'], paths[simtrack['id']], simtrack['sim'], json.dumps(meta, cls=SetEncoder)))
+                            set_filtered(simtrack, paths, filtered_tracks, 'meta')
                             continue
 
                     if 'title' in meta and meta['title'] in filter_out['titles']:
-                        _LOGGER.debug('FILTERED(title) ID:%d Path:%s Similarity:%f Meta:%s' % (simtrack['id'], mta.paths[simtrack['id']], simtrack['sim'], json.dumps(meta, cls=SetEncoder)))
-                        set_filtered(simtrack, mta, filtered_tracks, 'meta')
+                        _LOGGER.debug('FILTERED(title) ID:%d Path:%s Similarity:%f Meta:%s' % (simtrack['id'], paths[simtrack['id']], simtrack['sim'], json.dumps(meta, cls=SetEncoder)))
+                        set_filtered(simtrack, paths, filtered_tracks, 'meta')
                         continue
 
                     key = '%s::%s::%s' % (meta['artist'], meta['album'], meta['albumartist'] if 'albumartist' in meta and meta['albumartist'] is not None else '')
                     sim = simtrack['sim'] + genre_adjust(track_id_seed_metadata[track_id], meta, seed_genres, all_genres, no_genre_match_adj, genre_group_adj)
 
-                    _LOGGER.debug('USABLE ID:%d Path:%s Similarity:%f AdjSim:%s Meta:%s' % (simtrack['id'], mta.paths[simtrack['id']], simtrack['sim'], sim, json.dumps(meta, cls=SetEncoder)))
-                    similar_tracks.append({'path':mta.paths[simtrack['id']], 'similarity':sim})
+                    _LOGGER.debug('USABLE ID:%d Path:%s Similarity:%f AdjSim:%s Meta:%s' % (simtrack['id'], paths[simtrack['id']], simtrack['sim'], sim, json.dumps(meta, cls=SetEncoder)))
+                    similar_tracks.append({'path':paths[simtrack['id']], 'similarity':sim})
                     # Keep list of all tracks of an artist, so that we can randomly select one => we don't always use the same one
-                    matched_artists[meta['artist']]={'similarity':simtrack['sim'], 'tracks':[{'path':mta.paths[simtrack['id']], 'similarity':sim}], 'pos':len(similar_tracks)-1}
+                    matched_artists[meta['artist']]={'similarity':simtrack['sim'], 'tracks':[{'path':paths[simtrack['id']], 'similarity':sim}], 'pos':len(similar_tracks)-1}
                     if 'title' in meta:
                         filter_out['titles'].add(meta['title'])
 
