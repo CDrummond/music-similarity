@@ -50,18 +50,6 @@ def analyze_audiofile(pipe, libmusly, essentia_extractor, index, db_path, abs_pa
             resp['status'] = STATUS_ERROR
             resp['extra'] = 'Musly'
 
-    if use_essentia and STATUS_OK==resp['status']:
-        eres = None
-        try:
-            eres = essentia_analysis.analyse_track(index, essentia_extractor, db_path, abs_path, essentia_cache, essentia_highlevel)
-        except:
-            pass
-        if eres is None:
-            resp['status'] = STATUS_ERROR
-            resp['extra'] = 'Essentia'
-        else:
-            resp['essentia'] = eres
-
     if len(bliss_analyser)>1 and STATUS_OK==resp['status']:
         bres = None
         try:
@@ -75,6 +63,18 @@ def analyze_audiofile(pipe, libmusly, essentia_extractor, index, db_path, abs_pa
             resp['bliss'] = pickle.dumps(bres, protocol=4)
             if not use_essentia:
                 resp['bpm'] = bpm
+
+    if use_essentia and STATUS_OK==resp['status']:
+        eres = None
+        try:
+            eres = essentia_analysis.analyse_track(index, essentia_extractor, db_path, abs_path, essentia_cache, essentia_highlevel)
+        except:
+            pass
+        if eres is None:
+            resp['status'] = STATUS_ERROR
+            resp['extra'] = 'Essentia'
+        else:
+            resp['essentia'] = eres
 
     pipe.send(resp);
     pipe.close()
