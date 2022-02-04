@@ -4,8 +4,11 @@ This is a python3 script to analyse your music collection with Bliss, Essentia,
 and Musly, and to provide a simple HTTP API allowing the creation of mix of
 similar music for LMS.
 
-You may configure which anlysers are used to anlyse your music collection, and
-which of these is used for the similarity score.
+You may configure which anlysers are used to analyse your music collection, and
+which of these is used for the similarity score. By default Bliss is used for
+Linux, and Musly for Mac and Windows. Essentia support is disabled unless you
+download the relevant models and extractor - detailed with the `INSTALL.md
+located within the relevant OS folder.
 
 
 ## Bliss
@@ -167,6 +170,13 @@ The `linux/x86-64`, `linux/armv7l`, `mac`, and `windows` folders contain example
 config files for each system.
 
 Please refer to `docs/OtherConfig.md` for all configuration items.
+
+
+## Installation
+
+Please read the `INSTALL.md` file within the relevant OS (`linux`, `mac`,
+`windows`) folder for installation instructions.
+
 
 ## Credits
 

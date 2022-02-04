@@ -31,3 +31,14 @@ Installation
      of these may differ on your system.
 
 - Edit `config.json` to contain correct paths
+
+- If you wish to analyse with Essentia:
+
+  a) Download `https://github.com/CDrummond/music-similarity-extra/raw/master/essentia-models.zip`
+
+  b) Unzip `essentia-models.zip` into top-level `music-similarity` folder
+
+  c) Download `https://github.com/CDrummond/music-similarity-extra/raw/master/essentia-extractor-linux.zip`
+
+  d) Unzip `essentia-extractor-linux.zip` into `linux/x86-64` folder
+

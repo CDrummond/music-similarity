@@ -31,6 +31,23 @@ Installation
 
 - Edit `config.json` to contain correct paths
 
+- If you wish to analyse with Essentia:
+
+  a) Download essentia models and extractor from https://github.com/AF-1/sobras/tree/main/lms-music-similarity_on_macos
+
+  b) Place models, and profile, with `essentia` sub-folder of main `music-similarity`
+     folder. e.g. you should have
+
+     ```
+     music-similarity/
+         essentia/
+             models/
+                 ...
+             profile
+     ```
+
+  c) Place extractor into `mac` folder
+
 - Optional: Run Music Similarity Server as a daemon (in the background): https://github.com/AF-1/sobras/blob/main/lms-music-similarity_on_macos/README.md#running-music-similarity-server-as-a-daemonin-the-background
 
 ---

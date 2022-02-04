@@ -239,24 +239,30 @@ def read_config(path, analyse):
     if not 'simalgo' in config:
         config['simalgo']='bliss' if sname in SUPPORT_BLISS else 'musly'
 
-    # Ensure 'musly' is in config
-    if not 'musly' in config:
-        config['musly']={'enabled':True}
+    if not 'simalgo' in ['bliss', 'essentia', 'musly']:
+        exit_with_error("Invalid 'simalgo' setting")
 
-    # Ensure 'essentia' is in config
-    if not 'essentia' in config:
-        config['essentia']={'enabled':True}
-
-    # Ensure 'bliss' is in config
     if not 'bliss' in config:
-        config['bliss']={'enabled':sname in SUPPORT_BLISS}
+        config['bliss']={}
+
+    if not 'essentia' in config:
+        config['essentia']={}
+
+    if not 'musly' in config:
+        config['musly']={}
 
     setup_paths(config, analyse)
 
-    # Check/default musly settings
-    if not 'enabled' in config['musly']:
-        config['musly']['enabled']=True
+    if not 'enabled' in config['bliss']:
+        config['bliss']['enabled'] = (not analyse) or (sname in SUPPORT_BLISS)
 
+    if not 'enabled' in config['essentia']:
+        config['essentia']['enabled'] = (not analyse) or ('extractor' in config['essentia'] and os.path.exists(config['essentia']['extractor']))
+
+    if not 'enabled' in config['musly']:
+        config['musly']['enabled'] = (not analyse) or (sname not in SUPPORT_BLISS)
+
+    # Check/default musly settings
     if config['musly']['enabled']:
         if not 'lib' in config['musly']:
             exit_with_error("'musly.lib' not in config file" % key)
@@ -272,9 +278,6 @@ def read_config(path, analyse):
             config['musly']['styletracksmethod']='genres'
 
     # Check/default essentia settings
-    if not 'enabled' in config['essentia']:
-        config['essentia']['enabled']=True
-
     if config['essentia']['enabled']:
         if not 'bpm' in config['essentia']:
             config['essentia']['bpm']=20
@@ -302,10 +305,6 @@ def read_config(path, analyse):
                 config['essentia']['extractor'] = fix_path(config['essentia']['extractor'])
     else:
         config['essentia']['highlevel']=False
-
-    # Check/default bliss settings
-    if not 'enabled' in config['bliss']:
-        config['bliss']['enabled']=system_name() in SUPPORT_BLISS
 
     if config['bliss']['enabled']:
         if analyse:
@@ -346,5 +345,8 @@ def read_config(path, analyse):
 
     if analyse:
         check_binaries(config)
+
+    if not config['bliss']['enabled'] and not config['essentia']['enabled'] and not config['musly']['enabled']:
+        exit_with_error("Please enable at leasr one of bliss, essentia, musly")
 
     return config

@@ -219,4 +219,5 @@ Musly and Essentia are asked to analyse. Defaults to CPU count, if not set.
 * `maxduration` Only analyse tracks with duration <= this.
 * `excludegenres` List of genres that should be excluded from analysis. Any
 tracks that have a genre from this list will not be analysed.
-* `simalgo` Which method to use for similarity score; musly, essentia, or bliss
+* `simalgo` Which method to use for similarity score; musly, essentia, or bliss.
+tis defaults to `bliss` for Linux, and `musly` for Mac and Windows.
