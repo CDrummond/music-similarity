@@ -98,7 +98,7 @@ def setup_paths(config, analyse):
             update_paths(config, analyse, 'linux', 'linux/x86-64/libmusly.so', '%s/linux/x86-64/essentia_streaming_extractor_music' % root_folder, '%s/linux/x86-64/bliss-analyse' % root_folder)
             return
         else: # TODO: Check on Pi
-            update_paths(config, analyse, 'linux', 'linux/armv7l/libmusly.so', None)
+            update_paths(config, analyse, 'linux', 'linux/armv7l/libmusly.so', None, None)
             return
     elif system == 'windows':
         if arch.startswith('64'): # 64-bit Python
@@ -112,7 +112,7 @@ def setup_paths(config, analyse):
             update_paths(config, analyse, 'mac', 'mac/i386/libmusly.dylib', '%s/mac/streaming_extractor_music' % root_folder, None)
             return
     #    else: # M1??? Can use x86_64 binaries on M1?
-    #        update_paths(config, analyse, 'mac', 'mac/m1/libmusly.dylib', '%s/mac/streaming_extractor_music' % root_folder)
+    #        update_paths(config, analyse, 'mac', 'mac/m1/libmusly.dylib', '%s/mac/streaming_extractor_music' % root_folder, None)
     #        return
 
     if not 'lib' in config['musly'] or (analyse and config['essentia']['enabled'] and not 'extractor' in config['essentia']):
@@ -239,7 +239,7 @@ def read_config(path, analyse):
     if not 'simalgo' in config:
         config['simalgo']='bliss' if sname in SUPPORT_BLISS else 'musly'
 
-    if not 'simalgo' in ['bliss', 'essentia', 'musly']:
+    if not config['simalgo'] in ['bliss', 'essentia', 'musly']:
         exit_with_error("Invalid 'simalgo' setting")
 
     if not 'bliss' in config:
