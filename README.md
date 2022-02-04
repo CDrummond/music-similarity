@@ -53,7 +53,7 @@ on the similarity machine.
 Essentia binaries may be downloaded from [acousticbrainz.org](https://similarity.acousticbrainz.org/download).
 However, please note that these *only* support low-level analysis (bpm, key). To
 support high-level analysis (danceability, aggresiveness, etc.) you will need to
-compile your own build of Essentia - or use the prebuilt binary if on Linux
+compile your own build of Essentia. - or use the prebuilt binary if on Linux
 (`linux/x86-64/essentia_streaming_extractor_music`).
 
 - [Linux i386](http://ftp.acousticbrainz.org/pub/acousticbrainz/essentia-extractor-v2.1_beta2-linux-i686.tar.gz)
@@ -61,8 +61,14 @@ compile your own build of Essentia - or use the prebuilt binary if on Linux
 - [Mac 64 bit](http://ftp.acousticbrainz.org/pub/acousticbrainz/essentia-extractor-v2.1_beta2-2-gbb40004-osx.tar.gz)
 - [Windows 32](http://ftp.acousticbrainz.org/pub/acousticbrainz/essentia-extractor-v2.1_beta2-1-ge3940c0-win-i686.zip)
 
-If you download a new version of the extractor, place this within `linux`,
-`windows`, or `mac` sub-folder.
+For Linux you can download a pre-built version of Essentia that supports
+high-level analysis, and the models for this, from:
+
+- [Essentia](https://github.com/CDrummond/music-similarity-extra/raw/master/essentia-extractor-linux.zip)
+- [Models](https://github.com/CDrummond/music-similarity-extra/raw/master/essentia-models.zip)
+
+If you download the extractor, place this within `linux`, `windows`, or `mac`
+sub-folder.
 
 To be able to use Essentia for similarity scoring you must have a build of
 Essentia that supports the high-level models.
@@ -183,7 +189,7 @@ Please read the `INSTALL.md` file within the relevant OS (`linux`, `mac`,
 `lib/musly.py` (which is used as a python interface to the Musly library) is
 taken, and modified, from Roland0's [Musly Integration for LMS](https://www.nexus0.net/pub/sw/lmsmusly)
 
-The Essentia binary is taken from Roland0's [LMS Essentia Integration](https://www.nexus0.net/pub/sw/lmsessentia/)
+The Linux Essentia binary mentioned above is from Roland0's [LMS Essentia Integration](https://www.nexus0.net/pub/sw/lmsessentia/)
 
 The macOS build of the Musly library has been built by AF-1 and a copy taken
 from their [github repo.](https://github.com/AF-1/sobras/tree/main/lms-music-similarity_on_macos)
