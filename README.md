@@ -15,7 +15,9 @@ located within the relevant OS folder.
 
 This script can be configured to use the [Bliss music analyser](https://github.com/CDrummond/bliss-analyse)
 (which is a wrapper around the [Bliss library](https://github.com/Polochon-street/bliss-rs))
-to analyse tracks, and use this analysis to locate similar tracks.
+to analyse tracks, and use this analysis to locate similar tracks. The bliss
+binary is only required for analysis, and is not used for locating similar
+tracks.
 
 This project contains the following pre-built versions of this app:
 
@@ -45,33 +47,27 @@ these attributes to filter the results (e.g. only accept tracks in a similar
 key, etc.)
 
 The Essentia binaries and models are only required for analysing tracks, and are
-not required for locating similar tracks. Therefore, if analysis is performed on
-one machine and similar tracks located on another (e.g. a Raspberry Pi) the
-contents of the `essentia` folder, and the Essentia extractor, are not required
-on the similarity machine.
+not required for locating similar tracks.
 
 Essentia binaries may be downloaded from [acousticbrainz.org](https://similarity.acousticbrainz.org/download).
 However, please note that these *only* support low-level analysis (bpm, key). To
 support high-level analysis (danceability, aggresiveness, etc.) you will need to
-compile your own build of Essentia. - or use the prebuilt binary if on Linux
-(`linux/x86-64/essentia_streaming_extractor_music`).
+compile your own build of Essentia.
 
 - [Linux i386](http://ftp.acousticbrainz.org/pub/acousticbrainz/essentia-extractor-v2.1_beta2-linux-i686.tar.gz)
 - [Linux x86_64](http://ftp.acousticbrainz.org/pub/acousticbrainz/essentia-extractor-v2.1_beta2-linux-x86_64.tar.gz)
 - [Mac 64 bit](http://ftp.acousticbrainz.org/pub/acousticbrainz/essentia-extractor-v2.1_beta2-2-gbb40004-osx.tar.gz)
 - [Windows 32](http://ftp.acousticbrainz.org/pub/acousticbrainz/essentia-extractor-v2.1_beta2-1-ge3940c0-win-i686.zip)
 
-For Linux you can download a pre-built version of Essentia that supports
-high-level analysis, and the models for this, from:
-
-- [Essentia](https://github.com/CDrummond/music-similarity-extra/raw/master/essentia-extractor-linux.zip)
-- [Models](https://github.com/CDrummond/music-similarity-extra/raw/master/essentia-models.zip)
-
 If you download the extractor, place this within `linux`, `windows`, or `mac`
 sub-folder.
 
 To be able to use Essentia for similarity scoring you must have a build of
-Essentia that supports the high-level models.
+Essentia that supports the high-level models. A Linux version of Essentia that
+supports high-level analysis, and the models for this, may downloaded from:
+
+- [Essentia](https://github.com/CDrummond/music-similarity-extra/raw/master/essentia-extractor-linux.zip)
+- [Models](https://github.com/CDrummond/music-similarity-extra/raw/master/essentia-models.zip)
 
 
 ## Analysing Tracks
