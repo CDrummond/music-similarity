@@ -20,7 +20,7 @@ DEFAULT_ATTTRMIX_COUNT                = 100  # Default number of tracks to retur
 DEFAULT_NUM_PREV_TRACKS_FILTER_ARTIST = 15   # Try to ensure artist is not in previous N tracks
 DEFAULT_NUM_PREV_TRACKS_FILTER_ALBUM  = 25   # Try to ensure album is not in previous N tracks
 SHUFFLE_FACTOR                        = 5    # How many (shuffle_factor*count) tracks to shuffle?
-MIN_MUSLY_NUM_SIM                     = 5000 # Min number of tracs to query musly for
+MIN_NUM_SIM                           = 5000 # Min number of tracs to query for
 DEFAULT_NO_GENRE_MATCH_ADJUSTMENT     = 15
 DEFAULT_GENRE_GROUP_MATCH_ADJUSTMENT  = 7
 
@@ -336,8 +336,8 @@ def dump_api():
 
         count = int(get_value(params, 'count', 1000, isPost))
         num_sim = count * 50
-        if num_sim<MIN_MUSLY_NUM_SIM:
-            num_sim = MIN_MUSLY_NUM_SIM
+        if num_sim<MIN_NUM_SIM:
+            num_sim = MIN_NUM_SIM
         if num_sim>len(paths):
             num_sim = len(paths)
 
@@ -369,7 +369,7 @@ def dump_api():
 
             sim = simtrack['sim'] + genre_adjust(meta, track, acceptable_genres, all_genres, no_genre_match_adj, genre_group_adj)
             tracks.append({'path':paths[simtrack['id']], 'sim':sim})
-            if len(tracks)==MIN_MUSLY_NUM_SIM:
+            if len(tracks)==MIN_NUM_SIM:
                 break
 
         tracks = sorted(tracks, key=lambda k: k['sim'])
@@ -680,8 +680,8 @@ def similar_api():
     tracks_per_seed = int(similarity_count*2.5) if similarity_count<15 else similarity_count
 
     num_sim = count * len(track_ids) * 50
-    if num_sim<MIN_MUSLY_NUM_SIM:
-        num_sim = MIN_MUSLY_NUM_SIM
+    if num_sim<MIN_NUM_SIM:
+        num_sim = MIN_NUM_SIM
     if num_sim>len(paths):
         num_sim = len(paths)
 
