@@ -73,28 +73,35 @@ def init_camelot():
         camelot[CAMELOT[key]] = match
 
 
-def check_attribs(seed, candidate, ess_cfg):
+def check_bpm(seed, candidate, bpm_max_diff):
     if 'bpm' not in seed or 'bpm' not in candidate:
         # No essentia attributes, so accept track
         return None
 
-    if 'bpm' in ess_cfg and ess_cfg['bpm']<150 and abs(seed['bpm']-candidate['bpm'])>ess_cfg['bpm']:
+    if abs(seed['bpm']-candidate['bpm'])>bpm_max_diff:
         return 'bpm - %s/%s' % (str(seed['bpm']), str(candidate['bpm']))
 
-    if 'filterkey' in ess_cfg and ess_cfg['filterkey']:
-        # Use camelot codes to test if can mix keys
-        seed_cam = CAMELOT[seed['key']] if seed['key'] in CAMELOT else None
-        if seed_cam is not None:
-            candidate_cam = CAMELOT[candidate['key']] if candidate['key'] in CAMELOT else None
-            if candidate_cam is None:
-                return 'key - %s (%s) / %s (%s)' % (seed['key'], seed_cam, candidate['key'], 'None')
-            global camelot
-            if camelot is None:
-                init_camelot()
-            if candidate_cam not in camelot[seed_cam]:
-                return 'key - %s (%s) / %s (%s)' % (seed['key'], seed_cam, candidate['key'], candidate_cam)
+    return None
 
-    if 'highlevel' in ess_cfg and 'filterattrib' in ess_cfg and ess_cfg['highlevel'] and ess_cfg['filterattrib']:
+
+def check_key(seed, candidate, ess_cfg):
+    # Use camelot codes to test if can mix keys
+    seed_cam = CAMELOT[seed['key']] if seed['key'] in CAMELOT else None
+    if seed_cam is not None:
+        candidate_cam = CAMELOT[candidate['key']] if candidate['key'] in CAMELOT else None
+        if candidate_cam is None:
+            return 'key - %s (%s) / %s (%s)' % (seed['key'], seed_cam, candidate['key'], 'None')
+        global camelot
+        if camelot is None:
+            init_camelot()
+        if candidate_cam not in camelot[seed_cam]:
+            return 'key - %s (%s) / %s (%s)' % (seed['key'], seed_cam, candidate['key'], candidate_cam)
+
+    return None
+
+
+def check_attribs(seed, candidate, ess_cfg):
+    if 'highlevel' in ess_cfg and ess_cfg['highlevel']:
         ess_attr_high = 1.0 - ess_cfg['filterattrib_lim']
         ess_attr_low = ess_cfg['filterattrib_lim']
         ess_cand_attr_high = 1.0 - ess_cfg['filterattrib_cand']

@@ -239,22 +239,6 @@ def get_essentia_cfg(config, params):
                  'filterattrib_cand': config['essentia']['filterattrib_cand'],
                  'filterattrib_count': config['essentia']['filterattrib_count']}
 
-        if 'filterkey' in params and params['filterkey'] is not None:
-            ess_cfg['filterkey'] = int(params['filterkey'])==1
-        else:
-            ess_cfg['filterkey'] = config['essentia']['filterkey']
-
-        if 'filterattrib' in params and params['filterattrib'] is not None:
-            ess_cfg['filterattrib'] = int(params['filterattrib'])==1
-        else:
-            ess_cfg['filterattrib'] = config['essentia']['filterattrib']
-
-    # Might be able to use bliss for bpm
-    if 'maxbpmdiff' in params and params['maxbpmdiff'] is not None:
-        ess_cfg['bpm'] = int(params['maxbpmdiff'])
-    elif 'bpm' in config['essentia']:
-        ess_cfg['bpm'] = config['essentia']['bpm']
-
     _LOGGER.debug('Essentia(attrib) cfg: %s' % json.dumps(ess_cfg, cls=SetEncoder))
     return ess_cfg
 
@@ -540,6 +524,9 @@ def similar_api():
     exclude_christmas = int(get_value(params, 'filterxmas', '0', isPost))==1 and datetime.now().month!=12
     no_genre_match_adj = int(get_value(params, 'nogenrematchadj', DEFAULT_NO_GENRE_MATCH_ADJUSTMENT, isPost))/100.0
     genre_group_adj = int(get_value(params, 'genregroupadj', DEFAULT_GENRE_GROUP_MATCH_ADJUSTMENT, isPost))/100.0
+    bpm_max_diff = int(get_value(params, 'maxbpmdiff', 0, isPost))
+    filter_on_key = int(get_value(params, 'filterkey', '0', isPost))==1
+    filter_on_attribs = int(get_value(params, 'filterattrib', '0', isPost))==1
 
     if no_repeat_artist<0 or no_repeat_artist>200:
         no_repeat_artist = DEFAULT_NUM_PREV_TRACKS_FILTER_ARTIST
@@ -716,8 +703,18 @@ def similar_api():
                     _LOGGER.debug('DISCARD(xmas) ID:%d Path:%s Similarity:%f Meta:%s' % (simtrack['id'], paths[simtrack['id']], simtrack['sim'], json.dumps(meta, cls=SetEncoder)))
                     skip_track_ids.add(simtrack['id'])
                 else:
+                    if (ess_cfg['enabled'] or cfg['bliss']['enabled']) and bpm_max_diff is not None and bpm_max_diff>0 and bpm_max_diff<150:
+                        filtered_due_to = filtered_due_to = filters.check_bpm(track_id_seed_metadata[track_id], meta, bpm_max_diff)
+                        if filtered_due_to is not None:
+                            _LOGGER.debug('FILTERED(attribs(%s)) ID:%d Path:%s Similarity:%f Meta:%s' % (filtered_due_to, simtrack['id'], paths[simtrack['id']], simtrack['sim'], json.dumps(meta, cls=SetEncoder)))
+                            set_filtered(simtrack, paths, filtered_tracks, 'attribs')
+                            continue
+
                     if ess_cfg['enabled']:
-                        filtered_due_to = filters.check_attribs(track_id_seed_metadata[track_id], meta, ess_cfg)
+                        if filter_on_key:
+                            filtered_due_to = filters.check_key(track_id_seed_metadata[track_id], meta, ess_cfg)
+                        if filtered_due_to is None and filter_on_attribs:
+                            filtered_due_to = filters.check_attribs(track_id_seed_metadata[track_id], meta, ess_cfg)
                         if filtered_due_to is not None:
                             _LOGGER.debug('FILTERED(attribs(%s)) ID:%d Path:%s Similarity:%f Meta:%s' % (filtered_due_to, simtrack['id'], paths[simtrack['id']], simtrack['sim'], json.dumps(meta, cls=SetEncoder)))
                             set_filtered(simtrack, paths, filtered_tracks, 'attribs')
@@ -817,12 +814,15 @@ def config_api():
     return json.dumps(similarity_app.get_config())
 
 
-@similarity_app.route('/api/essentia', methods=['GET'])
+@similarity_app.route('/api/features', methods=['GET'])
 def essentia_api():
     cfg = similarity_app.get_config()
+    f=''
     if cfg['essentia']['enabled']:
-        return '2' if cfg['essentia']['highlevel'] else '1'
-    return '0'
+        f += 'E' if cfg['essentia']['highlevel'] else 'e'
+    if cfg['bliss']['enabled']:
+        f+='b'
+    return f
 
 
 genre_list = None
