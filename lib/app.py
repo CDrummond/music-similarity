@@ -668,6 +668,7 @@ def similar_api():
         num_sim = len(paths)
 
     matched_artists={}
+    artist_max_sim = 0.001 if cfg['bliss']['enabled'] else 0.1
     for track_id in track_ids:
         # Query musly and/or essentia for similar tracks
         simtracks = get_similars(track_id, mus, num_sim, mta, tdb, cfg)
@@ -725,7 +726,7 @@ def similar_api():
                             _LOGGER.debug('FILTERED(artist) ID:%d Path:%s Similarity:%f Meta:%s' % (simtrack['id'], paths[simtrack['id']], simtrack['sim'], json.dumps(meta, cls=SetEncoder)))
                             set_filtered(simtrack, paths, filtered_tracks, 'meta')
 
-                            if meta['artist'] in matched_artists and len(matched_artists[meta['artist']]['tracks'])<5 and simtrack['sim'] - matched_artists[meta['artist']]['similarity'] <= 0.1:
+                            if meta['artist'] in matched_artists and len(matched_artists[meta['artist']]['tracks'])<5 and simtrack['sim'] - matched_artists[meta['artist']]['similarity'] <= artist_max_sim:
                                 # Only add this track as a possibility if album not in previous
                                 akey = get_album_key(meta)
                                 if akey is None or akey not in filter_out['albums']:
