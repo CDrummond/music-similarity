@@ -280,7 +280,7 @@ def read_config(path, analyse):
     # Check/default essentia settings
     if config['essentia']['enabled']:
         if not 'bpm' in config['essentia']:
-            config['essentia']['bpm']=20
+            config['essentia']['bpm']=150
         if not 'filterkey' in config['essentia']:
             config['essentia']['filterkey']=True
         if not 'highlevel' in config['essentia']:

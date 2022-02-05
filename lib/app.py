@@ -716,8 +716,8 @@ def similar_api():
                     _LOGGER.debug('DISCARD(xmas) ID:%d Path:%s Similarity:%f Meta:%s' % (simtrack['id'], paths[simtrack['id']], simtrack['sim'], json.dumps(meta, cls=SetEncoder)))
                     skip_track_ids.add(simtrack['id'])
                 else:
-                    if ess_cfg['enabled'] or cfg['bliss']['enabled']:
-                        filtered_due_to = filtered_due_to = filters.check_attribs(track_id_seed_metadata[track_id], meta, ess_cfg)
+                    if ess_cfg['enabled']:
+                        filtered_due_to = filters.check_attribs(track_id_seed_metadata[track_id], meta, ess_cfg)
                         if filtered_due_to is not None:
                             _LOGGER.debug('FILTERED(attribs(%s)) ID:%d Path:%s Similarity:%f Meta:%s' % (filtered_due_to, simtrack['id'], paths[simtrack['id']], simtrack['sim'], json.dumps(meta, cls=SetEncoder)))
                             set_filtered(simtrack, paths, filtered_tracks, 'attribs')

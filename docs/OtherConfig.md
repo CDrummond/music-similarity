@@ -56,8 +56,7 @@ are usually supplied via the LMS plugin when it asks for mixes.
   "enabled":true,
   "extractor":"linux/x86-64/essentia_streaming_extractor_music",
   "highlevel":false,
-  "bpm":20,
-  "loudness":10,
+  "bpm":150,
   "filterkey":true,
   "filterattrib":false,
   "filterattrib_count":4,
@@ -80,7 +79,6 @@ default music-similarity will attempt to set this automatically.
 * `essentia.highlevel` Specify whether to support high-level Essentia analysis
 features. This defaults to true for Linux only.
 * `essentia.bpm` Specify max BPM difference when filtering tracks.
-* `essentia.loudness` Specify max loudness difference when filtering tracks.
 * `essentia.filterkey` Specify whether to filter on matching keys.
 * `essentia.filterattrib` Specify whether to filter on attrributes or not. If
 set only the highest, or lowest, attributes are used.
