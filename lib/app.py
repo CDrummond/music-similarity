@@ -111,9 +111,8 @@ class SetEncoder(json.JSONEncoder):
 
 
 def get_value(params, key, defVal, isPost):
-    if isPost:
-        return params[key] if key in params else defVal
-    return params[key][0] if key in params else defVal
+    val = (params[key] if key in params else defVal) if isPost else (params[key][0] if key in params else defVal)
+    return defVal if val is None else val
 
 
 def decode(url, root):
