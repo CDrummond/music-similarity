@@ -42,10 +42,6 @@ class SimilarityApp(Flask):
             hl_prev = app_config['essentia']['highlevel']
             app_config['essentia']['highlevel'] = app_config['essentia']['enabled'] and tdb.files_analysed_with_essentia_highlevel()
 
-            if not app_config['essentia']['enabled'] or hl_prev!=app_config['essentia']['highlevel']:
-                tdb.close()
-                tdb = tracks_db.TracksDb(app_config)
-
         if app_config['musly']['enabled']:
             app_config['musly']['enabled'] = tdb.files_analysed_with_musly()
 
@@ -57,6 +53,10 @@ class SimilarityApp(Flask):
 
         if app_config['simalgo']=='essentia' and (not app_config['essentia']['enabled'] or not app_config['essentia']['highlevel']):
             app_config['simalgo'] = 'bliss' if app_config['bliss']['enabled'] else 'musly'
+
+        # Re-open DB now that essentia/bliss have been checked
+        tdb.close()
+        tdb = tracks_db.TracksDb(app_config)
 
         self.mus = None
         self.mta = {'tracks':None, 'ids':None}

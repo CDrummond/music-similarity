@@ -75,6 +75,7 @@ def set_normalize_options(opts):
 class TracksDb(object):
     def __init__(self, config, create=False):
         path = os.path.join(config['paths']['db'], DB_FILE)
+        self.use_bliss = config['bliss']['enabled']
         self.use_essentia = config['essentia']['enabled']
         self.use_essentia_hl = config['essentia']['enabled'] and config['essentia']['highlevel']
         self.conn = None
@@ -197,6 +198,8 @@ class TracksDb(object):
                 if self.use_essentia_hl:
                     for ess in ESSENTIA_HIGHLEVEL_ATTRIBS:
                         cols+=', %s' % ess
+            elif self.use_bliss:
+                cols+=', bpm'
             if withFile:
                 cols+=', file'
             self.cursor.execute('SELECT %s FROM tracks WHERE rowid=%d' % (cols, i))
@@ -215,6 +218,9 @@ class TracksDb(object):
                     for ess in ESSENTIA_HIGHLEVEL_ATTRIBS:
                         meta[ess]=row[col]
                         col+=1
+            elif self.use_bliss:
+                meta['bpm']=row[col]
+                col+=1
             if withFile:
                 meta['file']=row[col]
             return meta
@@ -315,7 +321,7 @@ class TracksDb(object):
 
 
     def files_analysed_with_essentia(self):
-        self.cursor.execute('SELECT %s FROM tracks WHERE %s is not null LIMIT 1' % (ESSENTIA_LOWLEVEL_ATTRIBS[0], ESSENTIA_LOWLEVEL_ATTRIBS[0]))
+        self.cursor.execute('SELECT %s FROM tracks WHERE %s is not null LIMIT 1' % (ESSENTIA_LOWLEVEL_ATTRIBS[1], ESSENTIA_LOWLEVEL_ATTRIBS[1]))
         row = self.cursor.fetchone()
         return row is not None and row[0] is not None
 
