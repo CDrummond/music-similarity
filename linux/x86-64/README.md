@@ -44,5 +44,5 @@ Bliss
 x86-64 Linux build of bliss-analyse, built on Ubuntu
 
 It is not necessary to rebuild this app, but for those interested this is
-documented on its github page https://github.com/CDrummond/bliss-analyse.git
+documented on its github page https://github.com/CDrummond/bliss-analyse
 
