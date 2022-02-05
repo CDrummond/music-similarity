@@ -9,16 +9,6 @@ database and jukebox files can be saved.
 
 `paths.local` should point the location of music files to be analysed.
 
-  
-Essentia
-========
-
-Pre-built verison of Essentia etractor that is compiled agains GAIA/SVM. This is
-taken from Roland0's [LMS Essentia Integration](https://www.nexus0.net/pub/sw/lmsessentia/)
-
-This verison of Essentia allows highlevel (e.g. danaceability, aggresivness, etc)
-attributes to be analysed.
-
 
 Musly
 =====
