@@ -46,10 +46,10 @@ def init(db):
 
 def get_similars(db, track_id, num_tracks):
     global attrib_list, max_sim, tree
-    distances, indexes = tree.query(numpy.array([attrib_list[track_id]]), k=num_tracks)
+    distdances, indexes = tree.query(numpy.array([attrib_list[track_id]]), k=num_tracks)
 
     entries = []
     for i in range(min(len(indexes[0]), num_tracks)):
-        entries.append({'id':indexes[0][i], 'sim':distances[0][i]/max_sim})
+        entries.append({'id':indexes[0][i], 'sim':distdances[0][i]/max_sim})
 
     return entries;
