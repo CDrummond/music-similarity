@@ -297,45 +297,66 @@ class TracksDb(object):
 
 
     def file_analysed_with_musly(self, path):
-        self.cursor.execute('SELECT vals FROM tracks WHERE file=?', (path,))
-        row = self.cursor.fetchone()
-        return row is not None and row[0] is not None
+        try:
+            self.cursor.execute('SELECT vals FROM tracks WHERE file=?', (path,))
+            row = self.cursor.fetchone()
+            return row is not None and row[0] is not None
+        except:
+            return False
 
 
     def file_analysed_with_essentia(self, path):
-        self.cursor.execute('SELECT bpm FROM tracks WHERE file=?', (path,))
-        row = self.cursor.fetchone()
-        return row is not None and row[0] is not None
+        try:
+            self.cursor.execute('SELECT bpm FROM tracks WHERE file=?', (path,))
+            row = self.cursor.fetchone()
+            return row is not None and row[0] is not None
+        except:
+            return False
 
 
     def file_analysed_with_bliss(self, path):
-        self.cursor.execute('SELECT bliss FROM tracks WHERE file=?', (path,))
-        row = self.cursor.fetchone()
-        return row is not None and row[0] is not None
+        try:
+            self.cursor.execute('SELECT bliss FROM tracks WHERE file=?', (path,))
+            row = self.cursor.fetchone()
+            return row is not None and row[0] is not None
+        except:
+            return False
 
 
     def files_analysed_with_musly(self):
-        self.cursor.execute('SELECT vals FROM tracks WHERE vals is not null LIMIT 1')
-        row = self.cursor.fetchone()
-        return row is not None and row[0] is not None
+        try:
+            self.cursor.execute('SELECT vals FROM tracks WHERE vals is not null LIMIT 1')
+            row = self.cursor.fetchone()
+            return row is not None and row[0] is not None
+        except:
+            return False
 
 
     def files_analysed_with_essentia(self):
-        self.cursor.execute('SELECT %s FROM tracks WHERE %s is not null LIMIT 1' % (ESSENTIA_LOWLEVEL_ATTRIBS[1], ESSENTIA_LOWLEVEL_ATTRIBS[1]))
-        row = self.cursor.fetchone()
-        return row is not None and row[0] is not None
+        try:
+            self.cursor.execute('SELECT %s FROM tracks WHERE %s is not null LIMIT 1' % (ESSENTIA_LOWLEVEL_ATTRIBS[1], ESSENTIA_LOWLEVEL_ATTRIBS[1]))
+            row = self.cursor.fetchone()
+            return row is not None and row[0] is not None
+        except:
+            return False
 
 
     def files_analysed_with_essentia_highlevel(self):
-        self.cursor.execute('SELECT %s FROM tracks WHERE %s is not null LIMIT 1' % (ESSENTIA_HIGHLEVEL_ATTRIBS[0], ESSENTIA_HIGHLEVEL_ATTRIBS[0]))
-        row = self.cursor.fetchone()
-        return row is not None and row[0] is not None
+        try:
+            self.cursor.execute('SELECT %s FROM tracks WHERE %s is not null LIMIT 1' % (ESSENTIA_HIGHLEVEL_ATTRIBS[0], ESSENTIA_HIGHLEVEL_ATTRIBS[0]))
+            row = self.cursor.fetchone()
+            return row is not None and row[0] is not None
+        except:
+            return False
 
 
     def files_analysed_with_bliss(self):
-        self.cursor.execute('SELECT bliss FROM tracks WHERE bliss is not null LIMIT 1')
-        row = self.cursor.fetchone()
-        return row is not None and row[0] is not None
+        try:
+            self.cursor.execute('SELECT bliss FROM tracks WHERE bliss is not null LIMIT 1')
+            row = self.cursor.fetchone()
+            return row is not None and row[0] is not None
+        except:
+            return False
 
 
     def get_albums(self):
