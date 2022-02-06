@@ -667,7 +667,7 @@ def similar_api():
         num_sim = len(paths)
 
     matched_artists={}
-    artist_max_sim = 0.001 if cfg['bliss']['enabled'] else 0.1
+    artist_max_sim = 0.01 if cfg['bliss']['enabled'] else 0.1
     for track_id in track_ids:
         # Query musly and/or essentia for similar tracks
         simtracks = get_similars(track_id, mus, num_sim, mta, tdb, cfg)

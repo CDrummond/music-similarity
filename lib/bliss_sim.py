@@ -14,7 +14,7 @@ _LOGGER = logging.getLogger(__name__)
 
 
 attrib_list = []
-max_sim = None
+max_sim = math.sqrt(bliss_analysis.NUM_BLISS_VALS)
 tree = None
 
 
@@ -36,8 +36,6 @@ def init(db):
             else:
                 attr_list.append(pickle.loads(row[1]))
 
-        if max_sim is None:
-            max_sim = math.sqrt(len(attr_list))
         attrib_list = numpy.array(attr_list)
         tree = cKDTree(attrib_list)
         return paths
