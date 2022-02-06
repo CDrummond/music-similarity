@@ -747,7 +747,7 @@ def similar_api():
                     key = '%s::%s::%s' % (meta['artist'], meta['album'], meta['albumartist'] if 'albumartist' in meta and meta['albumartist'] is not None else '')
                     sim = simtrack['sim'] + genre_adjust(track_id_seed_metadata[track_id], meta, seed_genres, all_genres, no_genre_match_adj, genre_group_adj)
 
-                    _LOGGER.debug('USABLE ID:%d Path:%s Similarity:%f AdjSim:%s Meta:%s' % (simtrack['id'], paths[simtrack['id']], simtrack['sim'], sim, json.dumps(meta, cls=SetEncoder)))
+                    _LOGGER.debug('USABLE ID:%d Path:%s Similarity:%f AdjSim:%f Meta:%s' % (simtrack['id'], paths[simtrack['id']], simtrack['sim'], sim, json.dumps(meta, cls=SetEncoder)))
                     similar_tracks.append({'path':paths[simtrack['id']], 'similarity':sim})
                     # Keep list of all tracks of an artist, so that we can randomly select one => we don't always use the same one
                     matched_artists[meta['artist']]={'similarity':simtrack['sim'], 'tracks':[{'path':paths[simtrack['id']], 'similarity':sim}], 'pos':len(similar_tracks)-1}
