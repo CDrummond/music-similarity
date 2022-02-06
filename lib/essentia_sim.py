@@ -16,11 +16,12 @@ min_bpm = None
 bpm_range = None
 max_sim = math.sqrt(len(tracks_db.ESSENTIA_HIGHLEVEL_ATTRIBS) + 1) # +1 for bpm
 attrib_list = []
+total_tracks = 0
 tree = None
 
 
 def init(db):
-    global min_bpm, bpm_range, max_sim, attrib_list, tree
+    global min_bpm, bpm_range, max_sim, attrib_list, total_tracks, tree
     if min_bpm is None:
         _LOGGER.debug('Loading essentia attribs from DB')
         cursor = db.get_cursor()
@@ -58,12 +59,15 @@ def init(db):
 
         attrib_list = numpy.array(attr_list)
         tree = cKDTree(attrib_list)
+        total_tracks = len(paths)
         return paths
     return None
             
 
 def get_similars(track_id, num_tracks):
-    global attrib_list, max_sim, tree
+    global attrib_list, max_sim, total_tracks, tree
+    if num_tracks>total_tracks or num_tracks<0:
+        num_tracks = total_tracks
     distances, indexes = tree.query(numpy.array([attrib_list[track_id]]), k=num_tracks)
 
     entries = []

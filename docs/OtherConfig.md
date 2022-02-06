@@ -196,7 +196,12 @@ Misc
  "excludegenres":[
    "Podcast", "Audiobook"
  ],
- "simalgo":"musly"
+ "simalgo":"musly",
+ "mixed":{
+  "essentia":33,
+  "bliss":33,
+  "musly:34
+ }
 }
 ```
 
@@ -210,5 +215,8 @@ Musly and Essentia are asked to analyse. Defaults to CPU count, if not set.
 * `maxduration` Only analyse tracks with duration <= this.
 * `excludegenres` List of genres that should be excluded from analysis. Any
 tracks that have a genre from this list will not be analysed.
-* `simalgo` Which method to use for similarity score; musly, essentia, or bliss.
-tis defaults to `bliss` for Linux, and `musly` for Mac and Windows.
+* `simalgo` Which method to use for similarity score; musly, essentia, bliss, or
+mixed. This defaults to `bliss` for Linux, and `musly` for Mac and Windows.
+* `mixed.essentia`, `mixed.bliss`, `mixed.musly` are used to define the
+percentage each of these in the similarity score. Only used if `simalgo` is set
+to `mixed`.

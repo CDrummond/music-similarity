@@ -61,13 +61,13 @@ class SimilarityApp(Flask):
         self.mus = None
         self.mta = {'tracks':None, 'ids':None}
 
-        if app_config['simalgo']=='essentia':
+        if app_config['simalgo']=='essentia' or (app_config['simalgo']=='mixed' and app_config['mixed']['essentia']>0):
             self.paths = essentia_sim.init(tdb)
 
-        elif app_config['simalgo']=='bliss':
+        if app_config['simalgo']=='bliss' or (app_config['simalgo']=='mixed' and app_config['mixed']['bliss']>0):
             self.paths = bliss_sim.init(tdb)
 
-        elif app_config['simalgo']=='musly':
+        if app_config['simalgo']=='musly' or (app_config['simalgo']=='mixed' and app_config['mixed']['musly']>0):
             self.mus = musly.Musly(app_config['musly']['lib'])
             (self.paths, self.mta['tracks']) = self.mus.get_alltracks_db(tdb.get_cursor())
 
@@ -157,15 +157,55 @@ def genre_adjust(seed, entry, acceptable_genres, all_genres, no_genre_match_adj,
 def get_similars(track_id, mus, num_sim, mta, tdb, cfg):
     tracks = []
 
+    if cfg['simalgo']=='mixed':
+        etracks = []
+        btracks = []
+        mtracks = []
+        num_tracks = 10000 # TODO
+        use_ess = cfg['essentia']['enabled'] and cfg['essentia']['highlevel'] and 'essentia' in cfg['mixed'] and cfg['mixed']['essentia']>0
+        use_bliss = cfg['bliss']['enabled'] and 'bliss' in cfg['mixed'] and cfg['mixed']['bliss']>0
+        use_musly = cfg['musly']['enabled'] and 'musly' in cfg['mixed'] and cfg['mixed']['musly']>0
+        epc = cfg['mixed']['essentia']/100.0 if use_ess else 0.0
+        bpc = cfg['mixed']['bliss']/100.0 if use_bliss else 0.0
+        mpc = cfg['mixed']['musly']/100.0 if use_musly else 0.0
+        use_ess = use_ess and epc>0.0
+        use_bliss = use_bliss and bpc>0.0
+        use_musly = use_musly and mpc>0.0
+
+        if use_ess:
+            _LOGGER.debug('Get distances for all tracks from Essentia')
+            etracks = essentia_sim.get_similars(track_id, -1)
+            etracks = sorted(etracks, key=lambda k: k['id'])
+        if use_bliss:
+            _LOGGER.debug('Get distances for all tracks from Bliss')
+            btracks = bliss_sim.get_similars(track_id, -1)
+            btracks = sorted(btracks, key=lambda k: k['id'])
+        if use_musly:
+            _LOGGER.debug('Get distances for all tracks from Musly')
+            mtracks = mus.get_similars(mta['tracks'], mta['ids'], track_id, len(mta['tracks']))
+            mtracks = sorted(mtracks, key=lambda k: k['id'])
+
+        if len(etracks)>0 or len(btracks)>0 or len(mtracks)>0:
+            _LOGGER.debug('Combining similarities')
+            tracks = []
+            for i in range(num_tracks):
+                sim = 0.0
+                if use_ess:
+                    sim += etracks[i]['sim']*epc
+                if use_bliss:
+                    sim += btracks[i]['sim']*bpc
+                if use_musly:
+                    sim += mtracks[i]['sim']*mpc
+                tracks.append({'sim': sim, 'id':i})
+            return sorted(tracks, key=lambda k: k['sim'])[:num_sim]
+
     if cfg['simalgo']=='essentia':
         _LOGGER.debug('Get %d similar tracks to %d from Essentia' % (num_sim, track_id))
-        tracks = essentia_sim.get_similars(track_id, num_sim)
-        return sorted(tracks, key=lambda k: k['sim'])
+        return essentia_sim.get_similars(track_id, num_sim)
 
     if cfg['simalgo']=='bliss':
         _LOGGER.debug('Get %d similar tracks to %d from Bliss' % (num_sim, track_id))
-        tracks = bliss_sim.get_similars(track_id, num_sim)
-        return sorted(tracks, key=lambda k: k['sim'])
+        return bliss_sim.get_similars(track_id, num_sim)
 
     _LOGGER.debug('Get %d similar tracks to %d from Musly' % (num_sim, track_id))
     return mus.get_similars(mta['tracks'], mta['ids'], track_id, num_sim)
@@ -681,6 +721,7 @@ def similar_api():
             if (simtrack['sim']>0.0) and (simtrack['sim']<=max_similarity) and (not simtrack['id'] in skip_track_ids):
                 prev_idx = similar_track_positions[simtrack['id']] if simtrack['id'] in similar_track_positions else -1
                 meta = similar_tracks[prev_idx] if prev_idx>=0 else tdb.get_track(simtrack['id']+1) # IDs (rowid) in SQLite are 1.. musly is 0..
+                filtered_due_to = None
                 if prev_idx>=0:
                     # Seen from previous seed, so set similarity to lowest value
                     sim = simtrack['sim'] + genre_adjust(track_id_seed_metadata[track_id], meta, seed_genres, all_genres, no_genre_match_adj, genre_group_adj)
@@ -704,7 +745,7 @@ def similar_api():
                     skip_track_ids.add(simtrack['id'])
                 else:
                     if (ess_cfg['enabled'] or cfg['bliss']['enabled']) and bpm_max_diff is not None and bpm_max_diff>0 and bpm_max_diff<150:
-                        filtered_due_to = filtered_due_to = filters.check_bpm(track_id_seed_metadata[track_id], meta, bpm_max_diff)
+                        filtered_due_to = filters.check_bpm(track_id_seed_metadata[track_id], meta, bpm_max_diff)
                         if filtered_due_to is not None:
                             _LOGGER.debug('FILTERED(attribs(%s)) ID:%d Path:%s Similarity:%f Meta:%s' % (filtered_due_to, simtrack['id'], paths[simtrack['id']], simtrack['sim'], json.dumps(meta, cls=SetEncoder)))
                             set_filtered(simtrack, paths, filtered_tracks, 'attribs')
