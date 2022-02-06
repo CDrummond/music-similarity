@@ -62,7 +62,7 @@ def init(db):
     return None
             
 
-def get_similars(db, track_id, num_tracks):
+def get_similars(track_id, num_tracks):
     global attrib_list, max_sim, tree
     distances, indexes = tree.query(numpy.array([attrib_list[track_id]]), k=num_tracks)
 

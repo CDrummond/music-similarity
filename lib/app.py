@@ -159,12 +159,12 @@ def get_similars(track_id, mus, num_sim, mta, tdb, cfg):
 
     if cfg['simalgo']=='essentia':
         _LOGGER.debug('Get %d similar tracks to %d from Essentia' % (num_sim, track_id))
-        tracks = essentia_sim.get_similars(tdb, track_id, num_sim)
+        tracks = essentia_sim.get_similars(track_id, num_sim)
         return sorted(tracks, key=lambda k: k['sim'])
 
     if cfg['simalgo']=='bliss':
         _LOGGER.debug('Get %d similar tracks to %d from Bliss' % (num_sim, track_id))
-        tracks = bliss_sim.get_similars(tdb, track_id, num_sim)
+        tracks = bliss_sim.get_similars(track_id, num_sim)
         return sorted(tracks, key=lambda k: k['sim'])
 
     _LOGGER.debug('Get %d similar tracks to %d from Musly' % (num_sim, track_id))
