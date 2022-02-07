@@ -21,7 +21,7 @@ tree = None
 
 
 def init(db):
-    global min_bpm, bpm_range, max_sim, attrib_list, total_tracks, tree
+    global min_bpm, bpm_range, attrib_list, total_tracks, tree
     if min_bpm is None:
         _LOGGER.debug('Loading essentia attribs from DB')
         cursor = db.get_cursor()

@@ -20,7 +20,7 @@ tree = None
 
 
 def init(db):
-    global attrib_list, max_sim, total_tracks, tree
+    global attrib_list, total_tracks, tree
     if tree is None:
         _LOGGER.debug('Loading bliss from DB')
         cursor = db.get_cursor()
