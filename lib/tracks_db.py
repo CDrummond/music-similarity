@@ -168,7 +168,7 @@ class TracksDb(object):
             if self.file_entry_exists(path):
                 self.cursor.execute('UPDATE tracks SET bpm=?, key=? WHERE file=?', (essentia['bpm'], essentia['key'], path))
             else:
-                self.cursor.execute('INSERT INTO tracks (file, bpm, key) VALUES (?, ?, ?, ?, ?)', (path, essentia['bpm'], essentia['key']))
+                self.cursor.execute('INSERT INTO tracks (file, bpm, key) VALUES (?, ?, ?)', (path, essentia['bpm'], essentia['key']))
 
             if self.use_essentia_hl and 'danceable' in essentia:
                 try:
