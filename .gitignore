@@ -3,5 +3,6 @@ windows/ffmpeg-LICENSE.txt
 windows/ffmpeg.exe
 windows/ffprobe.exe
 windows/streaming_extractor_music.exe
-mac/streaming_extractor_music
-essentia/models-beta5/
+mac/i386/streaming_extractor_music
+essentia/
+linux/x86-64/essentia_streaming_extractor_music
