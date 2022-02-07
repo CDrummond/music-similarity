@@ -93,7 +93,7 @@ Bliss
 
 ```
 {
- "essentia":{
+ "bliss":{
   "enabled":true,
   "analyser":"linux/x86-64/bliss-analyse"
  }
