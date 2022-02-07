@@ -216,7 +216,8 @@ Musly and Essentia are asked to analyse. Defaults to CPU count, if not set.
 * `excludegenres` List of genres that should be excluded from analysis. Any
 tracks that have a genre from this list will not be analysed.
 * `simalgo` Which method to use for similarity score; musly, essentia, bliss, or
-mixed. This defaults to `bliss` for Linux, and `musly` for Mac and Windows.
+mixed. This defaults to `bliss` for Linux, and `musly` for Mac and Windows. This
+only affects the API usage, analysis will use all enabled types.
 * `mixed.essentia`, `mixed.bliss`, `mixed.musly` are used to define the
 percentage each of these in the similarity score. Only used if `simalgo` is set
 to `mixed`.
