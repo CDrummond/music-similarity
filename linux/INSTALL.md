@@ -19,8 +19,8 @@ Installation
 
     `pip install -r requirements.txt`
 
-- For Intel/AMD Linux installs ffmpeg libraries are required as the Musly
-  library links to these. The Musly build for Raspberry Pi systems is designed
+- For Intel/AMD Linux installs ffmpeg libraries are required as the Bliss analyser
+  and Musly library link to these. The Musly build for Raspberry Pi systems is designed
   for serving the similarity HTTP API only, and not analysis, hence is not
   linked to ffmpeg and therefore these libraries are not required. For ffmpeg
   you can either:
