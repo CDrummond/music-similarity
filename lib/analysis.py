@@ -203,7 +203,7 @@ def get_files_to_analyse(trks_db, lms_db, lms_path, path, files, local_root_len,
                 files.append({'abs':path, 'db':db_path, 'musly':musly, 'essentia':essentia, 'bliss':bliss})
 
 
-def analyse_files(config, path, remove_tracks, meta_only, force, jukebox, max_tracks):
+def analyse_files(config, path, remove_tracks, meta_only, force, jukebox, max_tracks, dry_run):
     signal.signal(signal.SIGINT, sig_handler)
     _LOGGER.debug('Analyse %s' % path)
     trks_db = tracks_db.TracksDb(config, True)
@@ -213,7 +213,7 @@ def analyse_files(config, path, remove_tracks, meta_only, force, jukebox, max_tr
     local_root_len = len(config['paths']['local'])
     lms_path = config['paths']['lms'] if 'lms' in config['paths'] else None
     temp_dir = config['paths']['tmp'] if 'tmp' in config['paths'] else None
-    removed_tracks = trks_db.remove_old_tracks(config['paths']['local']) if remove_tracks and not meta_only else False
+    removed_tracks = trks_db.remove_old_tracks(config['paths']['local'], dry_run) if remove_tracks and not meta_only else False
     musly_enabled = config['musly']['enabled']
     essentia_enabled = config['essentia']['enabled']
     bliss_enabled = config['bliss']['enabled']
@@ -249,6 +249,8 @@ def analyse_files(config, path, remove_tracks, meta_only, force, jukebox, max_tr
 
     get_files_to_analyse(trks_db, lms_db, lms_path, path, files, local_root_len, tmp_path, tmp_path_len, meta_only, force, musly_enabled, essentia_enabled, bliss_enabled)
     _LOGGER.debug('Num tracks to update: %d' % len(files))
+    if dry_run:
+        return
     if max_tracks>0 and len(files)>max_tracks:
         _LOGGER.debug('Only analysing %d tracks' % max_tracks)
         files=files[:max_tracks]

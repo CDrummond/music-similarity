@@ -218,8 +218,6 @@ def read_config(path, analyse):
             exit_with_error("'%s' does not exist" % config['lmsdb'])
         if not 'lms' in config['paths']:
             exit_with_error("'paths.lms' not in config file")
-        if not os.path.exists(config['paths']['lms']):
-            exit_with_error("'%s' does not exist" % config['paths']['lms'])
 
     if 'tmp' in config['paths'] and not os.path.exists(config['paths']['tmp']):
         exit_with_error("'%s' does not exist" % config['paths']['tmp'])

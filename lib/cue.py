@@ -5,8 +5,7 @@
 # GPLv3 license.
 #
 
-import logging, os, sqlite3, subprocess
-from urllib.parse import quote
+import logging, os, sqlite3, subprocess, urllib
 from concurrent.futures import ThreadPoolExecutor
 
 CUE_TRACK = '.CUE_TRACK.'
@@ -16,9 +15,9 @@ def get_cue_tracks(lms_db, lms_path, path, local_root_len, tmp_path):
     tracks=[]
     if lms_db is not None and lms_path is not None:
         # Convert local path into LMS path...
-        lms_full_path = '%s%s' % (lms_path, path[local_root_len:])
+        lms_full_path = 'file://%s' % urllib.parse.quote('%s%s' % (lms_path, path[local_root_len:]), safe="/-_.!~*'()")
         # Get list of cue tracks from LMS db...
-        cursor = lms_db.execute("select url, title from tracks where url like '%%%s#%%'" % quote(lms_full_path))
+        cursor = lms_db.execute("select url, title from tracks where url like '%%%s#%%'" % lms_full_path)
         for row in cursor:
             parts=row[0].split('#')
             if 2==len(parts):

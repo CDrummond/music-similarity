@@ -254,7 +254,7 @@ class TracksDb(object):
             self.update_metadata(track['db'], meta)
 
 
-    def remove_old_tracks(self, source_path):
+    def remove_old_tracks(self, source_path, dry_run):
         non_existant_files = []
         _LOGGER.debug('Looking for old tracks to remove')
         try:
@@ -266,6 +266,8 @@ class TracksDb(object):
                     non_existant_files.append(row[0])
 
             _LOGGER.debug('Num old tracks: %d' % len(non_existant_files))
+            if dry_run:
+                return False
             if len(non_existant_files)>0:
                 # Remove entries...
                 for path in non_existant_files:
