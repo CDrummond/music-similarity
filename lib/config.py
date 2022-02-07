@@ -12,7 +12,7 @@ _LOGGER = logging.getLogger(__name__)
 # Only Linux and mac, for now, support highlevel analysis
 SUPPORT_ESSENTIA_HIGHLEVEL = ['linux', 'mac']
 # Only Linux, for now, supports bliss
-SUPPORT_BLISS = ['linux']
+SUPPORT_BLISS = ['linux', 'mac']
 
 def exit_with_error(s):
     _LOGGER.error(s)
@@ -109,7 +109,7 @@ def setup_paths(config, analyse):
             return
     elif system == 'mac':
         if proc == 'i386':
-            update_paths(config, analyse, 'mac', 'mac/i386/libmusly.dylib', '%s/mac/streaming_extractor_music' % root_folder, None)
+            update_paths(config, analyse, 'mac', 'mac/i386/libmusly.dylib', '%s/mac/i386/streaming_extractor_music' % root_folder, '%s/mac/i386/bliss-analyse' % root_folder)
             return
     #    else: # M1??? Can use x86_64 binaries on M1?
     #        update_paths(config, analyse, 'mac', 'mac/m1/libmusly.dylib', '%s/mac/streaming_extractor_music' % root_folder, None)

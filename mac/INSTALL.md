@@ -31,6 +31,16 @@ Installation
 
 - Edit `config.json` to contain correct paths
 
+- Bliss requires alernate ffmpeg:
+
+    - Install an alternate ffmpeg version (may take some time):
+      `brew install ffmpeg@4`
+
+    - `ffmpeg@4` is "not symlinked into /usr/local because this is an alternate version of another formula", i.e. you already have another version of ffmpeg installed.
+
+    - Have Homebrew link it:
+      `brew link ffmpeg@4`
+
 - If you wish to analyse with Essentia:
 
   a) Download essentia models and extractor from https://github.com/AF-1/sobras/tree/main/lms-music-similarity_on_macos
@@ -46,7 +56,7 @@ Installation
              profile
      ```
 
-  c) Place extractor into `mac` folder
+  c) Place extractor into `mac/i386` folder
 
 - Optional: Run Music Similarity Server as a daemon (in the background): https://github.com/AF-1/sobras/blob/main/lms-music-similarity_on_macos/README.md#running-music-similarity-server-as-a-daemonin-the-background
 
