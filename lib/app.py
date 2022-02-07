@@ -331,8 +331,14 @@ def dump_api():
     add_file_protocol = params['track'][0].startswith('file://')
 
     track = decode(params['track'][0], root)
+    raw = int(get_value(params, 'raw', 0, isPost))==1
+    match_artist = int(get_value(params, 'filterartist', '0', isPost))==1
     no_genre_match_adj = int(get_value(params, 'nogenrematchadj', DEFAULT_NO_GENRE_MATCH_ADJUSTMENT, isPost))/100.0
     genre_group_adj = int(get_value(params, 'genregroupadj', DEFAULT_GENRE_GROUP_MATCH_ADJUSTMENT, isPost))/100.0
+    count = int(get_value(params, 'count', 1000, isPost))
+    fmt = get_value(params, 'format', '', isPost)
+    txt = fmt=='text'
+    txt_url = fmt=='text-url'
     _LOGGER.debug('S TRACK %s -> %s' % (params['track'][0], track))
 
     # Check that musly knows about this track
@@ -341,23 +347,19 @@ def dump_api():
         track_id = paths.index( track )
         if track_id<0:
             abort(404)
-        fmt = get_value(params, 'format', '', isPost)
-        txt = fmt=='text'
-        txt_url = fmt=='text-url'
-        match_artist = int(get_value(params, 'filterartist', '0', isPost))==1
-        meta = tdb.get_track(track_id+1) # IDs (rowid) in SQLite are 1.. musly is 0..
 
-        all_genres = genre_cfg['all_genres'] if 'all_genres' in genre_cfg else None
-        acceptable_genres=set()
-        if 'genres' in meta:
-            acceptable_genres.update(meta['genres'])
-            if 'genres' in genre_cfg:
-                for genre in meta['genres']:
-                    for group in genre_cfg['genres']:
-                        if genre in group:
-                            acceptable_genres.update(group)
+        if not raw:
+            meta = tdb.get_track(track_id+1) # IDs (rowid) in SQLite are 1.. musly is 0..
+            all_genres = genre_cfg['all_genres'] if 'all_genres' in genre_cfg else None
+            acceptable_genres=set()
+            if 'genres' in meta:
+                acceptable_genres.update(meta['genres'])
+                if 'genres' in genre_cfg:
+                    for genre in meta['genres']:
+                        for group in genre_cfg['genres']:
+                            if genre in group:
+                                acceptable_genres.update(group)
 
-        count = int(get_value(params, 'count', 1000, isPost))
         num_sim = count * 50
         if num_sim<MIN_NUM_SIM:
             num_sim = MIN_NUM_SIM
@@ -378,19 +380,25 @@ def dump_api():
                 continue
 
             track = tdb.get_track(simtrack['id']+1)
-            if match_artist and track['artist'] != meta['artist']:
-                continue
-            if not match_artist and track['ignore']:
-                continue
-            if simtrack['id']!=track_id and 'title' in track and 'title' in meta and track['title'] == meta['title']:
-                continue
+            if raw:
+                tracks.append({'path':paths[simtrack['id']], 'sim':simtrack['sim']})
+            else:
+                if match_artist and track['artist'] != meta['artist']:
+                    continue
+                if not match_artist and track['ignore']:
+                    continue
+                if simtrack['id']!=track_id and 'title' in track and 'title' in meta and track['title'] == meta['title']:
+                    continue
 
-            sim = simtrack['sim'] + genre_adjust(meta, track, acceptable_genres, all_genres, no_genre_match_adj, genre_group_adj)
-            tracks.append({'path':paths[simtrack['id']], 'sim':sim})
+                sim = simtrack['sim'] + genre_adjust(meta, track, acceptable_genres, all_genres, no_genre_match_adj, genre_group_adj)
+                tracks.append({'path':paths[simtrack['id']], 'sim':sim})
             if len(tracks)==MIN_NUM_SIM:
                 break
 
-        tracks = sorted(tracks, key=lambda k: k['sim'])
+        if not raw:
+            # Might have used genres to adjust sim score, so need to re-sort
+            tracks = sorted(tracks, key=lambda k: k['sim'])
+
         for track in tracks:
             _LOGGER.debug("%s %s" % (track['path'], track['sim']))
             if txt:
