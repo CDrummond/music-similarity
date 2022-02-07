@@ -189,16 +189,16 @@ def get_files_to_analyse(trks_db, lms_db, lms_path, path, files, local_root_len,
             if tmp_path is not None:
                 for track in cue.get_cue_tracks(lms_db, lms_path, path, local_root_len, tmp_path):
                     db_path = track['file'][tmp_path_len:].replace('\\', '/')
-                    musly = not meta_only and ('m' in force or (musly_enabled and not trks_db.file_analysed_with_musly(db_path)))
-                    essentia = not meta_only and ('e' in force or (essentia_enabled and not trks_db.file_analysed_with_essentia(db_path)))
-                    bliss = not meta_only and ('b' in force or (bliss_enabled and not trks_db.file_analysed_with_bliss(db_path)))
+                    musly = musly_enabled and not meta_only and ('m' in force or not trks_db.file_analysed_with_musly(db_path))
+                    essentia = essentia_enabled and not meta_only and ('e' in force or not trks_db.file_analysed_with_essentia(db_path))
+                    bliss = bliss_enabled and not meta_only and ('b' in force or not trks_db.file_analysed_with_bliss(db_path))
                     if meta_only or musly or essentia or bliss:
                         files.append({'abs':track['file'], 'db':db_path, 'track':track, 'src':path, 'musly':musly, 'essentia':essentia, 'bliss':bliss})
         else:
             db_path = path[local_root_len:].replace('\\', '/')
-            musly = not meta_only and ('m' in force or (musly_enabled and not trks_db.file_analysed_with_musly(db_path)))
-            essentia = not meta_only and ('e' in force or (essentia_enabled and not trks_db.file_analysed_with_essentia(db_path)))
-            bliss = not meta_only and ('b' in force or (bliss_enabled and not trks_db.file_analysed_with_bliss(db_path)))
+            musly = musly_enabled and not meta_only and ('m' in force or not trks_db.file_analysed_with_musly(db_path))
+            essentia = essentia_enabled and not meta_only and ('e' in force or not trks_db.file_analysed_with_essentia(db_path))
+            bliss = bliss_enabled and not meta_only and ('b' in force or not trks_db.file_analysed_with_bliss(db_path))
             if meta_only or musly or essentia or bliss:
                 files.append({'abs':path, 'db':db_path, 'musly':musly, 'essentia':essentia, 'bliss':bliss})
 
