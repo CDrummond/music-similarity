@@ -5,9 +5,10 @@
 # GPLv3 license.
 #
 
-import argparse, json, logging, math, os, random, re, sqlite3, urllib
+import argparse, json, logging, math, numpy, os, random, re, sqlite3, urllib
 from datetime import datetime
 from flask import Flask, abort, request
+from scipy.spatial import cKDTree
 from . import bliss_sim, cue, essentia_sim, filters, tracks_db, musly
 
 _LOGGER = logging.getLogger(__name__)
@@ -61,13 +62,14 @@ class SimilarityApp(Flask):
         self.mus = None
         self.mta = {'tracks':None, 'ids':None}
 
-        if app_config['simalgo']=='essentia' or (app_config['simalgo']=='mixed' and app_config['mixed']['essentia']>0):
+        mixed = app_config['simalgo']=='mixed' or app_config['simalgo']=='simplemixed'
+        if app_config['simalgo']=='essentia' or (mixed and app_config['mixed']['essentia']>0):
             self.paths = essentia_sim.init(tdb)
 
-        if app_config['simalgo']=='bliss' or (app_config['simalgo']=='mixed' and app_config['mixed']['bliss']>0):
+        if app_config['simalgo']=='bliss' or (mixed and app_config['mixed']['bliss']>0):
             self.paths = bliss_sim.init(tdb)
 
-        if app_config['simalgo']=='musly' or (app_config['simalgo']=='mixed' and app_config['mixed']['musly']>0):
+        if app_config['simalgo']=='musly' or (mixed and app_config['mixed']['musly']>0):
             self.mus = musly.Musly(app_config['musly']['lib'])
             (self.paths, self.mta['tracks']) = self.mus.get_alltracks_db(tdb.get_cursor())
 
@@ -157,7 +159,7 @@ def genre_adjust(seed, entry, acceptable_genres, all_genres, no_genre_match_adj,
 def get_similars(track_id, mus, num_sim, mta, tdb, cfg):
     tracks = []
 
-    if cfg['simalgo']=='mixed':
+    if cfg['simalgo']=='mixed' or cfg['simalgo']=='simplemixed':
         etracks = []
         btracks = []
         mtracks = []
@@ -172,6 +174,7 @@ def get_similars(track_id, mus, num_sim, mta, tdb, cfg):
         use_bliss = use_bliss and bpc>0.0
         use_musly = use_musly and mpc>0.0
 
+        # Get similarities from enabled algorithms
         if use_ess:
             _LOGGER.debug('Get distances for all tracks from Essentia')
             etracks = essentia_sim.get_similars(track_id, num_tracks)
@@ -188,16 +191,50 @@ def get_similars(track_id, mus, num_sim, mta, tdb, cfg):
         if len(etracks)>0 or len(btracks)>0 or len(mtracks)>0:
             _LOGGER.debug('Combining similarities')
             tracks = []
+            simple = cfg['simalgo']=='simplemixed'
+
+            if simple:
+                for i in range(num_tracks):
+                    sim = 0.0
+                    if use_ess:
+                        sim += etracks[i]['sim']*epc
+                    if use_bliss:
+                        sim += btracks[i]['sim']*bpc
+                    if use_musly:
+                        sim += mtracks[i]['sim']*mpc
+                    tracks.append({'sim': sim, 'id':i})
+                return sorted(tracks, key=lambda k: k['sim'])[:num_sim]
+
+            # Create a KDTree of these similarities
+            sim_list = []
             for i in range(num_tracks):
-                sim = 0.0
+                sims = []
                 if use_ess:
-                    sim += etracks[i]['sim']*epc
+                    sims.append(etracks[i]['sim']*epc)
                 if use_bliss:
-                    sim += btracks[i]['sim']*bpc
+                    sims.append(btracks[i]['sim']*bpc)
                 if use_musly:
-                    sim += mtracks[i]['sim']*mpc
-                tracks.append({'sim': sim, 'id':i})
-            return sorted(tracks, key=lambda k: k['sim'])[:num_sim]
+                    sims.append(mtracks[i]['sim']*mpc)
+                sim_list.append(sims)
+
+            sims_list = numpy.array(sim_list)
+            _LOGGER.debug('Create tree')
+            tree = cKDTree(sims_list)
+
+            # Find items closest to 0
+            zero = []
+            if use_ess:
+                zero.append(0.0)
+            if use_bliss:
+                zero.append(0.0)
+            if use_musly:
+                zero.append(0.0)
+            _LOGGER.debug('Query tree')
+            distances, indexes = tree.query(numpy.array([zero]), k=num_sim)
+            tracks = []
+            for i in range(min(len(indexes[0]), num_sim)):
+                tracks.append({'id':indexes[0][i], 'sim':distances[0][i]})
+            return tracks
 
     if cfg['simalgo']=='essentia':
         _LOGGER.debug('Get %d similar tracks to %d from Essentia' % (num_sim, track_id))
