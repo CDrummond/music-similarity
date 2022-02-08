@@ -161,7 +161,7 @@ def get_similars(track_id, mus, num_sim, mta, tdb, cfg):
         etracks = []
         btracks = []
         mtracks = []
-        num_tracks = 10000 # TODO
+        num_tracks = tdb.num_tracks()
         use_ess = cfg['essentia']['enabled'] and cfg['essentia']['highlevel'] and 'essentia' in cfg['mixed'] and cfg['mixed']['essentia']>0
         use_bliss = cfg['bliss']['enabled'] and 'bliss' in cfg['mixed'] and cfg['mixed']['bliss']>0
         use_musly = cfg['musly']['enabled'] and 'musly' in cfg['mixed'] and cfg['mixed']['musly']>0
@@ -174,15 +174,15 @@ def get_similars(track_id, mus, num_sim, mta, tdb, cfg):
 
         if use_ess:
             _LOGGER.debug('Get distances for all tracks from Essentia')
-            etracks = essentia_sim.get_similars(track_id, -1)
+            etracks = essentia_sim.get_similars(track_id, num_tracks)
             etracks = sorted(etracks, key=lambda k: k['id'])
         if use_bliss:
             _LOGGER.debug('Get distances for all tracks from Bliss')
-            btracks = bliss_sim.get_similars(track_id, -1)
+            btracks = bliss_sim.get_similars(track_id, num_tracks)
             btracks = sorted(btracks, key=lambda k: k['id'])
         if use_musly:
             _LOGGER.debug('Get distances for all tracks from Musly')
-            mtracks = mus.get_similars(mta['tracks'], mta['ids'], track_id, len(mta['tracks']))
+            mtracks = mus.get_similars(mta['tracks'], mta['ids'], track_id, num_tracks)
             mtracks = sorted(mtracks, key=lambda k: k['id'])
 
         if len(etracks)>0 or len(btracks)>0 or len(mtracks)>0:

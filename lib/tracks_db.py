@@ -399,6 +399,14 @@ class TracksDb(object):
         return albums
 
 
+    def num_tracks(self):
+        self.cursor.execute('SELECT count(*) FROM tracks')
+        row = self.cursor.fetchone()
+        if row is not None:
+            return int(row[0])
+        return 0
+
+
     def get_genres_with_count(self):
         genres = []
         self.cursor.execute('SELECT distinct genre from tracks')
