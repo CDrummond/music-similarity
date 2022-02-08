@@ -280,6 +280,35 @@ class TracksDb(object):
         return False
 
 
+    def update_if_required(self):
+        try:
+            self.cursor.execute("SELECT sql from sqlite_master where type='table' and name='tracks'")
+            row = self.cursor.fetchone()
+            if row is not None and row[0] is not None:
+                sql = row[0].replace('\t', ' ').replace('  ', ' ')
+                if '"vals" blob NOT NULL' in sql:
+                    _LOGGER.debug('Updating DB to remove old constraint')
+                    sql = sql.replace('"vals" blob NOT NULL', '"vals" blob')
+                    self.commit()
+                    self.cursor.execute('ALTER TABLE tracks RENAME TO tracks_old')
+                    self.cursor.execute('DELETE from tracks_tmp')
+                    self.cursor.execute('DROP TABLE tracks_tmp')
+                    self.cursor.execute(sql)
+                    self.cursor.execute('INSERT INTO tracks SELECT * from tracks_old')
+                    self.cursor.execute('DELETE from tracks_old')
+                    self.cursor.execute('DROP TABLE tracks_old')
+                    sql = sql.replace('CREATE TABLE "tracks"', 'CREATE TABLE "tracks_tmp"')
+                    self.cursor.execute(sql)
+                    self.commit()
+                    self.cursor.execute('VACUUM')
+                    self.commit()
+                    return
+            _LOGGER.debug('No update required')
+        except Exception as e:
+            _LOGGER.error(str(e))
+            pass
+
+
     def force_rowid_update(self):
         ''' Copy tracks into tmp and back - to force rowid to be updated '''
         self.commit()

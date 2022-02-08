@@ -8,7 +8,7 @@
 #
 
 import argparse, logging, os
-from lib import analysis, app, config, test, version
+from lib import analysis, app, config, test, tracks_db, version
 
 JUKEBOX_FILE = 'music-similarity.jukebox'
 _LOGGER = logging.getLogger(__name__)
@@ -25,12 +25,16 @@ if __name__=='__main__':
     parser.add_argument('-f', '--force', type=str, default='', help="Force rescan of specified data (use 'm' for musly, 'e' for essentia, 'b' for bliss, 'meb' for all; used in conjuction with --analyse)")
     parser.add_argument('-t', '--test', action='store_true', default=False, help='Test musly')
     parser.add_argument('-r', '--repeat', action='store_true', default=False, help='Repeat test until OK (used in conjuction with --test)')
+    parser.add_argument('-u', '--update-db', action='store_true', default=False, help='Update database to remove contraints')
     args = parser.parse_args()
     logging.basicConfig(format='%(asctime)s %(levelname).1s %(message)s', level=args.log_level, datefmt='%Y-%m-%d %H:%M:%S')
     cfg = config.read_config(args.config, args.analyse)
     _LOGGER.debug('Init DB')
     jukebox_file = os.path.join(cfg['paths']['db'], JUKEBOX_FILE)
-    if args.analyse:
+    if args.update_db:
+        db = tracks_db.TracksDb(cfg, False)
+        db.update_if_required()
+    elif args.analyse:
         path = cfg['paths']['local'] if args.analyse =='m' else args.analyse
         analysis.analyse_files(cfg, path, not args.keep_old, args.meta_only, args.force, jukebox_file, args.max_tracks, args.dry_run)
     elif args.test:
