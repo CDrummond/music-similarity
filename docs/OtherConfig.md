@@ -4,11 +4,32 @@ The main README.md details the basic config items, however more are supported,
 and these are detailed below:
 
 
+Bliss
+-----
+
+```
+{
+ "bliss":{
+  "enabled":true,
+  "analyser":"linux/x86-64/bliss-analyse"
+ }
+}
+```
+
+* `bliss.enabled` should be set to true if tracks should be analysed with bliss.
+This defaults to true for Linux and macOS when analysing, and to true for API if
+files have been analysed with Musly.
+* `bliss.analyser` should contain the path to the Bliss analyser extractor -path
+is relative to `music-similarity.py` Only required if analyising tracks. By
+default music-similarity will attempt to set this automatically.
+
+
 Musly
 -----
 ```
 {
  "musly":{
+  "enabled":true,
   "lib":"lib/x86-64/fedora/libmusly.so",
   "styletracks":1000,
   "styletracksmethod":"genres",
@@ -17,7 +38,9 @@ Musly
  }
 }
 ```
-
+* `musly.enabled` should be set to true if Musly is to be used for similarity.
+This defaults to true for Windows when analysing, and to true for API if files
+have been analysed with Musly.
 * `musly.lib` should contain the path the Musly shared library - path is
 relative to `music-similarity.py`
 * `musly.styletracks` A  subset of tracks is passed to Musly's `setmusicstyle`
@@ -69,7 +92,9 @@ are usually supplied via the LMS plugin when it asks for mixes.
 ```
 
 * `essentia.enabled` should be set to true if Essentia is to be used for
-filtering. This defaults to true.
+filtering, or similairty. This defaults to true if when analysing if the 
+extractor is found, and to true for API if files have been analysed with
+Essentia.
 * `essentia.extractor` should contain the path to the Essentia extractor - path
 is relative to `music-similarity.py` Only required if analyising tracks. By
 default music-similarity will attempt to set this automatically.
@@ -86,25 +111,6 @@ higher than or equal to this.
 lower than or equal to this.
 * `paths.cache` if set, then the full output of Essentia analysis for each track
 will be stored within a GZip compressed JSON file (`<music file>.json.gz`)
-
-
-Bliss
------
-
-```
-{
- "bliss":{
-  "enabled":true,
-  "analyser":"linux/x86-64/bliss-analyse"
- }
-}
-```
-
-* `bliss.enabled` should be set to true if tracks should be analysed with bliss.
-This defaults to true.
-* `bliss.analyser` should contain the path to the Bliss analyser extractor -path
-is relative to `music-similarity.py` Only required if analyising tracks. By
-default music-similarity will attempt to set this automatically.
 
 
 CUE Tracks
