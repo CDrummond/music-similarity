@@ -191,9 +191,8 @@ def get_similars(track_id, mus, num_sim, mta, tdb, cfg):
         if len(etracks)>0 or len(btracks)>0 or len(mtracks)>0:
             _LOGGER.debug('Combining similarities')
             tracks = []
-            simple = cfg['simalgo']=='simplemixed'
 
-            if simple:
+            if cfg['simalgo']=='simplemixed':
                 for i in range(num_tracks):
                     sim = 0.0
                     if use_ess:

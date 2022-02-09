@@ -237,7 +237,7 @@ def read_config(path, analyse):
     if not 'simalgo' in config:
         config['simalgo']='bliss' if sname in SUPPORT_BLISS else 'musly'
 
-    if not config['simalgo'] in ['bliss', 'essentia', 'musly', 'mixed']:
+    if not config['simalgo'] in ['bliss', 'essentia', 'musly', 'mixed', 'simplemixed']:
         exit_with_error("Invalid 'simalgo' setting")
 
     if not 'bliss' in config:
@@ -339,7 +339,7 @@ def read_config(path, analyse):
 
     if analyse:
         check_binaries(config)
-    elif 'mixed'==config['simalgo'] and not 'mixed' in config:
+    elif ('mixed'==config['simalgo'] or 'simplemixed'==config['simalgo']) and not 'mixed' in config:
         exit_with_error('Please deffine algo mix percentages')
 
     if not config['bliss']['enabled'] and not config['essentia']['enabled'] and not config['musly']['enabled']:
