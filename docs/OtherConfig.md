@@ -18,7 +18,7 @@ Bliss
 
 * `bliss.enabled` should be set to true if tracks should be analysed with bliss.
 This defaults to true for Linux and macOS when analysing, and to true for API if
-files have been analysed with Musly.
+tracks have been analysed with Musly.
 * `bliss.analyser` should contain the path to the Bliss analyser extractor -path
 is relative to `music-similarity.py` Only required if analyising tracks. By
 default music-similarity will attempt to set this automatically.
@@ -39,7 +39,7 @@ Musly
 }
 ```
 * `musly.enabled` should be set to true if Musly is to be used for similarity.
-This defaults to true for Windows when analysing, and to true for API if files
+This defaults to true for Windows when analysing, and to true for API if tracks
 have been analysed with Musly.
 * `musly.lib` should contain the path the Musly shared library - path is
 relative to `music-similarity.py`
@@ -55,15 +55,15 @@ queried for how many tracks each genre has and tracks are chosen for each of
 these genres based upon the percentage of tracks in a genre. If set to `albums`
 then at least one track from each album is used. If set to anything else then
 random tracks are chosen. Only used if analyising tracks.
-* `musly.extractlen` The maximum length in seconds of the file to decode. If
-zero or greater than the file length, then the whole file will be decoded. Note,
-however, that only a maximum of 5 minutes is used for analysis. Only used if
-analyising tracks.
+* `musly.extractlen` The maximum length in seconds of the track to decode. If
+zero or greater than the track's length, then the whole track will be decoded.
+Note, however, that only a maximum of 5 minutes is used for analysis. Only used
+if analysing tracks.
 * `musly.extractstart` The starting position in seconds of the excerpt to
 decode. If zero, decoding starts at the beginning. If negative, the excerpt is
-centred in the file, but starts at `-extractstart` the latest. If positive and
-`extractstart`+`extractlen` exceeds the file length, then the excerpt is taken
-from the end of the file. Only used if analyising tracks.
+centred in the track, but starts at `-extractstart` the latest. If positive and
+`extractstart`+`extractlen` exceeds the track length, then the excerpt is taken
+from the end of the track. Only used if analyising tracks.
 
 
 Essentia
@@ -93,7 +93,7 @@ are usually supplied via the LMS plugin when it asks for mixes.
 
 * `essentia.enabled` should be set to true if Essentia is to be used for
 filtering, or similairty. This defaults to true if when analysing if the 
-extractor is found, and to true for API if files have been analysed with
+extractor is found, and to true for API if tracks have been analysed with
 Essentia.
 * `essentia.extractor` should contain the path to the Essentia extractor - path
 is relative to `music-similarity.py` Only required if analyising tracks. By
@@ -221,9 +221,16 @@ Musly and Essentia are asked to analyse. Defaults to CPU count, if not set.
 * `maxduration` Only analyse tracks with duration <= this.
 * `excludegenres` List of genres that should be excluded from analysis. Any
 tracks that have a genre from this list will not be analysed.
-* `simalgo` Which method to use for similarity score; musly, essentia, bliss, or
-mixed. This defaults to `bliss` for Linux, and `musly` for Mac and Windows. This
-only affects the API usage, analysis will use all enabled types.
+* `simalgo` Which method to use for similarity score; `musly`, `essentia`,
+`bliss`, `mixed`, or `simplemixed`. This defaults to `bliss` for Linux and macOS,
+and `musly` for Windows. This only affects the API usage, analysis will use all
+enabled types. `mixed` uses a KDTree of all similarity scores, to attempt to
+locate the track that is most similar across all algorithms. `simplemixed` is
+a simplified version of `mixed` where the average of similarity scores is
+used for each track. **NOTE** Both `mixed` and `simplemixed` will be slower, as
+these calculate similarites against all tracks, combine, and then produce a
+result. How effective, or usefull, this is remains to be seen, and these _might_
+be removed.
 * `mixed.essentia`, `mixed.bliss`, `mixed.musly` are used to define the
 percentage each of these in the similarity score. Only used if `simalgo` is set
-to `mixed`.
+to `mixed` or `simplemixed`.
