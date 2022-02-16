@@ -65,16 +65,16 @@ class SimilarityApp(Flask):
         mixed = app_config['simalgo']=='mixed' or app_config['simalgo']=='simplemixed'
         if app_config['simalgo']=='essentia' or (mixed and app_config['mixed']['essentia']>0):
             self.paths = essentia_sim.init(tdb)
-            _LOGGER.debug('%d track(s) loaded from Essentia' % len(self.paths))
+            _LOGGER.debug('%d track(s) loaded from Essentia' % len(self.paths) if self.paths is not None else 0)
 
         if app_config['simalgo']=='bliss' or (mixed and app_config['mixed']['bliss']>0):
             self.paths = bliss_sim.init(tdb)
-            _LOGGER.debug('%d track(s) loaded from Bliss' % len(self.paths))
+            _LOGGER.debug('%d track(s) loaded from Bliss' % len(self.paths) if self.paths is not None else 0)
 
         if app_config['simalgo']=='musly' or (mixed and app_config['mixed']['musly']>0):
             self.mus = musly.Musly(app_config['musly']['lib'])
             (self.paths, self.mta['tracks']) = self.mus.get_alltracks_db(tdb.get_cursor())
-            _LOGGER.debug('%d track(s) loaded from Musly' % len(self.paths))
+            _LOGGER.debug('%d track(s) loaded from Musly' % len(self.paths) if self.paths is not None else 0)
 
             # If we can, load musly from jukebox...
             if os.path.exists(jukebox_path):
