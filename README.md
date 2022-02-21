@@ -22,7 +22,7 @@ tracks.
 This project contains the following pre-built versions of this app:
 
 1. Linux 64-bit - `linux/x86-64/bliss-analyse`
-
+2. Mac i386 = `mac/i386/bliss-analyse`
 
 ## Musly
 
