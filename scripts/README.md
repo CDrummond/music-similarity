@@ -41,3 +41,7 @@ Following extra files, not checked into github, are required:
 - mac/streaming_extractor_music - from https://github.com/AF-1/sobras/tree/main/lms-music-similarity_on_macos/binaries
 - essentia/models-beta5/ - from https://github.com/AF-1/sobras/tree/main/lms-music-similarity_on_macos/binaries
 
+
+# Convert to bliss.db for bliss-analyser
+
+`to-bliss.py -m music-similarity.db -b bliss.db`
