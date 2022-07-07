@@ -1,3 +1,5 @@
+**DEPRECATED** Please use [Bliss Analyser](https://github.com/CDrummond/bliss-analyser) instead.
+
 # Music Similarity
 
 This is a python3 script to analyse your music collection with Bliss, Essentia,
